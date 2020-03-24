@@ -30,12 +30,12 @@ import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.ref.ManifestRef;
 import io.reactivex.Flowable;
+import io.vertx.reactivex.core.Vertx;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Integration tests for {@link AstoRepo}.
@@ -48,9 +48,12 @@ final class AstoRepoITCase {
             Thread.currentThread().getContextClassLoader()
                 .getResource("docker").toURI()
         ).getParent();
-        final Repo repo = new AstoRepo(new FileStorage(dir), new RepoName.Simple("test"));
+        final Repo repo = new AstoRepo(
+            new FileStorage(dir, Vertx.vertx().fileSystem()),
+            new RepoName.Simple("test")
+        );
         final byte[] content = new Remaining(
-            Flowable.fromPublisher(FlowAdapters.toPublisher(repo.manifest(new ManifestRef("1"))))
+            Flowable.fromPublisher(repo.manifest(new ManifestRef("1")))
                 .toList()
                 .blockingGet()
                 .stream()
