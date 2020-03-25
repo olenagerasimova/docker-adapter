@@ -25,6 +25,7 @@ package com.artipie.docker.http;
 
 import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
@@ -43,7 +44,7 @@ class DockerSliceVersionCheckTest {
     void shouldRespondOkToVersionCheck() {
         final DockerSlice slice = new DockerSlice();
         final Response response = slice.response(
-            "GET /v2/",
+            new RequestLine("GET", "/v2/", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

@@ -23,14 +23,10 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.SliceRoute;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import org.reactivestreams.Publisher;
 
 /**
  * Slice implementing Docker Registry HTTP API.
@@ -38,20 +34,22 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.1
  */
-public final class DockerSlice implements Slice {
-    @Override
-    public Response response(
-        final String line,
-        final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        return new SliceRoute(
-            new SliceRoute.Path(
-                new RtRule.Multiple(
-                    new RtRule.ByPath("/v2/"),
-                    new RtRule.ByMethod(RqMethod.GET)
-                ),
-                new VersionCheck()
+public final class DockerSlice extends Slice.Wrap {
+
+    /**
+     * Ctor.
+     */
+    public DockerSlice() {
+        super(
+            new SliceRoute(
+                new SliceRoute.Path(
+                    new RtRule.Multiple(
+                        new RtRule.ByPath("/v2/"),
+                        new RtRule.ByMethod(RqMethod.GET)
+                    ),
+                    new VersionCheck()
+                )
             )
-        ).response(line, headers, body);
+        );
     }
 }
