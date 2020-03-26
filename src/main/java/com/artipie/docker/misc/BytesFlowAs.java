@@ -35,15 +35,16 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import javax.json.Json;
 import javax.json.JsonStructure;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 /**
- * This class represents {@link Flow.Subscriber} as converted value.
+ * This class represents {@link Subscriber} as converted value.
  * @param <T> Representing type
  * @since 0.1
  */
@@ -51,7 +52,7 @@ public abstract class BytesFlowAs<T> {
     /**
      * Byte flow.
      */
-    private final Flow.Publisher<ByteBuffer> flow;
+    private final Publisher<ByteBuffer> flow;
 
     /**
      * Byte chunks accumulator.
@@ -63,7 +64,7 @@ public abstract class BytesFlowAs<T> {
      * @param flow Flow of byte chunks
      * @param accum Byte chunks accumulator
      */
-    protected BytesFlowAs(final Flow.Publisher<ByteBuffer> flow,
+    protected BytesFlowAs(final Publisher<ByteBuffer> flow,
         final Accumulator<T> accum) {
         this.flow = flow;
         this.accum = accum;
@@ -84,7 +85,7 @@ public abstract class BytesFlowAs<T> {
      * @param <T> Target type
      * @since 0.1
      */
-    private static final class FutureSubscriber<T> implements Flow.Subscriber<ByteBuffer> {
+    private static final class FutureSubscriber<T> implements Subscriber<ByteBuffer> {
 
         /**
          * Future.
@@ -180,7 +181,7 @@ public abstract class BytesFlowAs<T> {
          * Ctor.
          * @param flow Bytes flow
          */
-        public JsonObject(final Flow.Publisher<ByteBuffer> flow) {
+        public JsonObject(final Publisher<ByteBuffer> flow) {
             super(
                 flow,
                 new BytesFlowAs.StreamAccum<>(inp -> Json.createReader(inp).read())
@@ -198,7 +199,7 @@ public abstract class BytesFlowAs<T> {
          * Bytes as text with UTF-8 encoding.
          * @param flow Bytes flow
          */
-        public Text(final Flow.Publisher<ByteBuffer> flow) {
+        public Text(final Publisher<ByteBuffer> flow) {
             this(flow, StandardCharsets.UTF_8);
         }
 
@@ -207,7 +208,7 @@ public abstract class BytesFlowAs<T> {
          * @param flow Bytes flow
          * @param charset Text encoding
          */
-        public Text(final Flow.Publisher<ByteBuffer> flow, final Charset charset) {
+        public Text(final Publisher<ByteBuffer> flow, final Charset charset) {
             super(
                 flow,
                 new BytesFlowAs.StreamAccum<>(

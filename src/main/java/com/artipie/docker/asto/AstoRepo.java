@@ -34,8 +34,8 @@ import com.artipie.docker.ref.BlobRef;
 import com.artipie.docker.ref.ManifestRef;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Flow;
-import java.util.concurrent.Flow.Subscriber;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
 
 /**
  * Asto implementation of {@link Repo}.
@@ -69,7 +69,7 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public Flow.Publisher<ByteBuffer> manifest(final ManifestRef link) {
+    public Publisher<ByteBuffer> manifest(final ManifestRef link) {
         final Key key = new Key.From(
             RegistryRoot.V2, "repositories", this.name.value(),
             "_manifests", link.string()
@@ -79,7 +79,10 @@ public final class AstoRepo implements Repo {
             .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
             .thenApply(Digest.FromLink::new)
             .thenApply(digest -> new Key.From(new BlobRef(digest), "data"))
-            .thenCompose(blob -> this.asto.value(new Key.From(RegistryRoot.V2, blob.string())))
+            .thenCompose(
+                blob -> this.asto.value(new Key.From(RegistryRoot.V2, blob.string()))
+                    .thenApply(content -> content)
+            )
         );
     }
 
@@ -91,18 +94,18 @@ public final class AstoRepo implements Repo {
      *  Maybe move it to separate library, since it's not related to
      *  artipie docker library.
      */
-    private static final class PubFromFuture<T> implements Flow.Publisher<T> {
+    private static final class PubFromFuture<T> implements Publisher<T> {
 
         /**
          * Async pubisher.
          */
-        private final CompletionStage<Flow.Publisher<T>> source;
+        private final CompletionStage<Publisher<T>> source;
 
         /**
          * Ctor.
          * @param source Future of publisher
          */
-        PubFromFuture(final CompletionStage<Flow.Publisher<T>> source) {
+        PubFromFuture(final CompletionStage<Publisher<T>> source) {
             this.source = source;
         }
 

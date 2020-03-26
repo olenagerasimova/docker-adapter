@@ -23,36 +23,29 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
-import org.junit.jupiter.api.io.TempDir;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Integration test for {@link AstoBlobs}.
  * @since 0.1
- * @todo #43:30min Fix a bug with RxFile which doesn't allow to delete
- *  temporary directories annotated with TempDir after tests.
- *  After fix remove this annotation to enable tests on Windows.
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 final class AstoBlobsITCase {
     @Test
-    void saveBlobDataAtCorrectPath(@TempDir final Path tmp) throws Exception {
-        final BlobStore blobs = new AstoBlobs(new FileStorage(tmp));
+    void saveBlobDataAtCorrectPath() throws Exception {
+        final InMemoryStorage storage = new InMemoryStorage();
+        final BlobStore blobs = new AstoBlobs(storage);
         final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
-        final Digest digest = blobs.put(
-            FlowAdapters.toFlowPublisher(Flowable.fromArray(buf))
-        ).get();
+        final Digest digest = blobs.put(new Content.From(Flowable.fromArray(buf))).get();
         MatcherAssert.assertThat(
             "Digest alg is not correct",
             digest.alg(), Matchers.equalTo("sha256")
@@ -65,22 +58,20 @@ final class AstoBlobsITCase {
         );
         MatcherAssert.assertThat(
             "File content is not correct",
-            Files.readAllBytes(
-                tmp.resolve("docker/registry/v2/blobs/sha256/05").resolve(hash).resolve("data")
+            new BlockingStorage(storage).value(
+                new Key.From(String.format("docker/registry/v2/blobs/sha256/05/%s/data", hash))
             ),
             Matchers.equalTo(buf.array())
         );
     }
 
     @Test
-    void writeAndReadBlob(@TempDir final Path tmp) throws Exception {
-        final BlobStore blobs = new AstoBlobs(new FileStorage(tmp));
+    void writeAndReadBlob() throws Exception {
+        final BlobStore blobs = new AstoBlobs(new InMemoryStorage());
         final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x05, 0x06, 0x07, 0x08});
-        final Digest digest = blobs.put(
-            FlowAdapters.toFlowPublisher(Flowable.fromArray(buf))
-        ).get();
+        final Digest digest = blobs.put(new Content.From(Flowable.fromArray(buf))).get();
         final byte[] read = Flowable.fromPublisher(
-            FlowAdapters.toPublisher(blobs.blob(digest).get())
+            blobs.blob(digest).get()
         ).toList().blockingGet().get(0).array();
         MatcherAssert.assertThat(read, Matchers.equalTo(buf.array()));
     }

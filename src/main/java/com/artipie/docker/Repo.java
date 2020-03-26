@@ -26,7 +26,7 @@ package com.artipie.docker;
 
 import com.artipie.docker.ref.ManifestRef;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Flow;
+import org.reactivestreams.Publisher;
 
 /**
  * Docker repository files and metadata.
@@ -52,5 +52,5 @@ public interface Repo {
      * @param link Manifest reference link
      * @return Flow with manifest data
      */
-    Flow.Publisher<ByteBuffer> manifest(ManifestRef link);
+    Publisher<ByteBuffer> manifest(ManifestRef link);
 }

@@ -24,6 +24,7 @@
 
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.RxFile;
@@ -32,10 +33,11 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.ref.BlobRef;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
+import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.reactivex.internal.operators.flowable.FlowableFromPublisher;
+import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.file.FileSystem;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,10 +45,8 @@ import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
 import org.cactoos.io.BytesOf;
 import org.cactoos.text.HexOf;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Asto {@link BlobStore} implementation.
@@ -58,6 +58,11 @@ import org.reactivestreams.FlowAdapters;
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class AstoBlobs implements BlobStore {
+
+    /**
+     * Vert.x file system used for temporary files.
+     */
+    private static final FileSystem FILE_SYSTEM = Vertx.vertx().fileSystem();
 
     /**
      * Storage.
@@ -73,7 +78,7 @@ public final class AstoBlobs implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<Flow.Publisher<ByteBuffer>> blob(final Digest digest) {
+    public CompletableFuture<Content> blob(final Digest digest) {
         return this.asto.value(
             new Key.From(
                 RegistryRoot.V2, new BlobRef(digest).string(), "data"
@@ -83,7 +88,7 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     @SuppressWarnings("PMD.OnlyOneReturn")
-    public CompletableFuture<Digest> put(final Flow.Publisher<ByteBuffer> blob) {
+    public CompletableFuture<Digest> put(final Content blob) {
         final MessageDigest sha;
         try {
             sha = MessageDigest.getInstance("SHA-256");
@@ -98,7 +103,7 @@ public final class AstoBlobs implements BlobStore {
         } catch (final IOException err) {
             return CompletableFuture.failedFuture(err);
         }
-        return new FlowableFromPublisher<>(FlowAdapters.toPublisher(blob))
+        return Flowable.fromPublisher(blob)
             .flatMapCompletable(
                 buf -> Completable.mergeArray(
                     Completable.fromAction(
@@ -124,7 +129,7 @@ public final class AstoBlobs implements BlobStore {
                 digest -> SingleInterop.fromFuture(
                     this.asto.save(
                         new Key.From(RegistryRoot.V2, new BlobRef(digest).string(), "data"),
-                        FlowAdapters.toFlowPublisher(new RxFile(tmp).flow())
+                        new Content.From(new RxFile(tmp, AstoBlobs.FILE_SYSTEM).flow())
                     ).thenApply(none -> digest)
                 )
             ).doOnTerminate(() -> Files.delete(tmp))

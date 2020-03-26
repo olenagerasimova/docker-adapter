@@ -24,9 +24,8 @@
 
 package com.artipie.docker;
 
-import java.nio.ByteBuffer;
+import com.artipie.asto.Content;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Flow;
 
 /**
  * Docker registry blob store.
@@ -39,13 +38,13 @@ public interface BlobStore {
      * @param digest Blob digest
      * @return Async publisher output
      */
-    CompletableFuture<Flow.Publisher<ByteBuffer>> blob(Digest digest);
+    CompletableFuture<Content> blob(Digest digest);
 
     /**
      * Put data into blob store and calculate its digest.
      * @param blob Data flow
      * @return Future with digest
      */
-    CompletableFuture<Digest> put(Flow.Publisher<ByteBuffer> blob);
+    CompletableFuture<Digest> put(Content blob);
 }
 

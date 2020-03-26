@@ -31,7 +31,6 @@ import javax.json.JsonObject;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.FlowAdapters;
 
 /**
  * Test case for {@link BytesFlowAs}.
@@ -44,9 +43,7 @@ final class BytesFlowAsTest {
         final String txt = "hello";
         MatcherAssert.assertThat(
             new BytesFlowAs.Text(
-                FlowAdapters.toFlowPublisher(
-                    Flowable.fromArray(ByteBuffer.wrap(txt.getBytes(StandardCharsets.UTF_8)))
-                ),
+                Flowable.fromArray(ByteBuffer.wrap(txt.getBytes(StandardCharsets.UTF_8))),
                 StandardCharsets.UTF_8
             ).future().get(),
             Matchers.equalTo(txt)
@@ -60,10 +57,8 @@ final class BytesFlowAsTest {
             .build();
         MatcherAssert.assertThat(
             new BytesFlowAs.JsonObject(
-                FlowAdapters.toFlowPublisher(
-                    Flowable.fromArray(
-                        ByteBuffer.wrap(json.toString().getBytes(StandardCharsets.UTF_8))
-                    )
+                Flowable.fromArray(
+                    ByteBuffer.wrap(json.toString().getBytes(StandardCharsets.UTF_8))
                 )
             ).future().get(),
             Matchers.equalTo(json)
