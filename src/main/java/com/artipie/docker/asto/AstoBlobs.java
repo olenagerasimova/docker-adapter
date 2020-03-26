@@ -36,8 +36,8 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.core.file.FileSystem;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,6 +58,11 @@ import org.cactoos.text.HexOf;
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class AstoBlobs implements BlobStore {
+
+    /**
+     * Vert.x file system used for temporary files.
+     */
+    private static final FileSystem FILE_SYSTEM = Vertx.vertx().fileSystem();
 
     /**
      * Storage.
@@ -121,18 +126,12 @@ public final class AstoBlobs implements BlobStore {
             .cast(Digest.class)
             .doOnTerminate(out::close)
             .flatMap(
-                digest -> {
-                    final Vertx vertx = Vertx.vertx();
-                    final Flowable<ByteBuffer> data = new RxFile(tmp, vertx.fileSystem())
-                        .flow()
-                        .doAfterTerminate(vertx::close);
-                    return SingleInterop.fromFuture(
-                        this.asto.save(
-                            new Key.From(RegistryRoot.V2, new BlobRef(digest).string(), "data"),
-                            new Content.From(data)
-                        ).thenApply(none -> digest)
-                    );
-                }
+                digest -> SingleInterop.fromFuture(
+                    this.asto.save(
+                        new Key.From(RegistryRoot.V2, new BlobRef(digest).string(), "data"),
+                        new Content.From(new RxFile(tmp, AstoBlobs.FILE_SYSTEM).flow())
+                    ).thenApply(none -> digest)
+                )
             ).doOnTerminate(() -> Files.delete(tmp))
             .to(SingleInterop.get()).toCompletableFuture();
     }
