@@ -25,6 +25,7 @@
 package com.artipie.docker.ref;
 
 import com.artipie.docker.Digest;
+import com.artipie.docker.Tag;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ public final class ManifestRefTest {
     @Test
     void resolvesTagLink() {
         MatcherAssert.assertThat(
-            new ManifestRef("latest").string(),
+            new ManifestRef(new Tag.Valid("latest")).string(),
             Matchers.equalTo("tags/latest/current/link")
         );
     }

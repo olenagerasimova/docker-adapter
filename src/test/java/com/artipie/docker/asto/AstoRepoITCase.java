@@ -29,6 +29,7 @@ import com.artipie.asto.Remaining;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tag;
 import com.artipie.docker.ref.ManifestRef;
 import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
@@ -66,7 +67,7 @@ final class AstoRepoITCase {
 
     @Test
     void shouldReadManifest() throws Exception {
-        final Optional<Content> manifest = this.repo.manifest(new ManifestRef("1"))
+        final Optional<Content> manifest = this.repo.manifest(new ManifestRef(new Tag.Valid("1")))
             .toCompletableFuture()
             .get();
         final byte[] content = new Remaining(
@@ -86,7 +87,7 @@ final class AstoRepoITCase {
 
     @Test
     void shouldReadNoManifestIfAbsent() throws Exception {
-        final Optional<Content> manifest = this.repo.manifest(new ManifestRef("2"))
+        final Optional<Content> manifest = this.repo.manifest(new ManifestRef(new Tag.Valid("2")))
             .toCompletableFuture()
             .get();
         MatcherAssert.assertThat(manifest.isPresent(), new IsEqual<>(false));
