@@ -24,9 +24,10 @@
 
 package com.artipie.docker;
 
+import com.artipie.asto.Content;
 import com.artipie.docker.ref.ManifestRef;
-import java.nio.ByteBuffer;
-import org.reactivestreams.Publisher;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Docker repository files and metadata.
@@ -50,7 +51,7 @@ public interface Repo {
     /**
      * Resolve docker image manifest file by reference link.
      * @param link Manifest reference link
-     * @return Flow with manifest data
+     * @return Flow with manifest data, or empty if absent
      */
-    Publisher<ByteBuffer> manifest(ManifestRef link);
+    CompletionStage<Optional<Content>> manifest(ManifestRef link);
 }

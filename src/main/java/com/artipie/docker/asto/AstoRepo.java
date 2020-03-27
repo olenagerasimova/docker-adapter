@@ -24,6 +24,7 @@
 
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Digest;
@@ -32,10 +33,9 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.misc.BytesFlowAs;
 import com.artipie.docker.ref.BlobRef;
 import com.artipie.docker.ref.ManifestRef;
-import java.nio.ByteBuffer;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
 
 /**
  * Asto implementation of {@link Repo}.
@@ -69,49 +69,29 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public Publisher<ByteBuffer> manifest(final ManifestRef link) {
+    public CompletionStage<Optional<Content>> manifest(final ManifestRef link) {
         final Key key = new Key.From(
             RegistryRoot.V2, "repositories", this.name.value(),
             "_manifests", link.string()
         );
-        return new AstoRepo.PubFromFuture<>(
-            this.asto.value(key)
-            .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
-            .thenApply(Digest.FromLink::new)
-            .thenApply(digest -> new Key.From(new BlobRef(digest), "data"))
-            .thenCompose(
-                blob -> this.asto.value(new Key.From(RegistryRoot.V2, blob.string()))
-                    .thenApply(content -> content)
-            )
+        return this.asto.exists(key).thenCompose(
+            exists -> {
+                final CompletionStage<Optional<Content>> stage;
+                if (exists) {
+                    stage = this.asto.value(key)
+                        .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
+                        .thenApply(Digest.FromLink::new)
+                        .thenApply(digest -> new Key.From(new BlobRef(digest), "data"))
+                        .thenCompose(
+                            blob -> this.asto.value(
+                                new Key.From(RegistryRoot.V2, blob.string())
+                            ).thenApply(Optional::of)
+                        );
+                } else {
+                    stage = CompletableFuture.completedFuture(Optional.empty());
+                }
+                return stage;
+            }
         );
-    }
-
-    /**
-     * Flow publisher from future.
-     * @param <T> Publisher type
-     * @since 1.0
-     * @todo #57:30min Extract this class from AstoRepo.
-     *  Maybe move it to separate library, since it's not related to
-     *  artipie docker library.
-     */
-    private static final class PubFromFuture<T> implements Publisher<T> {
-
-        /**
-         * Async pubisher.
-         */
-        private final CompletionStage<Publisher<T>> source;
-
-        /**
-         * Ctor.
-         * @param source Future of publisher
-         */
-        PubFromFuture(final CompletionStage<Publisher<T>> source) {
-            this.source = source;
-        }
-
-        @Override
-        public void subscribe(final Subscriber<? super T> sub) {
-            this.source.thenAccept(pub -> pub.subscribe(sub));
-        }
     }
 }
