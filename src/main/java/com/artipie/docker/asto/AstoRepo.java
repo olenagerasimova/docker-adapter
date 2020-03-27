@@ -69,10 +69,10 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public CompletionStage<Optional<Content>> manifest(final ManifestRef link) {
+    public CompletionStage<Optional<Content>> manifest(final ManifestRef ref) {
         final Key key = new Key.From(
             RegistryRoot.V2, "repositories", this.name.value(),
-            "_manifests", link.string()
+            "_manifests", ref.link().string()
         );
         return this.asto.exists(key).thenCompose(
             exists -> {

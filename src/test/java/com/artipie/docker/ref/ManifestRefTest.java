@@ -45,7 +45,7 @@ public final class ManifestRefTest {
     @Test
     void resolvesDigestString() {
         MatcherAssert.assertThat(
-            new ManifestRef.FromString("sha256:1234").string(),
+            new ManifestRef.FromString("sha256:1234").link().string(),
             Matchers.equalTo("revisions/sha256/1234/link")
         );
     }
@@ -53,7 +53,7 @@ public final class ManifestRefTest {
     @Test
     void resolvesTagString() {
         MatcherAssert.assertThat(
-            new ManifestRef.FromString("1.0").string(),
+            new ManifestRef.FromString("1.0").link().string(),
             Matchers.equalTo("tags/1.0/current/link")
         );
     }
@@ -67,7 +67,7 @@ public final class ManifestRefTest {
     void failsToResolveInvalid(final String string) {
         final Throwable throwable = Assertions.assertThrows(
             IllegalStateException.class,
-            () -> new ManifestRef.FromString(string).string()
+            () -> new ManifestRef.FromString(string).link().string()
         );
         MatcherAssert.assertThat(
             throwable.getMessage(),
@@ -83,7 +83,7 @@ public final class ManifestRefTest {
     @Test
     void resolvesDigestLink() {
         MatcherAssert.assertThat(
-            new ManifestRef(new Digest.Sha256("0000")).string(),
+            new ManifestRef.FromDigest(new Digest.Sha256("0000")).link().string(),
             Matchers.equalTo("revisions/sha256/0000/link")
         );
     }
@@ -91,7 +91,7 @@ public final class ManifestRefTest {
     @Test
     void resolvesTagLink() {
         MatcherAssert.assertThat(
-            new ManifestRef(new Tag.Valid("latest")).string(),
+            new ManifestRef.FromTag(new Tag.Valid("latest")).link().string(),
             Matchers.equalTo("tags/latest/current/link")
         );
     }

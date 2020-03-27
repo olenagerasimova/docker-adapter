@@ -49,9 +49,9 @@ public interface Repo {
     Digest layer(String alg, String digest);
 
     /**
-     * Resolve docker image manifest file by reference link.
-     * @param link Manifest reference link
+     * Resolve docker image manifest file by reference.
+     * @param ref Manifest reference
      * @return Flow with manifest data, or empty if absent
      */
-    CompletionStage<Optional<Content>> manifest(ManifestRef link);
+    CompletionStage<Optional<Content>> manifest(ManifestRef ref);
 }
