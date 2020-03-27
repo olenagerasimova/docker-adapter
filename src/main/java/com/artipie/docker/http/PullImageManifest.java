@@ -23,12 +23,18 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.Docker;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -76,12 +82,50 @@ final class PullImageManifest {
      */
     public static class Get implements Slice {
 
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Get(final Docker docker) {
+            this.docker = docker;
+        }
+
         @Override
         public Response response(
             final String line,
             final Iterable<Map.Entry<String, String>> headers,
-            final Publisher<ByteBuffer> body) {
-            return new RsWithStatus(RsStatus.OK);
+            final Publisher<ByteBuffer> body
+        ) {
+            final String path = new RequestLineFrom(line).uri().getPath();
+            final Matcher matcher = PATH.matcher(path);
+            if (!matcher.find()) {
+                throw new IllegalStateException(
+                    String.format("Unexpected path: %s", path)
+                );
+            }
+            final String name = matcher.group("name");
+            final ManifestRef ref = new ManifestRef.FromString(matcher.group("reference"));
+            return connection -> this.docker.repo(new RepoName.Valid(name)).manifest(ref)
+                .thenCompose(
+                    manifest -> {
+                        final Response response;
+                        if (manifest.isPresent()) {
+                            response = new RsWithBody(
+                                new RsWithStatus(RsStatus.OK),
+                                manifest.get()
+                            );
+                        } else {
+                            response = new RsWithStatus(RsStatus.NOT_FOUND);
+                        }
+                        return response.send(connection);
+                    }
+                );
         }
     }
 }
