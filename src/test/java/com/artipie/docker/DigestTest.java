@@ -35,15 +35,15 @@ import org.junit.jupiter.api.Test;
  */
 public final class DigestTest {
     @Test
-    void parsesValidLink() {
-        final Digest dgst = new Digest.FromLink("sha256:1234");
+    void parsesValidString() {
+        final Digest dgst = new Digest.FromString("sha256:1234");
         MatcherAssert.assertThat("bad algorithm", dgst.alg(), Matchers.is("sha256"));
         MatcherAssert.assertThat("bad digest", dgst.digest(), Matchers.is("1234"));
     }
 
     @Test
-    void failsOnInvalidLink() {
-        final Digest dgst = new Digest.FromLink("asd");
+    void failsOnInvalidString() {
+        final Digest dgst = new Digest.FromString("asd");
         Assertions.assertThrows(
             IllegalStateException.class, () -> dgst.alg(), "alg() didn't fail"
         );

@@ -80,7 +80,7 @@ public final class AstoRepo implements Repo {
                 if (exists) {
                     stage = this.asto.value(key)
                         .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
-                        .thenApply(Digest.FromLink::new)
+                        .thenApply(Digest.FromString::new)
                         .thenApply(digest -> new Key.From(new BlobRef(digest), "data"))
                         .thenCompose(
                             blob -> this.asto.value(
