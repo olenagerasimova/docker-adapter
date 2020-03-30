@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link DockerSlice}.
  * Pull image manifest endpoint.
  *
- * @since 0.1
+ * @since 0.2
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class DockerSlicePullImageManifestTest {

@@ -36,7 +36,7 @@ import org.reactivestreams.Publisher;
  * Slice for pull image manifest endpoint.
  * See <a href="https://docs.docker.com/registry/spec/api/#pulling-an-image">Pulling An Image</a>.
  *
- * @since 0.1
+ * @since 0.2
  */
 final class PullImageManifest implements Slice {
 
