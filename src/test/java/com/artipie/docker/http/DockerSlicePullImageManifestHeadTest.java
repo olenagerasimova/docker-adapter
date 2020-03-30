@@ -34,18 +34,18 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link DockerSlice}.
- * Pull image manifest endpoint.
+ * Pull image manifest endpoint, HEAD method.
  *
  * @since 0.2
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-class DockerSlicePullImageManifestTest {
+class DockerSlicePullImageManifestHeadTest {
 
     @Test
     void shouldReturnManifestByTag() {
         final DockerSlice slice = new DockerSlice();
         final Response response = slice.response(
-            new RequestLine("GET", "/v2/test/manifests/1", "HTTP/1.1").toString(),
+            new RequestLine("HEAD", "/v2/test/manifests/1", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -65,7 +65,7 @@ class DockerSlicePullImageManifestTest {
         );
         final Response response = slice.response(
             new RequestLine(
-                "GET",
+                "HEAD",
                 String.format("/v2/test/manifests/%s", digest),
                 "HTTP/1.1"
             ).toString(),

@@ -38,7 +38,7 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  */
-final class PullImageManifest implements Slice {
+final class PullImageManifest {
 
     /**
      * RegEx pattern for path.
@@ -47,11 +47,41 @@ final class PullImageManifest implements Slice {
         "^/v2/(?<name>[^/]*)/manifests/(?<reference>.*)$"
     );
 
-    @Override
-    public Response response(
-        final String line,
-        final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        return new RsWithStatus(RsStatus.OK);
+    /**
+     * Ctor.
+     */
+    private PullImageManifest() {
+    }
+
+    /**
+     * Slice for HEAD method, checking manifest existence.
+     *
+     * @since 0.2
+     */
+    public static class Head implements Slice {
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body) {
+            return new RsWithStatus(RsStatus.OK);
+        }
+    }
+
+    /**
+     * Slice for GET method, getting manifest content.
+     *
+     * @since 0.2
+     */
+    public static class Get implements Slice {
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body) {
+            return new RsWithStatus(RsStatus.OK);
+        }
     }
 }
