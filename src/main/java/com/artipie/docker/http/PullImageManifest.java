@@ -23,40 +23,35 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.http.Response;
 import com.artipie.http.Slice;
-import com.artipie.http.rq.RqMethod;
-import com.artipie.http.rt.RtRule;
-import com.artipie.http.rt.SliceRoute;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.regex.Pattern;
+import org.reactivestreams.Publisher;
 
 /**
- * Slice implementing Docker Registry HTTP API.
- * See <a href="https://docs.docker.com/registry/spec/api/">Docker Registry HTTP API V2</a>.
+ * Slice for pull image manifest endpoint.
+ * See <a href="https://docs.docker.com/registry/spec/api/#pulling-an-image">Pulling An Image</a>.
  *
- * @since 0.1
+ * @since 0.2
  */
-public final class DockerSlice extends Slice.Wrap {
+final class PullImageManifest implements Slice {
 
     /**
-     * Ctor.
+     * RegEx pattern for path.
      */
-    public DockerSlice() {
-        super(
-            new SliceRoute(
-                new SliceRoute.Path(
-                    new RtRule.Multiple(
-                        new RtRule.ByPath("/v2/"),
-                        new RtRule.ByMethod(RqMethod.GET)
-                    ),
-                    new VersionCheck()
-                ),
-                new SliceRoute.Path(
-                    new RtRule.Multiple(
-                        new RtRule.ByPath(PullImageManifest.PATH),
-                        new RtRule.ByMethod(RqMethod.GET)
-                    ),
-                    new PullImageManifest()
-                )
-            )
-        );
+    public static final Pattern PATH = Pattern.compile(
+        "^/v2/(?<name>[^/]*)/manifests/(?<reference>.*)$"
+    );
+
+    @Override
+    public Response response(
+        final String line,
+        final Iterable<Map.Entry<String, String>> headers,
+        final Publisher<ByteBuffer> body) {
+        return new RsWithStatus(RsStatus.OK);
     }
 }
