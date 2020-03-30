@@ -24,6 +24,7 @@
 
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.docker.Repo;
@@ -33,8 +34,11 @@ import io.reactivex.Flowable;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -42,18 +46,31 @@ import org.junit.jupiter.api.Test;
  * @since 0.1
  */
 final class AstoRepoITCase {
-    @Test
-    void readsManifestJson() throws Exception {
+
+    /**
+     * Repository being tested.
+     */
+    private Repo repo;
+
+    @BeforeEach
+    void setUp() throws Exception {
         final Path dir = Path.of(
             Thread.currentThread().getContextClassLoader()
                 .getResource("docker").toURI()
         ).getParent();
-        final Repo repo = new AstoRepo(
+        this.repo = new AstoRepo(
             new FileStorage(dir, Vertx.vertx().fileSystem()),
             new RepoName.Simple("test")
         );
+    }
+
+    @Test
+    void shouldReadManifest() throws Exception {
+        final Optional<Content> manifest = this.repo.manifest(new ManifestRef("1"))
+            .toCompletableFuture()
+            .get();
         final byte[] content = new Remaining(
-            Flowable.fromPublisher(repo.manifest(new ManifestRef("1")))
+            Flowable.fromPublisher(manifest.get())
                 .toList()
                 .blockingGet()
                 .stream()
@@ -65,5 +82,13 @@ final class AstoRepoITCase {
         ).bytes();
         // @checkstyle MagicNumberCheck (1 line)
         MatcherAssert.assertThat(content.length, Matchers.equalTo(942));
+    }
+
+    @Test
+    void shouldReadNoManifestIfAbsent() throws Exception {
+        final Optional<Content> manifest = this.repo.manifest(new ManifestRef("2"))
+            .toCompletableFuture()
+            .get();
+        MatcherAssert.assertThat(manifest.isPresent(), new IsEqual<>(false));
     }
 }
