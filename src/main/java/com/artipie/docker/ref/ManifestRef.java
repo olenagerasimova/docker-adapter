@@ -77,5 +77,46 @@ public final class ManifestRef implements Key {
     public String string() {
         return String.join("/", this.parts);
     }
+
+    /**
+     * Manifest reference from a string.
+     * <p>
+     * String may be tag or digest.
+     *
+     * @since 0.2
+     */
+    public static final class FromString implements Key {
+
+        /**
+         * Manifest reference string.
+         */
+        private final String value;
+
+        /**
+         * Ctor.
+         *
+         * @param value Manifest reference string.
+         */
+        public FromString(final String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String string() {
+            final ManifestRef ref;
+            final Digest.FromString digest = new Digest.FromString(this.value);
+            final Tag.Valid tag = new Tag.Valid(this.value);
+            if (digest.valid()) {
+                ref = new ManifestRef(digest);
+            } else if (tag.valid()) {
+                ref = new ManifestRef(tag);
+            } else {
+                throw new IllegalStateException(
+                    String.format("Unsupported reference: `%s`", this.value)
+                );
+            }
+            return ref.string();
+        }
+    }
 }
 

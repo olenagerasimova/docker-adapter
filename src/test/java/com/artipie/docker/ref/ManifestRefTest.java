@@ -35,6 +35,23 @@ import org.junit.jupiter.api.Test;
  * @since 0.1
  */
 public final class ManifestRefTest {
+
+    @Test
+    void resolvesDigestString() {
+        MatcherAssert.assertThat(
+            new ManifestRef.FromString("sha256:1234").string(),
+            Matchers.equalTo("revisions/sha256/1234/link")
+        );
+    }
+
+    @Test
+    void resolvesTagString() {
+        MatcherAssert.assertThat(
+            new ManifestRef.FromString("1.0").string(),
+            Matchers.equalTo("tags/1.0/current/link")
+        );
+    }
+
     @Test
     void resolvesDigestLink() {
         MatcherAssert.assertThat(

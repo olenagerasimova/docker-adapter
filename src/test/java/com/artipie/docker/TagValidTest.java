@@ -48,7 +48,9 @@ class TagValidTest {
         "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567"
     })
     void shouldGetValueWhenValid(final String original) {
-        MatcherAssert.assertThat(new Tag.Valid(original).value(), new IsEqual<>(original));
+        final Tag.Valid tag = new Tag.Valid(original);
+        MatcherAssert.assertThat(tag.valid(), new IsEqual<>(true));
+        MatcherAssert.assertThat(tag.value(), new IsEqual<>(original));
     }
 
     @ParameterizedTest
@@ -62,6 +64,8 @@ class TagValidTest {
         "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
     })
     void shouldFailToGetValueWhenInvalid(final String original) {
-        Assertions.assertThrows(IllegalStateException.class, () -> new Tag.Valid(original).value());
+        final Tag.Valid tag = new Tag.Valid(original);
+        MatcherAssert.assertThat(tag.valid(), new IsEqual<>(false));
+        Assertions.assertThrows(IllegalStateException.class, tag::value);
     }
 }

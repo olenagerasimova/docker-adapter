@@ -110,6 +110,15 @@ public interface Digest {
         }
 
         /**
+         * Validates digest string.
+         *
+         * @return True if string is valid digest, false otherwise.
+         */
+        public boolean valid() {
+            return this.original.split(":").length == 2;
+        }
+
+        /**
          * Part from input string split by {@code :}.
          * @param pos Part position
          * @return Part

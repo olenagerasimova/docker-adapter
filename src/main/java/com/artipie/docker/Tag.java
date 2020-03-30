@@ -76,10 +76,19 @@ public interface Tag {
 
         @Override
         public String value() {
-            if (!Tag.Valid.PATTERN.matcher(this.original).matches()) {
+            if (!this.valid()) {
                 throw new IllegalStateException(String.format("Invalid tag: %s", this.original));
             }
             return this.original;
+        }
+
+        /**
+         * Validates digest string.
+         *
+         * @return True if string is valid digest, false otherwise.
+         */
+        public boolean valid() {
+            return Tag.Valid.PATTERN.matcher(this.original).matches();
         }
     }
 }
