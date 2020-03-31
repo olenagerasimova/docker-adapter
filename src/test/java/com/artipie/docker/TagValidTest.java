@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 /**
  * Tests for {@link Tag.Valid}.
  *
- * @since 0.1
+ * @since 0.2
  */
 class TagValidTest {
 
@@ -48,13 +48,13 @@ class TagValidTest {
         "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567"
     })
     void shouldGetValueWhenValid(final String original) {
-        final Tag tag = new Tag.Valid(original);
-        MatcherAssert.assertThat(tag.value(), new IsEqual<>(original));
+        MatcherAssert.assertThat(new Tag.Valid(original).value(), new IsEqual<>(original));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
         "",
+        ".0",
         "*",
         "\u00ea",
         "-my-tag",
@@ -62,7 +62,6 @@ class TagValidTest {
         "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
     })
     void shouldFailToGetValueWhenInvalid(final String original) {
-        final Tag tag = new Tag.Valid(original);
-        Assertions.assertThrows(IllegalStateException.class, tag::value);
+        Assertions.assertThrows(IllegalStateException.class, () -> new Tag.Valid(original).value());
     }
 }

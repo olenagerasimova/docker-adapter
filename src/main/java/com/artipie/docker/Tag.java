@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * Docker image tag.
  * See <a href="https://docs.docker.com/engine/reference/commandline/tag/">docker tag</a>.
  *
- * @since 0.1
+ * @since 0.2
  */
 public interface Tag {
 
