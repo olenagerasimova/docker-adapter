@@ -26,6 +26,7 @@ package com.artipie.docker.ref;
 
 import com.artipie.asto.Key;
 import com.artipie.docker.Digest;
+import com.artipie.docker.Tag;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -56,11 +57,11 @@ public final class ManifestRef implements Key {
 
     /**
      * Manifest link from a tag.
-     * @param tag Name
+     * @param tag Image tag
      */
-    public ManifestRef(final String tag) {
+    public ManifestRef(final Tag tag) {
         this(
-            Arrays.asList("tags", tag, "current/link")
+            Arrays.asList("tags", tag.value(), "current/link")
         );
     }
 
