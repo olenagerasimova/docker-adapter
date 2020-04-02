@@ -44,7 +44,7 @@ class PullImageManifestGetTest {
     void shouldReturnManifestByTag() {
         MatcherAssert.assertThat(
             new DockerSlice().response(
-                new RequestLine("GET", "/v2/test/manifests/1", "HTTP/1.1").toString(),
+                new RequestLine("GET", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
@@ -59,8 +59,8 @@ class PullImageManifestGetTest {
                 new RequestLine(
                     "GET",
                     String.format(
-                        "/v2/test/manifests/%s",
-                        "sha256:c647f47b8a2bb36a54371ced35bee9d1d75eb302f9b5a24d9da0ca04a742e85"
+                        "/v2/my-alpine/manifests/%s",
+                        "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
                     ),
                     "HTTP/1.1"
                 ).toString(),

@@ -26,6 +26,7 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
+import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -57,19 +58,17 @@ final class AstoRepoITCase {
     void setUp() throws Exception {
         final Path dir = Path.of(
             Thread.currentThread().getContextClassLoader()
-                .getResource("docker").toURI()
-        ).getParent();
-        this.repo = new AstoRepo(
-            new FileStorage(dir, Vertx.vertx().fileSystem()),
-            new RepoName.Simple("test")
+                .getResource("example-my-alpine").toURI()
         );
+        final Storage storage = new FileStorage(dir, Vertx.vertx().fileSystem());
+        this.repo = new AstoRepo(storage, new RepoName.Simple("my-alpine"));
     }
 
     @Test
     void shouldReadManifest() throws Exception {
-        final Optional<Content> manifest = this.repo.manifest(new ManifestRef(new Tag.Valid("1")))
-            .toCompletableFuture()
-            .get();
+        final Optional<Content> manifest = this.repo.manifest(
+            new ManifestRef(new Tag.Valid("1"))
+        ).toCompletableFuture().get();
         final byte[] content = new Remaining(
             Flowable.fromPublisher(manifest.get())
                 .toList()
@@ -82,7 +81,7 @@ final class AstoRepoITCase {
                 ).orElse(ByteBuffer.allocate(0))
         ).bytes();
         // @checkstyle MagicNumberCheck (1 line)
-        MatcherAssert.assertThat(content.length, Matchers.equalTo(942));
+        MatcherAssert.assertThat(content.length, Matchers.equalTo(528));
     }
 
     @Test

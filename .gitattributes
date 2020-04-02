@@ -2,3 +2,4 @@
 *.java ident
 *.xml ident
 *.png binary
+src/test/resources-binary/* binary
