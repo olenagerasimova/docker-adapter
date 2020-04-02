@@ -23,8 +23,11 @@
  */
 package com.artipie.docker;
 
+import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -66,6 +69,18 @@ class TagValidTest {
     void shouldFailToGetValueWhenInvalid(final String original) {
         final Tag.Valid tag = new Tag.Valid(original);
         MatcherAssert.assertThat(tag.valid(), new IsEqual<>(false));
-        Assertions.assertThrows(IllegalStateException.class, tag::value);
+        final Throwable throwable = Assertions.assertThrows(
+            IllegalStateException.class,
+            tag::value
+        );
+        MatcherAssert.assertThat(
+            throwable.getMessage(),
+            new AllOf<>(
+                Arrays.asList(
+                    new StringContains(true, "Invalid tag"),
+                    new StringContains(false, original)
+                )
+            )
+        );
     }
 }

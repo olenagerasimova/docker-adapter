@@ -124,15 +124,14 @@ public interface Digest {
          * @return Part
          */
         private String part(final int pos) {
-            final String[] parts = this.original.split(":");
-            if (parts.length != 2) {
+            if (!this.valid()) {
                 throw new IllegalStateException(
                     String.format(
                         "Expected two parts separated by `:`, but was `%s`", this.original
                     )
                 );
             }
-            return parts[pos];
+            return this.original.split(":")[pos];
         }
     }
 }

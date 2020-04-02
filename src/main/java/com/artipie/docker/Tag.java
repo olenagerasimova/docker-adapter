@@ -77,7 +77,7 @@ public interface Tag {
         @Override
         public String value() {
             if (!this.valid()) {
-                throw new IllegalStateException(String.format("Invalid tag: %s", this.original));
+                throw new IllegalStateException(String.format("Invalid tag: '%s'", this.original));
             }
             return this.original;
         }

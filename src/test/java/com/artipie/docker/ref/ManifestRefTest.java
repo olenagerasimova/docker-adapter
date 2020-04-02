@@ -26,9 +26,15 @@ package com.artipie.docker.ref;
 
 import com.artipie.docker.Digest;
 import com.artipie.docker.Tag;
+import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.AllOf;
+import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test case for {@link ManifestRef}.
@@ -49,6 +55,28 @@ public final class ManifestRefTest {
         MatcherAssert.assertThat(
             new ManifestRef.FromString("1.0").string(),
             Matchers.equalTo("tags/1.0/current/link")
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "",
+        "a:b:c",
+        ".123"
+    })
+    void failsToResolveInvalid(final String string) {
+        final Throwable throwable = Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> new ManifestRef.FromString(string).string()
+        );
+        MatcherAssert.assertThat(
+            throwable.getMessage(),
+            new AllOf<>(
+                Arrays.asList(
+                    new StringContains(true, "Unsupported reference"),
+                    new StringContains(false, string)
+                )
+            )
         );
     }
 
