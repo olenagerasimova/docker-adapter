@@ -33,6 +33,7 @@ import com.artipie.http.rt.SliceRoute;
  * See <a href="https://docs.docker.com/registry/spec/api/">Docker Registry HTTP API V2</a>.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 public final class DockerSlice extends Slice.Wrap {
 
@@ -52,9 +53,16 @@ public final class DockerSlice extends Slice.Wrap {
                 new SliceRoute.Path(
                     new RtRule.Multiple(
                         new RtRule.ByPath(PullImageManifest.PATH),
+                        new RtRule.ByMethod(RqMethod.HEAD)
+                    ),
+                    new PullImageManifest.Head()
+                ),
+                new SliceRoute.Path(
+                    new RtRule.Multiple(
+                        new RtRule.ByPath(PullImageManifest.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new PullImageManifest()
+                    new PullImageManifest.Get()
                 )
             )
         );

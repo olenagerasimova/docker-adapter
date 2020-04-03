@@ -23,7 +23,6 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
@@ -39,41 +38,35 @@ import org.junit.jupiter.api.Test;
  * @since 0.2
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-class DockerSlicePullImageManifestTest {
+class PullImageManifestGetTest {
 
     @Test
     void shouldReturnManifestByTag() {
-        final DockerSlice slice = new DockerSlice();
-        final Response response = slice.response(
-            new RequestLine("GET", "/v2/test/manifests/1", "HTTP/1.1").toString(),
-            Collections.emptyList(),
-            Flowable.empty()
-        );
         MatcherAssert.assertThat(
-            response,
+            new DockerSlice().response(
+                new RequestLine("GET", "/v2/test/manifests/1", "HTTP/1.1").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
             new RsHasStatus(RsStatus.OK)
         );
     }
 
     @Test
     void shouldReturnManifestByDigest() {
-        final DockerSlice slice = new DockerSlice();
-        final String digest = String.join(
-            "",
-            "sha256:",
-            "bc647f47b8a2bb36a54371ced35bee9d1d75eb302f9b5a24d9da0ca04a742e85"
-        );
-        final Response response = slice.response(
-            new RequestLine(
-                "GET",
-                String.format("/v2/test/manifests/%s", digest),
-                "HTTP/1.1"
-            ).toString(),
-            Collections.emptyList(),
-            Flowable.empty()
-        );
         MatcherAssert.assertThat(
-            response,
+            new DockerSlice().response(
+                new RequestLine(
+                    "GET",
+                    String.format(
+                        "/v2/test/manifests/%s",
+                        "sha256:c647f47b8a2bb36a54371ced35bee9d1d75eb302f9b5a24d9da0ca04a742e85"
+                    ),
+                    "HTTP/1.1"
+                ).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
             new RsHasStatus(RsStatus.OK)
         );
     }
