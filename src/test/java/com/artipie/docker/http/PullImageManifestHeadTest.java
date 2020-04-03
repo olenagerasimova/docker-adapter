@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 class PullImageManifestHeadTest {
 
     @Test
-    void shouldReturnManifestByTag() {
+    void shouldRespondOkWhenManifestFoundByTag() {
         final DockerSlice slice = new DockerSlice();
         final Response response = slice.response(
             new RequestLine("HEAD", "/v2/test/manifests/1", "HTTP/1.1").toString(),
@@ -56,7 +56,7 @@ class PullImageManifestHeadTest {
     }
 
     @Test
-    void shouldReturnManifestByDigest() {
+    void shouldRespondOkWhenManifestFoundByDigest() {
         final DockerSlice slice = new DockerSlice();
         final String digest = String.join(
             "",
