@@ -23,36 +23,71 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.asto.Key;
+import com.artipie.asto.blocking.BlockingStorage;
+import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link DockerSlice}.
- * Version check endpoint.
+ * Pull layer endpoint.
  *
- * @since 0.1
+ * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
-class DockerSliceVersionCheckTest {
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+class PullLayerTest {
+
+    /**
+     * Slice being tested.
+     */
+    private DockerSlice slice;
+
+    @BeforeEach
+    void setUp() {
+        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+    }
 
     @Test
-    void shouldRespondOkToVersionCheck() {
-        final DockerSlice slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
-        final Response response = slice.response(
-            new RequestLine("GET", "/v2/", "HTTP/1.1").toString(),
+    void shouldReturnLayer() {
+        final Response response = this.slice.response(
+            new RequestLine(
+                "GET",
+                String.format(
+                    "/v2/test/blobs/%s",
+                    "sha256:aad63a9339440e7c3e1fff2b988991b9bfb81280042fa7f39a5e327023056819"
+                ),
+                "HTTP/1.1"
+            ).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
+        final Key expected = new Key.From(
+            "docker", "registry", "v2", "blobs", "sha256", "aa",
+            "aad63a9339440e7c3e1fff2b988991b9bfb81280042fa7f39a5e327023056819", "data"
+        );
         MatcherAssert.assertThat(
             response,
-            new RsHasStatus(RsStatus.OK)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasBody(
+                        new BlockingStorage(new ExampleStorage()).value(expected)
+                    )
+                )
+            )
         );
     }
 }

@@ -26,16 +26,13 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
-import com.artipie.asto.Storage;
-import com.artipie.asto.fs.FileStorage;
+import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.ref.ManifestRef;
 import io.reactivex.Flowable;
-import io.vertx.reactivex.core.Vertx;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -55,13 +52,11 @@ final class AstoRepoITCase {
     private Repo repo;
 
     @BeforeEach
-    void setUp() throws Exception {
-        final Path dir = Path.of(
-            Thread.currentThread().getContextClassLoader()
-                .getResource("example-my-alpine").toURI()
+    void setUp() {
+        this.repo = new AstoRepo(
+            new ExampleStorage(),
+            new RepoName.Simple("my-alpine")
         );
-        final Storage storage = new FileStorage(dir, Vertx.vertx().fileSystem());
-        this.repo = new AstoRepo(storage, new RepoName.Simple("my-alpine"));
     }
 
     @Test

@@ -23,6 +23,8 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.ExampleStorage;
+import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
@@ -30,6 +32,7 @@ import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -41,10 +44,19 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class PullImageManifestHeadTest {
 
+    /**
+     * Slice being tested.
+     */
+    private DockerSlice slice;
+
+    @BeforeEach
+    void setUp() {
+        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+    }
+
     @Test
     void shouldRespondOkWhenManifestFoundByTag() {
-        final DockerSlice slice = new DockerSlice();
-        final Response response = slice.response(
+        final Response response = this.slice.response(
             new RequestLine("HEAD", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
@@ -57,8 +69,7 @@ class PullImageManifestHeadTest {
 
     @Test
     void shouldRespondOkWhenManifestFoundByDigest() {
-        final DockerSlice slice = new DockerSlice();
-        final Response response = slice.response(
+        final Response response = this.slice.response(
             new RequestLine(
                 "HEAD",
                 String.format(
