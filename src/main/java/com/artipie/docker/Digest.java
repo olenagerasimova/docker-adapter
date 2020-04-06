@@ -73,27 +73,30 @@ public interface Digest {
     }
 
     /**
-     * Digest parsed from link reference.
+     * Digest parsed from string.
      * <p>
-     * Docker registry link is a text file with digest formatted
+     * See <a href="https://docs.docker.com/registry/spec/api/#introduction#content-digests">Content Digests</a>
+     * <p>
+     * Docker registry digest is a string with digest formatted
      * by joining algorithm name with hex string using {@code :} as separator.
-     * E.g. if algorihm is {@code sha256} and the digest is {@code 0000}, the link will be
+     * E.g. if algorithm is {@code sha256} and the digest is {@code 0000}, the link will be
      * {@code sha256:0000}.
      * @since 0.1
      */
-    final class FromLink implements Digest {
+    final class FromString implements Digest {
 
         /**
-         * Digest link.
+         * Digest string.
          */
-        private final String link;
+        private final String original;
 
         /**
          * Ctor.
-         * @param link Link reference
+         *
+         * @param original Digest string.
          */
-        public FromLink(final String link) {
-            this.link = link;
+        public FromString(final String original) {
+            this.original = original;
         }
 
         @Override
@@ -107,20 +110,28 @@ public interface Digest {
         }
 
         /**
-         * Part from input string splitted by {@code :}.
+         * Validates digest string.
+         *
+         * @return True if string is valid digest, false otherwise.
+         */
+        public boolean valid() {
+            return this.original.split(":").length == 2;
+        }
+
+        /**
+         * Part from input string split by {@code :}.
          * @param pos Part position
          * @return Part
          */
         private String part(final int pos) {
-            final String[] parts = this.link.split(":");
-            if (parts.length != 2) {
+            if (!this.valid()) {
                 throw new IllegalStateException(
                     String.format(
-                        "Broken link, expected two parts separated by `:`, but was %s", this.link
+                        "Expected two parts separated by `:`, but was `%s`", this.original
                     )
                 );
             }
-            return parts[pos];
+            return this.original.split(":")[pos];
         }
     }
 }

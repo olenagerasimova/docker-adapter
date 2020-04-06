@@ -26,6 +26,7 @@ package com.artipie.docker;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -35,15 +36,17 @@ import org.junit.jupiter.api.Test;
  */
 public final class DigestTest {
     @Test
-    void parsesValidLink() {
-        final Digest dgst = new Digest.FromLink("sha256:1234");
+    void parsesValidString() {
+        final Digest.FromString dgst = new Digest.FromString("sha256:1234");
+        MatcherAssert.assertThat(dgst.valid(), new IsEqual<>(true));
         MatcherAssert.assertThat("bad algorithm", dgst.alg(), Matchers.is("sha256"));
         MatcherAssert.assertThat("bad digest", dgst.digest(), Matchers.is("1234"));
     }
 
     @Test
-    void failsOnInvalidLink() {
-        final Digest dgst = new Digest.FromLink("asd");
+    void failsOnInvalidString() {
+        final Digest.FromString dgst = new Digest.FromString("asd");
+        MatcherAssert.assertThat(dgst.valid(), new IsEqual<>(false));
         Assertions.assertThrows(
             IllegalStateException.class, () -> dgst.alg(), "alg() didn't fail"
         );
