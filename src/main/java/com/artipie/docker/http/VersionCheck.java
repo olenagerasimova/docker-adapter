@@ -26,9 +26,12 @@ package com.artipie.docker.http;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.Map;
+import org.cactoos.map.MapEntry;
 import org.reactivestreams.Publisher;
 
 /**
@@ -40,8 +43,15 @@ import org.reactivestreams.Publisher;
 class VersionCheck implements Slice {
     @Override
     public Response response(
-        final String line, final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body) {
-        return new RsWithStatus(RsStatus.OK);
+        final String line,
+        final Iterable<Map.Entry<String, String>> headers,
+        final Publisher<ByteBuffer> body
+    ) {
+        return new RsWithHeaders(
+            new RsWithStatus(RsStatus.OK),
+            Collections.singleton(
+                new MapEntry<>("Docker-Distribution-API-Version", "registry/2.0")
+            )
+        );
     }
 }
