@@ -12,8 +12,8 @@ other supported storages.
 
 ## Specification
 
-Front end support non-blocking requests processing, this is why the back-end uses `Flow` API from JDK9.
-ASTO storage system also support non-blocking data processing (in case of TCP/HTTP APIs, FS operations are
+Front end supports non-blocking requests processing, this is why the back-end uses `Flow` API from JDK9.
+ASTO storage system also supports non-blocking data processing (in case of TCP/HTTP APIs, FS operations are
 always blocking).
 
 Registry documentation:
