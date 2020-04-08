@@ -23,73 +23,24 @@
  */
 package com.artipie.docker;
 
-import com.artipie.asto.Content;
-import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.Transaction;
 import com.artipie.asto.fs.FileStorage;
 import io.vertx.reactivex.core.Vertx;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Storage with example docker repository data from resources folder 'example-my-alpine'.
  *
  * @since 0.2
  */
-public final class ExampleStorage implements Storage {
-
-    /**
-     * Delegate storage.
-     */
-    private final Storage delegate;
+public final class ExampleStorage extends Storage.Wrap {
 
     /**
      * Ctor.
      */
     public ExampleStorage() {
-        this.delegate = new FileStorage(
-            path(),
-            Vertx.vertx().fileSystem()
-        );
-    }
-
-    @Override
-    public CompletableFuture<Boolean> exists(final Key key) {
-        return this.delegate.exists(key);
-    }
-
-    @Override
-    public CompletableFuture<Collection<Key>> list(final Key prefix) {
-        return this.delegate.list(prefix);
-    }
-
-    @Override
-    public CompletableFuture<Void> save(final Key key, final Content content) {
-        return this.delegate.save(key, content);
-    }
-
-    @Override
-    public CompletableFuture<Void> move(final Key source, final Key destination) {
-        return this.delegate.move(source, destination);
-    }
-
-    @Override
-    public CompletableFuture<Content> value(final Key key) {
-        return this.delegate.value(key);
-    }
-
-    @Override
-    public CompletableFuture<Void> delete(final Key key) {
-        return this.delegate.delete(key);
-    }
-
-    @Override
-    public CompletableFuture<Transaction> transaction(final List<Key> keys) {
-        return this.delegate.transaction(keys);
+        super(new FileStorage(path(), Vertx.vertx().fileSystem()));
     }
 
     /**
