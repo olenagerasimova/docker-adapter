@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.Docker;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.RtRule;
@@ -39,8 +40,10 @@ public final class DockerSlice extends Slice.Wrap {
 
     /**
      * Ctor.
+     *
+     * @param docker Docker repository.
      */
-    public DockerSlice() {
+    public DockerSlice(final Docker docker) {
         super(
             new SliceRoute(
                 new SliceRoute.Path(
@@ -63,6 +66,13 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
                     new PullImageManifest.Get()
+                ),
+                new SliceRoute.Path(
+                    new RtRule.Multiple(
+                        new RtRule.ByPath(PullLayer.PATH),
+                        new RtRule.ByMethod(RqMethod.GET)
+                    ),
+                    new PullLayer(docker)
                 )
             )
         );

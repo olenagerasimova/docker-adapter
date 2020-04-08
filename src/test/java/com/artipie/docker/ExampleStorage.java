@@ -21,38 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.http;
+package com.artipie.docker;
 
-import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.docker.asto.AstoDocker;
-import com.artipie.http.Response;
-import com.artipie.http.hm.RsHasStatus;
-import com.artipie.http.rq.RequestLine;
-import com.artipie.http.rs.RsStatus;
-import io.reactivex.Flowable;
-import java.util.Collections;
-import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Test;
+import com.artipie.asto.Storage;
+import com.artipie.asto.fs.FileStorage;
+import io.vertx.reactivex.core.Vertx;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 
 /**
- * Tests for {@link DockerSlice}.
- * Version check endpoint.
+ * Storage with example docker repository data from resources folder 'example-my-alpine'.
  *
- * @since 0.1
+ * @since 0.2
  */
-class DockerSliceVersionCheckTest {
+public final class ExampleStorage extends Storage.Wrap {
 
-    @Test
-    void shouldRespondOkToVersionCheck() {
-        final DockerSlice slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
-        final Response response = slice.response(
-            new RequestLine("GET", "/v2/", "HTTP/1.1").toString(),
-            Collections.emptyList(),
-            Flowable.empty()
-        );
-        MatcherAssert.assertThat(
-            response,
-            new RsHasStatus(RsStatus.OK)
-        );
+    /**
+     * Ctor.
+     */
+    public ExampleStorage() {
+        super(new FileStorage(path(), Vertx.vertx().fileSystem()));
+    }
+
+    /**
+     * Path to example storage files.
+     *
+     * @return Files path.
+     */
+    private static Path path() {
+        try {
+            return Path.of(
+                Thread.currentThread().getContextClassLoader()
+                    .getResource("example-my-alpine").toURI()
+            );
+        } catch (final URISyntaxException ex) {
+            throw new IllegalStateException("Failed to resolve resources path", ex);
+        }
     }
 }
