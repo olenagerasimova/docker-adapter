@@ -90,7 +90,7 @@ The rules for a repository name are as follows:
 ## Manifest resolution strategy
 
 Manifest can be resolved by repo "name" and "reference". The reference may include a tag
-or digest. Manifest represented as a JSON object. It can be resolved using these steps:
+or digest. Manifest is represented as a JSON object. It can be resolved using these steps:
  1. Resolve tag or reference by reading a file at
  `docker/registry/v2/repositories/<name>/_manifests`: `revisions/<alg>/<digest>/link` for
  references and `tags/<tag>/current/link` for tags. The file content has a digest of
