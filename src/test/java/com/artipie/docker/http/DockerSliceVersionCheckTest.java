@@ -26,12 +26,16 @@ package com.artipie.docker.http;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.util.Arrays;
 import java.util.Collections;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -39,6 +43,7 @@ import org.junit.jupiter.api.Test;
  * Version check endpoint.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 class DockerSliceVersionCheckTest {
 
@@ -52,7 +57,14 @@ class DockerSliceVersionCheckTest {
         );
         MatcherAssert.assertThat(
             response,
-            new RsHasStatus(RsStatus.OK)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new MapEntry<>("Docker-Distribution-API-Version", "registry/2.0")
+                    )
+                )
+            )
         );
     }
 }
