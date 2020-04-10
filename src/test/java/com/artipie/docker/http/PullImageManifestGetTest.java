@@ -23,14 +23,19 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Key;
+import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,6 +44,7 @@ import org.junit.jupiter.api.Test;
  * Pull image manifest endpoint.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class PullImageManifestGetTest {
@@ -55,18 +61,33 @@ class PullImageManifestGetTest {
 
     @Test
     void shouldReturnManifestByTag() {
+        final Key expected = new Key.From(
+            "docker", "registry", "v2", "blobs", "sha256", "cb",
+            "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
+        );
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine("GET", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.OK)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasBody(
+                        new BlockingStorage(new ExampleStorage()).value(expected)
+                    )
+                )
+            )
         );
     }
 
     @Test
     void shouldReturnManifestByDigest() {
+        final Key expected = new Key.From(
+            "docker", "registry", "v2", "blobs", "sha256", "cb",
+            "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
+        );
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
@@ -80,7 +101,45 @@ class PullImageManifestGetTest {
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.OK)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasBody(
+                        new BlockingStorage(new ExampleStorage()).value(expected)
+                    )
+                )
+            )
+        );
+    }
+
+    @Test
+    void shouldReturnNotFoundForUnknownTag() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("GET", "/v2/my-alpine/manifests/2", "HTTP/1.1").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
+
+    @Test
+    void shouldReturnNotFoundForUnknownDigest() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(
+                    "GET",
+                    String.format(
+                        "/v2/my-alpine/manifests/%s",
+                        "sha256:0123456789012345678901234567890123456789012345678901234567890123"
+                    ),
+                    "HTTP/1.1"
+                ).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.NOT_FOUND)
         );
     }
 }
