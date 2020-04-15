@@ -21,3 +21,9 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Build it with Maven
         run: mvn -B verify -Pqulice
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./target/site/jacoco/jacoco.xml
+          name: codecov-artipie-docker-adapter
+          fail_ci_if_error: true
