@@ -21,18 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.manifest;
+package com.artipie.docker.misc;
 
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.docker.misc.Json;
+import com.artipie.asto.Remaining;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
+import java.io.ByteArrayInputStream;
 import java.util.concurrent.CompletionStage;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 
 /**
- * Image manifest in JSON format.
+ * Data in JSON format.
  *
  * @since 0.2
  */
-public final class JsonManifest implements Manifest {
+public final class Json {
 
     /**
      * JSON bytes.
@@ -44,17 +49,28 @@ public final class JsonManifest implements Manifest {
      *
      * @param source JSON bytes.
      */
-    public JsonManifest(final Content source) {
+    public Json(final Content source) {
         this.source = source;
     }
 
-    @Override
-    public CompletionStage<String> mediaType() {
-        return new Json(this.source).object().thenApply(root -> root.getString("mediaType"));
-    }
-
-    @Override
-    public Content content() {
-        return this.source;
+    /**
+     * Reads content as JSON object.
+     *
+     * @return JSON object.
+     */
+    public CompletionStage<JsonObject> object() {
+        return new Concatenation(this.source)
+            .single()
+            .map(buf -> new Remaining(buf, true))
+            .map(Remaining::bytes)
+            .map(ByteArrayInputStream::new)
+            .map(
+                stream -> {
+                    try (JsonReader reader = javax.json.Json.createReader(stream)) {
+                        return reader.readObject();
+                    }
+                }
+            )
+            .to(SingleInterop.get());
     }
 }
