@@ -33,17 +33,11 @@ import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.core.AllOf;
-import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.StringStartsWith;
-import org.hamcrest.text.IsEqualIgnoringCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -99,46 +93,4 @@ class StartUploadTest {
         );
     }
 
-    /**
-     * Header matcher.
-     *
-     * @since 0.2
-     */
-    private static class IsHeader extends TypeSafeMatcher<Map.Entry<String, String>> {
-
-        /**
-         * Header name matcher.
-         */
-        private final Matcher<String> name;
-
-        /**
-         * Header value matcher.
-         */
-        private final Matcher<String> value;
-
-        IsHeader(final String name, final String value) {
-            this(name, new IsEqual<>(value));
-        }
-
-        IsHeader(final String name, final Matcher<String> value) {
-            this(new IsEqualIgnoringCase(name), value);
-        }
-
-        IsHeader(final Matcher<String> name, final Matcher<String> value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        @Override
-        public void describeTo(final Description description) {
-            description.appendDescriptionOf(this.name)
-                .appendText(" ")
-                .appendDescriptionOf(this.value);
-        }
-
-        @Override
-        public boolean matchesSafely(final Map.Entry<String, String> item) {
-            return this.name.matches(item.getKey()) && this.value.matches(item.getValue());
-        }
-    }
 }
