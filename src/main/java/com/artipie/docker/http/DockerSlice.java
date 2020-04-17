@@ -69,6 +69,13 @@ public final class DockerSlice extends Slice.Wrap {
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
+                        new RtRule.ByPath(PushImageManifest.PATH),
+                        new RtRule.ByMethod(RqMethod.PUT)
+                    ),
+                    new PushImageManifest()
+                ),
+                new SliceRoute.Path(
+                    new RtRule.Multiple(
                         new RtRule.ByPath(PullLayer.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
