@@ -28,12 +28,14 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.hm.RsHasBody;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Arrays;
 import java.util.Collections;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,6 +76,12 @@ class PullImageManifestGetTest {
             new AllOf<>(
                 Arrays.asList(
                     new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new MapEntry<>(
+                            "Content-Type",
+                            "application/vnd.docker.distribution.manifest.v2+json"
+                        )
+                    ),
                     new RsHasBody(
                         new BlockingStorage(new ExampleStorage()).value(expected)
                     )
@@ -104,6 +112,12 @@ class PullImageManifestGetTest {
             new AllOf<>(
                 Arrays.asList(
                     new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new MapEntry<>(
+                            "Content-Type",
+                            "application/vnd.docker.distribution.manifest.v2+json"
+                        )
+                    ),
                     new RsHasBody(
                         new BlockingStorage(new ExampleStorage()).value(expected)
                     )
