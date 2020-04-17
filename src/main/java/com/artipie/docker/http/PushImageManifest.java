@@ -34,7 +34,7 @@ import org.reactivestreams.Publisher;
 
 /**
  * Slice for push image manifest endpoint.
- * See <a href="https://docs.docker.com/registry/spec/api/#pushing-an-image">Pushing An Image</a>.
+ * See <a href="https://docs.docker.com/registry/spec/api/#pushing-an-image-manifest">Pushing An Image Manifest</a>.
  *
  * @since 0.2
  */
