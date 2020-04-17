@@ -80,6 +80,13 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
                     new PullLayer(docker)
+                ),
+                new SliceRoute.Path(
+                    new RtRule.Multiple(
+                        new RtRule.ByPath(StartUpload.PATH),
+                        new RtRule.ByMethod(RqMethod.POST)
+                    ),
+                    new StartUpload()
                 )
             )
         );
