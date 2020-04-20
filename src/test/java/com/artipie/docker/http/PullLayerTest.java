@@ -90,4 +90,23 @@ class PullLayerTest {
             )
         );
     }
+
+    @Test
+    void shouldReturnNotFoundForUnknownDigest() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(
+                    "GET",
+                    String.format(
+                        "/v2/test/blobs/%s",
+                        "sha256:0123456789012345678901234567890123456789012345678901234567890123"
+                    ),
+                    "HTTP/1.1"
+                ).toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
 }
