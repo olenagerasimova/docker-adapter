@@ -39,58 +39,92 @@ import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
- * Slice for pull image manifest endpoint.
- * See <a href="https://docs.docker.com/registry/spec/api/#pulling-an-image">Pulling An Image</a>.
+ * Blob entity in Docker HTTP API.
+ * See <a href="Blob">Blob</a>.
  *
  * @since 0.2
  */
-final class PullLayer implements Slice {
+final class BlobEntity {
 
     /**
      * RegEx pattern for path.
      */
     public static final Pattern PATH = Pattern.compile(
-        // /v2/<name>/blobs/<digest>
         "^/v2/[^/]*/blobs/(?<digest>.*)$"
     );
 
     /**
-     * Docker repository.
-     */
-    private final Docker docker;
-
-    /**
      * Ctor.
-     *
-     * @param docker Docker repository.
      */
-    PullLayer(final Docker docker) {
-        this.docker = docker;
+    private BlobEntity() {
     }
 
-    @Override
-    public Response response(
-        final String line,
-        final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body
-    ) {
+    /**
+     * Read digest from HTTP request line.
+     *
+     * @param line HTTP request line.
+     * @return Digest.
+     */
+    private static Digest digest(final String line) {
         final String path = new RequestLineFrom(line).uri().getPath();
         final Matcher matcher = PATH.matcher(path);
         if (!matcher.find()) {
-            throw new IllegalStateException(
-                String.format("Unexpected path: %s", path)
+            throw new IllegalStateException(String.format("Unexpected path: %s", path));
+        }
+        return new Digest.FromString(matcher.group("digest"));
+    }
+
+    /**
+     * Slice for GET method.
+     *
+     * @since 0.2
+     */
+    static final class Get implements Slice {
+
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Get(final Docker docker) {
+            this.docker = docker;
+        }
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body
+        ) {
+            return new AsyncResponse(
+                this.docker.blobStore().blob(digest(line)).thenApply(
+                    layer -> layer.<Response>map(
+                        bytes -> new RsWithBody(new RsWithStatus(RsStatus.OK), bytes)
+                    ).orElseGet(() -> new RsWithStatus(RsStatus.NOT_FOUND))
+                )
             );
         }
-        final Digest digest = new Digest.FromString(matcher.group("digest"));
-        return new AsyncResponse(
-            this.docker.blobStore().blob(digest).thenApply(
-                layer -> layer.<Response>map(
-                    bytes -> new RsWithBody(
-                        new RsWithStatus(RsStatus.OK),
-                        bytes
-                    )
-                ).orElseGet(() -> new RsWithStatus(RsStatus.NOT_FOUND))
-            )
-        );
+    }
+
+    /**
+     * Slice for HEAD method.
+     *
+     * @since 0.2
+     */
+    static final class Head implements Slice {
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body
+        ) {
+            return new RsWithStatus(RsStatus.OK);
+        }
     }
 }
