@@ -36,11 +36,14 @@ import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.reactivestreams.Publisher;
 
 /**
@@ -116,9 +119,15 @@ final class PullImageManifest {
             }
             final RepoName name = new RepoName.Valid(matcher.group("name"));
             final ManifestRef ref = new ManifestRef.FromString(matcher.group("reference"));
+            final Collection<String> accepts = StreamSupport.stream(headers.spliterator(), false)
+                .filter(e -> e.getKey().equalsIgnoreCase("Accept"))
+                .map(Map.Entry::getValue)
+                .collect(Collectors.toList());
             return new AsyncResponse(
                 this.docker.repo(name).manifest(ref).thenCompose(
-                    manifest -> manifest.map(Get::response).orElseGet(
+                    manifest -> manifest.map(
+                        original -> original.convert(accepts).thenCompose(Get::response)
+                    ).orElseGet(
                         () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
                 )
