@@ -40,7 +40,7 @@ import org.reactivestreams.Publisher;
 
 /**
  * Blob entity in Docker HTTP API.
- * See <a href="Blob">Blob</a>.
+ * See <a href="https://docs.docker.com/registry/spec/api/#blob">Blob</a>.
  *
  * @since 0.2
  */
