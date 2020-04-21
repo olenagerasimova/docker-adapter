@@ -68,7 +68,9 @@ class PullImageManifestGetTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine("GET", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
-                Collections.emptyList(),
+                Collections.singleton(
+                    new MapEntry<>("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                ),
                 Flowable.empty()
             ),
             success(
@@ -92,7 +94,9 @@ class PullImageManifestGetTest {
                     ),
                     "HTTP/1.1"
                 ).toString(),
-                Collections.emptyList(),
+                Collections.singleton(
+                    new MapEntry<>("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                ),
                 Flowable.empty()
             ),
             success(
