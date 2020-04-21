@@ -21,45 +21,59 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.asto;
 
-package com.artipie.docker;
-
-import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.ref.ManifestRef;
-import java.util.Optional;
+import com.artipie.asto.Content;
+import com.artipie.asto.Storage;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
+import org.reactivestreams.Publisher;
 
 /**
- * Docker repository files and metadata.
- * @since 0.1
+ * Asto implementation of {@link Upload}.
+ *
+ * @since 0.2
  */
-public interface Repo {
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public final class AstoUpload implements Upload {
 
     /**
-     * Layer link by algorithm and digest.
-     * <p>
-     * layerLinkPathSpec:
-     * <code>repositories/&lt;name&gt;/_layers/
-     * &lt;algorithm&gt;/&lt;hex digest&gt;/link</code>
-     * </p>
-     * @param alg Digest algorithm
-     * @param digest Digest hex string
-     * @return Digest of layer blob
+     * Storage.
      */
-    Digest layer(String alg, String digest);
+    private final Storage storage;
 
     /**
-     * Resolve docker image manifest file by reference.
-     * @param ref Manifest reference
-     * @return Flow with manifest data, or empty if absent
+     * Repository name.
      */
-    CompletionStage<Optional<Manifest>> manifest(ManifestRef ref);
+    private final RepoName name;
 
     /**
-     * Find upload by UUID.
+     * Upload UUID.
+     */
+    private final String uuid;
+
+    /**
+     * Ctor.
      *
+     * @param storage Storage.
+     * @param name Repository name.
      * @param uuid Upload UUID.
-     * @return Upload.
      */
-    Upload upload(String uuid);
+    public AstoUpload(final Storage storage, final RepoName name, final String uuid) {
+        this.storage = storage;
+        this.name = name;
+        this.uuid = uuid;
+    }
+
+    @Override
+    public CompletionStage<Long> append(final Publisher<ByteBuffer> chunk) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public CompletionStage<Content> content() {
+        throw new UnsupportedOperationException();
+    }
 }
