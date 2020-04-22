@@ -104,4 +104,27 @@ class AstoUploadTest {
             new IsInstanceOf(UnsupportedOperationException.class)
         );
     }
+
+    @Test
+    void shouldAppendedSecondChunkIfFirstOneFailed() throws Exception {
+        try {
+            this.upload.append(Flowable.error(new IllegalStateException()))
+                .toCompletableFuture()
+                .join();
+        } catch (final CompletionException ignored) {
+        }
+        final byte[] chunk = "content".getBytes();
+        this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            this.upload.content()
+                .thenApply(Concatenation::new)
+                .thenApply(Concatenation::single)
+                .thenCompose(single -> single.to(SingleInterop.get()))
+                .thenApply(Remaining::new)
+                .thenApply(Remaining::bytes)
+                .toCompletableFuture()
+                .get(),
+            new IsEqual<>(chunk)
+        );
+    }
 }
