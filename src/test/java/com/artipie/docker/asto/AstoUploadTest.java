@@ -25,40 +25,48 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Remaining;
-import com.artipie.docker.ExampleStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Disabled;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link AstoUpload}.
  *
  * @since 0.2
- * @todo #54:30min Implement AstoUpload.
- *  Implement AstoUpload and enable `AstoUploadTest#shouldReadAppendedChunk` test.
- *  Minimal support should allow single chunk being added and read afterwards.
  */
 class AstoUploadTest {
 
-    @Test
-    @Disabled("Not implemented")
-    void shouldReadAppendedChunk() throws Exception {
-        final Upload upload = new AstoUpload(
-            new ExampleStorage(),
+    /**
+     * Slice being tested.
+     */
+    private Upload upload;
+
+    @BeforeEach
+    void setUp() {
+        this.upload = new AstoUpload(
+            new InMemoryStorage(),
             new RepoName.Valid("test"),
             UUID.randomUUID().toString()
         );
+    }
+
+    @Test
+    void shouldReadAppendedChunk() throws Exception {
         final byte[] chunk = "chunk".getBytes();
-        upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
+        this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            upload.content()
+            this.upload.content()
                 .thenApply(Concatenation::new)
                 .thenApply(Concatenation::single)
                 .thenCompose(single -> single.to(SingleInterop.get()))
@@ -67,6 +75,33 @@ class AstoUploadTest {
                 .toCompletableFuture()
                 .get(),
             new IsEqual<>(chunk)
+        );
+    }
+
+    @Test
+    void shouldFailReadEmptyContent() {
+        MatcherAssert.assertThat(
+            Assertions.assertThrows(
+                CompletionException.class,
+                () -> this.upload.content().toCompletableFuture().join()
+            ).getCause(),
+            new IsInstanceOf(IllegalStateException.class)
+        );
+    }
+
+    @Test
+    void shouldFailAppendedSecondChunk() {
+        this.upload.append(Flowable.just(ByteBuffer.wrap("one".getBytes())))
+            .toCompletableFuture()
+            .join();
+        MatcherAssert.assertThat(
+            Assertions.assertThrows(
+                CompletionException.class,
+                () -> this.upload.append(Flowable.just(ByteBuffer.wrap("two".getBytes())))
+                    .toCompletableFuture()
+                    .join()
+            ).getCause(),
+            new IsInstanceOf(UnsupportedOperationException.class)
         );
     }
 }

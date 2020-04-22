@@ -23,10 +23,14 @@
  */
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
@@ -36,7 +40,6 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class AstoUpload implements Upload {
 
     /**
@@ -69,11 +72,52 @@ public final class AstoUpload implements Upload {
 
     @Override
     public CompletionStage<Long> append(final Publisher<ByteBuffer> chunk) {
-        throw new UnsupportedOperationException();
+        final Key root = this.root();
+        return this.storage.list(root).thenCompose(
+            chunks -> {
+                if (!chunks.isEmpty()) {
+                    throw new UnsupportedOperationException("Multiple chunks are not supported");
+                }
+                return new Concatenation(chunk).single().to(SingleInterop.get()).thenCompose(
+                    buf -> {
+                        final byte[] bytes = new Remaining(buf, true).bytes();
+                        final long offset = bytes.length;
+                        return this.storage.save(
+                            new Key.From(root, String.valueOf(offset)),
+                            new Content.From(bytes)
+                        ).thenApply(ignored -> offset);
+                    }
+                );
+            }
+        );
     }
 
     @Override
     public CompletionStage<Content> content() {
-        throw new UnsupportedOperationException();
+        return this.storage.list(this.root()).thenCompose(
+            chunks -> {
+                if (chunks.size() == 0) {
+                    throw new IllegalStateException("No content was uploaded yet");
+                }
+                if (chunks.size() > 1) {
+                    throw new UnsupportedOperationException(
+                        "Multiple chunks are not supported yet"
+                    );
+                }
+                return this.storage.value(chunks.iterator().next());
+            }
+        );
+    }
+
+    /**
+     * Root key for upload chunks.
+     *
+     * @return Root key.
+     */
+    private Key root() {
+        return new Key.From(
+            RegistryRoot.V2, "repositories", this.name.value(),
+            "_uploads", this.uuid
+        );
     }
 }
