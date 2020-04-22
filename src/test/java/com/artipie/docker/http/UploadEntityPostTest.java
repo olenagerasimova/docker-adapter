@@ -43,13 +43,13 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link DockerSlice}.
- * Start upload endpoint.
+ * Upload PUT endpoint.
  *
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-class StartUploadTest {
+class UploadEntityPostTest {
 
     /**
      * Slice being tested.
@@ -64,11 +64,7 @@ class StartUploadTest {
     @Test
     void shouldReturnInitialUploadStatus() {
         final Response response = this.slice.response(
-            new RequestLine(
-                "POST",
-                "/v2/test/blobs/uploads/",
-                "HTTP/1.1"
-            ).toString(),
+            new RequestLine("POST", "/v2/test/blobs/uploads/", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
