@@ -29,6 +29,7 @@ import com.artipie.asto.Storage;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.BytesFlowAs;
@@ -94,5 +95,10 @@ public final class AstoRepo implements Repo {
                 return stage;
             }
         );
+    }
+
+    @Override
+    public Upload upload(final String uuid) {
+        return new AstoUpload(this.asto, this.name, uuid);
     }
 }

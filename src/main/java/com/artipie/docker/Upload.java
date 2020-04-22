@@ -21,45 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.docker;
 
-import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.ref.ManifestRef;
-import java.util.Optional;
+import com.artipie.asto.Content;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
+import org.reactivestreams.Publisher;
 
 /**
- * Docker repository files and metadata.
- * @since 0.1
+ * Blob upload.
+ * See <a href="https://docs.docker.com/registry/spec/api/#blob-upload">Blob Upload</a>
+ *
+ * @since 0.2
  */
-public interface Repo {
+public interface Upload {
 
     /**
-     * Layer link by algorithm and digest.
-     * <p>
-     * layerLinkPathSpec:
-     * <code>repositories/&lt;name&gt;/_layers/
-     * &lt;algorithm&gt;/&lt;hex digest&gt;/link</code>
-     * </p>
-     * @param alg Digest algorithm
-     * @param digest Digest hex string
-     * @return Digest of layer blob
-     */
-    Digest layer(String alg, String digest);
-
-    /**
-     * Resolve docker image manifest file by reference.
-     * @param ref Manifest reference
-     * @return Flow with manifest data, or empty if absent
-     */
-    CompletionStage<Optional<Manifest>> manifest(ManifestRef ref);
-
-    /**
-     * Find upload by UUID.
+     * Appends a chunk of data to upload.
      *
-     * @param uuid Upload UUID.
-     * @return Upload.
+     * @param chunk Chunk of data.
+     * @return Offset after appending chunk.
      */
-    Upload upload(String uuid);
+    CompletionStage<Long> append(Publisher<ByteBuffer> chunk);
+
+    /**
+     * Get uploaded content.
+     *
+     * @return Content.
+     */
+    CompletionStage<Content> content();
 }
