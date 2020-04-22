@@ -32,9 +32,13 @@ import com.jcabi.log.Logger;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.hamcrest.core.StringContains;
+import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -46,7 +50,9 @@ import org.junit.jupiter.params.provider.ValueSource;
  * Integration test for {@link DockerSlice}.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.AvoidDuplicateLiterals"})
 final class DockerSliceITCase {
 
     // @checkstyle VisibilityModifierCheck (5 lines)
@@ -111,18 +117,44 @@ final class DockerSliceITCase {
         );
     }
 
+    @Test
+    @Disabled("Not implemented")
+    void shouldPush() throws Exception {
+        final String original = "busybox";
+        this.run("pull", original);
+        final String remote = String.format("%s/my-%s", this.repo, original);
+        this.run("tag", original, remote);
+        final String output = this.run("push", remote);
+        MatcherAssert.assertThat(
+            output,
+            new AllOf<>(
+                Arrays.asList(
+                    new StringContains(false, "5b0d2d635df8: Pushed"),
+                    new StringContains(
+                        false,
+                        String.format(
+                            "latest: digest: %s:%s",
+                            "sha256",
+                            "d52901359e0a4002c4cd84d7a391325cf6e4816042e1960298015bbec0069da0"
+                        )
+                    )
+                )
+            )
+        );
+    }
+
     private String run(final String... args) throws Exception {
         final Path stdout = this.temp.resolve(
             String.format("%s-stdout.txt", UUID.randomUUID().toString())
         );
+        final List<String> command = ImmutableList.<String>builder()
+            .add("docker")
+            .add(args)
+            .build();
+        Logger.debug(this, "Command:\n%s", String.join(" ", command));
         final int code = new ProcessBuilder()
             .directory(this.temp.toFile())
-            .command(
-                ImmutableList.<String>builder()
-                    .add("docker")
-                    .add(args)
-                    .build()
-            )
+            .command(command)
             .redirectOutput(stdout.toFile())
             .redirectErrorStream(true)
             .start()
