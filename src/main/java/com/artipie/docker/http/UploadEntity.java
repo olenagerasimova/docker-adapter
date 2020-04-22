@@ -31,7 +31,6 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -82,15 +81,13 @@ public final class UploadEntity {
             final String uuid = UUID.randomUUID().toString();
             return new RsWithHeaders(
                 new RsWithStatus(RsStatus.ACCEPTED),
-                Arrays.asList(
-                    new Header(
-                        "Location",
-                        String.format("/v2/%s/blobs/uploads/%s", name, uuid)
-                    ),
-                    new Header("Range", "bytes=0-0"),
-                    new Header("Content-Length", "0"),
-                    new Header("Docker-Upload-UUID", uuid)
-                )
+                new Header(
+                    "Location",
+                    String.format("/v2/%s/blobs/uploads/%s", name, uuid)
+                ),
+                new Header("Range", "bytes=0-0"),
+                new Header("Content-Length", "0"),
+                new Header("Docker-Upload-UUID", uuid)
             );
         }
     }
