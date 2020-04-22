@@ -54,7 +54,7 @@ final class AstoBlobsITCase {
         final String hash = "054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8";
         MatcherAssert.assertThat(
             "Digest sum is not correct",
-            digest.digest(),
+            digest.hex(),
             Matchers.equalTo(hash)
         );
         MatcherAssert.assertThat(

@@ -43,7 +43,7 @@ public final class BlobRef extends Key.Wrap {
     public BlobRef(final Digest digest) {
         super(
             new Key.From(
-                "blobs", digest.alg(), digest.digest().substring(0, 2), digest.digest()
+                "blobs", digest.alg(), digest.hex().substring(0, 2), digest.hex()
             )
         );
     }
