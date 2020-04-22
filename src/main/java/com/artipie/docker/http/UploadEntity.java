@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.cactoos.map.MapEntry;
 import org.reactivestreams.Publisher;
 
 /**
@@ -83,13 +83,13 @@ public final class UploadEntity {
             return new RsWithHeaders(
                 new RsWithStatus(RsStatus.ACCEPTED),
                 Arrays.asList(
-                    new MapEntry<>(
+                    new Header(
                         "Location",
                         String.format("/v2/%s/blobs/uploads/%s", name, uuid)
                     ),
-                    new MapEntry<>("Range", "bytes=0-0"),
-                    new MapEntry<>("Content-Length", "0"),
-                    new MapEntry<>("Docker-Upload-UUID", uuid)
+                    new Header("Range", "bytes=0-0"),
+                    new Header("Content-Length", "0"),
+                    new Header("Docker-Upload-UUID", uuid)
                 )
             );
         }
