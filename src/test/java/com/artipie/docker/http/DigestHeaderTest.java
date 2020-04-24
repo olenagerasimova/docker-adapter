@@ -21,38 +21,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.http;
 
-package com.artipie.docker;
-
+import com.artipie.docker.Digest;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link Digest}.
+ * Test case for {@link DigestHeader}.
  *
- * @since 0.1
+ * @since 0.2
  */
-public final class DigestTest {
-    @Test
-    void parsesValidString() {
-        final Digest.FromString dgst = new Digest.FromString("sha256:1234");
-        MatcherAssert.assertThat(dgst.valid(), new IsEqual<>(true));
-        MatcherAssert.assertThat("bad algorithm", dgst.alg(), Matchers.is("sha256"));
-        MatcherAssert.assertThat("bad digest", dgst.hex(), Matchers.is("1234"));
-    }
+public final class DigestHeaderTest {
 
     @Test
-    void failsOnInvalidString() {
-        final Digest.FromString dgst = new Digest.FromString("asd");
-        MatcherAssert.assertThat(dgst.valid(), new IsEqual<>(false));
-        Assertions.assertThrows(
-            IllegalStateException.class, () -> dgst.alg(), "alg() didn't fail"
+    void shouldHaveExpectedNameAndValue() {
+        final DigestHeader header = new DigestHeader(
+            new Digest.Sha256(
+                "6c3c624b58dbbcd3c0dd82b4c53f04194d1247c6eebdaab7c610cf7d66709b3b"
+            )
         );
-        Assertions.assertThrows(
-            IllegalStateException.class, () -> dgst.hex(), "digest() didn't fail"
+        MatcherAssert.assertThat(
+            header.getKey(),
+            new IsEqual<>("Docker-Content-Digest")
+        );
+        MatcherAssert.assertThat(
+            header.getValue(),
+            new IsEqual<>("sha256:6c3c624b58dbbcd3c0dd82b4c53f04194d1247c6eebdaab7c610cf7d66709b3b")
         );
     }
 }
