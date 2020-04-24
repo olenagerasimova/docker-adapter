@@ -24,10 +24,12 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import java.nio.ByteBuffer;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
 
@@ -36,7 +38,6 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.2
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class AstoUpload implements Upload {
 
     /**
@@ -69,11 +70,51 @@ public final class AstoUpload implements Upload {
 
     @Override
     public CompletionStage<Long> append(final Publisher<ByteBuffer> chunk) {
-        throw new UnsupportedOperationException();
+        return this.storage.exists(this.data()).thenCompose(
+            exists -> {
+                if (exists) {
+                    throw new UnsupportedOperationException("Multiple chunks are not supported");
+                }
+                final Key tmp = new Key.From(this.root(), UUID.randomUUID().toString());
+                return this.storage.save(tmp, new Content.From(chunk)).thenCompose(
+                    ignored -> this.storage.move(tmp, this.data())
+                ).thenCompose(
+                    ignored -> this.storage.size(this.data())
+                );
+            }
+        );
     }
 
     @Override
     public CompletionStage<Content> content() {
-        throw new UnsupportedOperationException();
+        return this.storage.exists(this.data()).thenCompose(
+            exists -> {
+                if (!exists) {
+                    throw new IllegalStateException("No content was uploaded yet");
+                }
+                return this.storage.value(this.data());
+            }
+        );
+    }
+
+    /**
+     * Root key for upload chunks.
+     *
+     * @return Root key.
+     */
+    private Key root() {
+        return new Key.From(
+            RegistryRoot.V2, "repositories", this.name.value(),
+            "_uploads", this.uuid
+        );
+    }
+
+    /**
+     * Uploaded data key.
+     *
+     * @return Key.
+     */
+    private Key data() {
+        return new Key.From(this.root(), "data");
     }
 }
