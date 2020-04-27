@@ -32,11 +32,11 @@ import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Arrays;
 import java.util.Collections;
-import org.cactoos.map.MapEntry;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
@@ -69,7 +69,7 @@ class ManifestEntityGetTest {
             this.slice.response(
                 new RequestLine("GET", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
                 Collections.singleton(
-                    new MapEntry<>("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),
                 Flowable.empty()
             ),
@@ -95,7 +95,7 @@ class ManifestEntityGetTest {
                     "HTTP/1.1"
                 ).toString(),
                 Collections.singleton(
-                    new MapEntry<>("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),
                 Flowable.empty()
             ),
@@ -144,7 +144,7 @@ class ManifestEntityGetTest {
             Arrays.asList(
                 new RsHasStatus(RsStatus.OK),
                 new RsHasHeaders(
-                    new MapEntry<>(
+                    new Header(
                         "Content-Type",
                         "application/vnd.docker.distribution.manifest.v2+json"
                     )

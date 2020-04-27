@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.hm.IsHeader;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
@@ -74,15 +75,13 @@ class UploadEntityPostTest {
                 Arrays.asList(
                     new RsHasStatus(RsStatus.ACCEPTED),
                     new RsHasHeaders(
-                        Matchers.contains(
-                            new IsHeader(
-                                "Location",
-                                new StringStartsWith(false, "/v2/test/blobs/uploads/")
-                            ),
-                            new IsHeader("Range", "bytes=0-0"),
-                            new IsHeader("Content-Length", "0"),
-                            new IsHeader("Docker-Upload-UUID", new IsNot<>(Matchers.emptyString()))
-                        )
+                        new IsHeader(
+                            "Location",
+                            new StringStartsWith(false, "/v2/test/blobs/uploads/")
+                        ),
+                        new IsHeader("Range", "bytes=0-0"),
+                        new IsHeader("Content-Length", "0"),
+                        new IsHeader("Docker-Upload-UUID", new IsNot<>(Matchers.emptyString()))
                     )
                 )
             )
