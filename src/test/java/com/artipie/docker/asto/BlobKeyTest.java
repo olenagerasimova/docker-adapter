@@ -21,33 +21,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.http;
+package com.artipie.docker.asto;
 
-import com.artipie.http.Response;
-import com.artipie.http.Slice;
-import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithHeaders;
-import com.artipie.http.rs.RsWithStatus;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import org.reactivestreams.Publisher;
+import com.artipie.docker.Digest;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
 /**
- * Slice for Version Check endpoint.
- * See <a href="https://docs.docker.com/registry/spec/api/#api-version-check">API Version Check</a>.
+ * Test case for {@link BlobKey}.
  *
- * @since 0.1
+ * @since 0.2
  */
-class VersionCheck implements Slice {
-    @Override
-    public Response response(
-        final String line,
-        final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body
-    ) {
-        return new RsWithHeaders(
-            new RsWithStatus(RsStatus.OK),
-            "Docker-Distribution-API-Version", "registry/2.0"
+public final class BlobKeyTest {
+
+    @Test
+    public void buildsValidPathFromDigest() {
+        final String hex = "00801519ca78ec3ac54f0aea959bce240ab3b42fae7727d2359b1f9ebcabe23d";
+        MatcherAssert.assertThat(
+            new BlobKey(new Digest.Sha256(hex)).string(),
+            Matchers.equalTo(
+                String.join(
+                    "/",
+                    "docker", "registry", "v2", "blobs", "sha256", "00", hex, "data"
+                )
+            )
         );
     }
 }

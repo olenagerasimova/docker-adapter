@@ -21,38 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.http;
 
-import com.artipie.http.Response;
-import com.artipie.http.Slice;
-import com.artipie.http.rs.RsStatus;
-import com.artipie.http.rs.RsWithStatus;
-import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.regex.Pattern;
-import org.reactivestreams.Publisher;
+package com.artipie.docker.asto;
+
+import com.artipie.asto.Key;
+import com.artipie.docker.Digest;
 
 /**
- * Slice for push image manifest endpoint.
- * See <a href="https://docs.docker.com/registry/spec/api/#pushing-an-image-manifest">Pushing An Image Manifest</a>.
+ * Key for blob data in storage.
  *
  * @since 0.2
  */
-final class PushImageManifest implements Slice {
+final class BlobKey extends Key.Wrap {
 
     /**
-     * RegEx pattern for path.
+     * Ctor.
+     *
+     * @param digest Blob digest
      */
-    public static final Pattern PATH = Pattern.compile(
-        "^/v2/(?<name>[^/]*)/manifests/(?<reference>.*)$"
-    );
-
-    @Override
-    public Response response(
-        final String line,
-        final Iterable<Map.Entry<String, String>> headers,
-        final Publisher<ByteBuffer> body
-    ) {
-        return new RsWithStatus(RsStatus.CREATED);
+    BlobKey(final Digest digest) {
+        super(
+            new Key.From(
+                RegistryRoot.V2,
+                "blobs", digest.alg(), digest.digest().substring(0, 2), digest.digest(), "data"
+            )
+        );
     }
 }

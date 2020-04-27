@@ -21,29 +21,48 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.ref;
+package com.artipie.docker.http;
 
-import com.artipie.docker.Digest;
+import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasHeaders;
+import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
+import com.artipie.http.rs.RsStatus;
+import io.reactivex.Flowable;
+import java.util.Arrays;
+import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.Test;
 
 /**
- * Test case for {@link BlobRefTest}.
+ * Tests for {@link DockerSlice}.
+ * Base GET endpoint.
+ *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
-public final class BlobRefTest {
+class BaseEntityGetTest {
 
     @Test
-    public void buildsValidPathFromDigest() throws Exception {
-        final String hex =
-            "00801519ca78ec3ac54f0aea959bce240ab3b42fae7727d2359b1f9ebcabe23d";
+    void shouldRespondOkToVersionCheck() {
+        final DockerSlice slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
+        final Response response = slice.response(
+            new RequestLine("GET", "/v2/", "HTTP/1.1").toString(),
+            Collections.emptyList(),
+            Flowable.empty()
+        );
         MatcherAssert.assertThat(
-            new BlobRef(new Digest.Sha256(hex)).string(),
-            Matchers.equalTo(
-                String.join(
-                    "/",
-                    "blobs", "sha256", "00", hex
+            response,
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new Header("Docker-Distribution-API-Version", "registry/2.0")
+                    )
                 )
             )
         );

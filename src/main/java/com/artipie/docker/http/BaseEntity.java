@@ -21,30 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.http;
 
-package com.artipie.docker.ref;
-
-import com.artipie.asto.Key;
-import com.artipie.docker.Digest;
+import com.artipie.http.Response;
+import com.artipie.http.Slice;
+import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithHeaders;
+import com.artipie.http.rs.RsWithStatus;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.regex.Pattern;
+import org.reactivestreams.Publisher;
 
 /**
- * Blob reference.
- * <p>
- * Can be resolved by blob digest.
- * </p>
+ * Base entity in Docker HTTP API..
+ * See <a href="https://docs.docker.com/registry/spec/api/#base">Base</a>.
+ *
  * @since 0.1
  */
-public final class BlobRef extends Key.Wrap {
+class BaseEntity implements Slice {
 
     /**
-     * Ctor.
-     * @param digest Blob digest
+     * RegEx pattern for path.
      */
-    public BlobRef(final Digest digest) {
-        super(
-            new Key.From(
-                "blobs", digest.alg(), digest.digest().substring(0, 2), digest.digest()
-            )
+    public static final Pattern PATH = Pattern.compile("^/v2/$");
+
+    @Override
+    public Response response(
+        final String line,
+        final Iterable<Map.Entry<String, String>> headers,
+        final Publisher<ByteBuffer> body
+    ) {
+        return new RsWithHeaders(
+            new RsWithStatus(RsStatus.OK),
+            "Docker-Distribution-API-Version", "registry/2.0"
         );
     }
 }
