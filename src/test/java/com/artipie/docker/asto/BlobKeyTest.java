@@ -21,29 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.asto;
 
-package com.artipie.docker.ref;
-
-import com.artipie.asto.Key;
 import com.artipie.docker.Digest;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Test;
 
 /**
- * Blob reference.
- * <p>
- * Can be resolved by blob digest.
- * </p>
- * @since 0.1
+ * Test case for {@link BlobKey}.
+ *
+ * @since 0.2
  */
-public final class BlobRef extends Key.Wrap {
+public final class BlobKeyTest {
 
-    /**
-     * Ctor.
-     * @param digest Blob digest
-     */
-    public BlobRef(final Digest digest) {
-        super(
-            new Key.From(
-                "blobs", digest.alg(), digest.digest().substring(0, 2), digest.digest()
+    @Test
+    public void buildsValidPathFromDigest() {
+        final String hex = "00801519ca78ec3ac54f0aea959bce240ab3b42fae7727d2359b1f9ebcabe23d";
+        MatcherAssert.assertThat(
+            new BlobKey(new Digest.Sha256(hex)).string(),
+            Matchers.equalTo(
+                String.join(
+                    "/",
+                    "docker", "registry", "v2", "blobs", "sha256", "00", hex, "data"
+                )
             )
         );
     }
