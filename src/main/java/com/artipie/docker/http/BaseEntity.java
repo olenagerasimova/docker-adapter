@@ -30,15 +30,22 @@ import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
- * Slice for Version Check endpoint.
- * See <a href="https://docs.docker.com/registry/spec/api/#api-version-check">API Version Check</a>.
+ * Base entity in Docker HTTP API..
+ * See <a href="https://docs.docker.com/registry/spec/api/#base">Base</a>.
  *
  * @since 0.1
  */
-class VersionCheck implements Slice {
+class BaseEntity implements Slice {
+
+    /**
+     * RegEx pattern for path.
+     */
+    public static final Pattern PATH = Pattern.compile("^/v2/$");
+
     @Override
     public Response response(
         final String line,
