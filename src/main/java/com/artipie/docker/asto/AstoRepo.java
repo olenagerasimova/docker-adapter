@@ -33,7 +33,6 @@ import com.artipie.docker.Upload;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.BytesFlowAs;
-import com.artipie.docker.ref.BlobRef;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -83,11 +82,11 @@ public final class AstoRepo implements Repo {
                     stage = this.asto.value(key)
                         .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
                         .thenApply(Digest.FromString::new)
-                        .thenApply(digest -> new Key.From(new BlobRef(digest), "data"))
+                        .thenApply(BlobKey::new)
                         .thenCompose(
-                            blob -> this.asto.value(
-                                new Key.From(RegistryRoot.V2, blob.string())
-                            ).thenApply(JsonManifest::new).thenApply(Optional::of)
+                            data -> this.asto.value(data)
+                                .thenApply(JsonManifest::new)
+                                .thenApply(Optional::of)
                         );
                 } else {
                     stage = CompletableFuture.completedFuture(Optional.empty());

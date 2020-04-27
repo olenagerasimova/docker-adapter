@@ -30,7 +30,6 @@ import com.artipie.asto.Storage;
 import com.artipie.asto.fs.RxFile;
 import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
-import com.artipie.docker.ref.BlobRef;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -81,7 +80,7 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     public CompletableFuture<Optional<Content>> blob(final Digest digest) {
-        final Key key = new Key.From(RegistryRoot.V2, new BlobRef(digest).string(), "data");
+        final Key key = new BlobKey(digest);
         return this.asto.exists(key).thenCompose(
             exists -> {
                 final CompletionStage<Optional<Content>> stage;
@@ -137,7 +136,7 @@ public final class AstoBlobs implements BlobStore {
             .flatMap(
                 digest -> SingleInterop.fromFuture(
                     this.asto.save(
-                        new Key.From(RegistryRoot.V2, new BlobRef(digest).string(), "data"),
+                        new BlobKey(digest),
                         new Content.From(new RxFile(tmp, AstoBlobs.FILE_SYSTEM).flow())
                     ).thenApply(none -> digest)
                 )
