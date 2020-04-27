@@ -33,7 +33,7 @@ import java.util.Map;
  *
  * @since 0.2
  */
-class DigestHeader implements Map.Entry<String, String> {
+final class DigestHeader implements Map.Entry<String, String> {
 
     /**
      * Header delegate.
@@ -64,7 +64,7 @@ class DigestHeader implements Map.Entry<String, String> {
 
     @Override
     public String setValue(final String value) {
-        return this.delegate.setValue(value);
+        throw new UnsupportedOperationException("Value cannot be modified");
     }
 
     @Override
