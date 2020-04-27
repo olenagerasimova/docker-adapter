@@ -45,13 +45,13 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link DockerSlice}.
- * Pull image manifest endpoint.
+ * Manifest GET endpoint.
  *
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-class PullImageManifestGetTest {
+class ManifestEntityGetTest {
 
     /**
      * Slice being tested.

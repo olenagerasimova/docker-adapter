@@ -23,67 +23,48 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.docker.ExampleStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.util.Arrays;
 import java.util.Collections;
+import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.BeforeEach;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link DockerSlice}.
- * Pull image manifest endpoint, HEAD method.
+ * Base GET endpoint.
  *
- * @since 0.2
+ * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
-class PullImageManifestHeadTest {
-
-    /**
-     * Slice being tested.
-     */
-    private DockerSlice slice;
-
-    @BeforeEach
-    void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
-    }
+class BaseEntityGetTest {
 
     @Test
-    void shouldRespondOkWhenManifestFoundByTag() {
-        final Response response = this.slice.response(
-            new RequestLine("HEAD", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
+    void shouldRespondOkToVersionCheck() {
+        final DockerSlice slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
+        final Response response = slice.response(
+            new RequestLine("GET", "/v2/", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             response,
-            new RsHasStatus(RsStatus.OK)
-        );
-    }
-
-    @Test
-    void shouldRespondOkWhenManifestFoundByDigest() {
-        final Response response = this.slice.response(
-            new RequestLine(
-                "HEAD",
-                String.format(
-                    "/v2/my-alpine/manifests/%s",
-                    "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
-                ),
-                "HTTP/1.1"
-            ).toString(),
-            Collections.emptyList(),
-            Flowable.empty()
-        );
-        MatcherAssert.assertThat(
-            response,
-            new RsHasStatus(RsStatus.OK)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new MapEntry<>("Docker-Distribution-API-Version", "registry/2.0")
+                    )
+                )
+            )
         );
     }
 }

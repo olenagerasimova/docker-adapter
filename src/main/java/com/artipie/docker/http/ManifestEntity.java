@@ -45,13 +45,13 @@ import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
- * Slice for pull image manifest endpoint.
- * See <a href="https://docs.docker.com/registry/spec/api/#pulling-an-image">Pulling An Image</a>.
+ * Manifest entity in Docker HTTP API..
+ * See <a href="https://docs.docker.com/registry/spec/api/#manifest">Manifest</a>.
  *
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-final class PullImageManifest {
+final class ManifestEntity {
 
     /**
      * RegEx pattern for path.
@@ -63,7 +63,7 @@ final class PullImageManifest {
     /**
      * Ctor.
      */
-    private PullImageManifest() {
+    private ManifestEntity() {
     }
 
     /**
@@ -143,6 +143,23 @@ final class PullImageManifest {
                     manifest.content()
                 )
             );
+        }
+    }
+
+    /**
+     * Slice for PUT method, uploading manifest content.
+     *
+     * @since 0.2
+     */
+    public static class Put implements Slice {
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body
+        ) {
+            return new RsWithStatus(RsStatus.CREATED);
         }
     }
 }

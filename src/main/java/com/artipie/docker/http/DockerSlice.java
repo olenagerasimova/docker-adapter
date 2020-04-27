@@ -48,31 +48,31 @@ public final class DockerSlice extends Slice.Wrap {
             new SliceRoute(
                 new SliceRoute.Path(
                     new RtRule.Multiple(
-                        new RtRule.ByPath("/v2/"),
+                        new RtRule.ByPath(BaseEntity.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new VersionCheck()
+                    new BaseEntity()
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
-                        new RtRule.ByPath(PullImageManifest.PATH),
+                        new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.HEAD)
                     ),
-                    new PullImageManifest.Head()
+                    new ManifestEntity.Head()
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
-                        new RtRule.ByPath(PullImageManifest.PATH),
+                        new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new PullImageManifest.Get(docker)
+                    new ManifestEntity.Get(docker)
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
-                        new RtRule.ByPath(PushImageManifest.PATH),
+                        new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.PUT)
                     ),
-                    new PushImageManifest()
+                    new ManifestEntity.Put()
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
