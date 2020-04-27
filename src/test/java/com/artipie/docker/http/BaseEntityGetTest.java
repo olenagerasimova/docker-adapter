@@ -29,11 +29,11 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Arrays;
 import java.util.Collections;
-import org.cactoos.map.MapEntry;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ class BaseEntityGetTest {
                 Arrays.asList(
                     new RsHasStatus(RsStatus.OK),
                     new RsHasHeaders(
-                        new MapEntry<>("Docker-Distribution-API-Version", "registry/2.0")
+                        new Header("Docker-Distribution-API-Version", "registry/2.0")
                     )
                 )
             )
