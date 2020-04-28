@@ -23,15 +23,21 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.docker.ExampleStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +46,7 @@ import org.junit.jupiter.api.Test;
  * Upload PATCH endpoint.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 class UploadEntityPatchTest {
 
@@ -50,19 +57,32 @@ class UploadEntityPatchTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
     }
 
     @Test
     void shouldReturnInitialUploadStatus() {
+        final byte[] data = "data".getBytes();
+        final String uuid = UUID.randomUUID().toString();
+        final String path = String.format("/v2/test/blobs/uploads/%s", uuid);
         final Response response = this.slice.response(
-            new RequestLine("PATCH", "/v2/test/blobs/uploads/", "HTTP/1.1").toString(),
+            new RequestLine("PATCH", path, "HTTP/1.1").toString(),
             Collections.emptyList(),
-            Flowable.empty()
+            Flowable.just(ByteBuffer.wrap(data))
         );
         MatcherAssert.assertThat(
             response,
-            new RsHasStatus(RsStatus.ACCEPTED)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.ACCEPTED),
+                    new RsHasHeaders(
+                        new Header("Location", path),
+                        new Header("Range", String.format("0-%d", data.length)),
+                        new Header("Content-Length", "0"),
+                        new Header("Docker-Upload-UUID", uuid)
+                    )
+                )
+            )
         );
     }
 
