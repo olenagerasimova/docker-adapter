@@ -21,30 +21,64 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.http;
 
-package com.artipie.docker.asto;
-
-import com.artipie.asto.Key;
 import com.artipie.docker.Digest;
+import com.artipie.http.rs.Header;
+import java.util.Map;
 
 /**
- * Key for blob data in storage.
+ * Docker-Content-Digest header.
+ * See <a href="https://docs.docker.com/registry/spec/api/#blob-upload#content-digests">Content Digests</a>.
  *
  * @since 0.2
  */
-final class BlobKey extends Key.Wrap {
+final class DigestHeader implements Map.Entry<String, String> {
+
+    /**
+     * Header delegate.
+     */
+    private final Header delegate;
 
     /**
      * Ctor.
      *
-     * @param digest Blob digest
+     * @param digest Digest value.
      */
-    BlobKey(final Digest digest) {
-        super(
-            new Key.From(
-                RegistryRoot.V2,
-                "blobs", digest.alg(), digest.hex().substring(0, 2), digest.hex(), "data"
-            )
+    DigestHeader(final Digest digest) {
+        this.delegate = new Header(
+            "Docker-Content-Digest",
+            String.format("%s:%s", digest.alg(), digest.hex())
         );
+    }
+
+    @Override
+    public String getKey() {
+        return this.delegate.getKey();
+    }
+
+    @Override
+    public String getValue() {
+        return this.delegate.getValue();
+    }
+
+    @Override
+    public String setValue(final String value) {
+        throw new UnsupportedOperationException("Value cannot be modified");
+    }
+
+    @Override
+    public boolean equals(final Object that) {
+        return this.delegate.equals(that);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.delegate.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return this.delegate.toString();
     }
 }

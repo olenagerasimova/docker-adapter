@@ -25,22 +25,24 @@
 package com.artipie.docker;
 
 /**
- * Digest for image layer.
+ * Content Digest.
+ * See <a href="https://docs.docker.com/registry/spec/api/#content-digests">Content Digests</a>
+ *
  * @since 0.1
  */
 public interface Digest {
 
     /**
-     * Link digest algorithm name.
-     * @return Algorith name string
+     * Digest algorithm part.
+     * @return Algorithm string
      */
     String alg();
 
     /**
-     * Link digest hex.
+     * Digest hex.
      * @return Link digest hex string
      */
-    String digest();
+    String hex();
 
     /**
      * SHA256 digest implementation.
@@ -67,15 +69,20 @@ public interface Digest {
         }
 
         @Override
-        public String digest() {
+        public String hex() {
             return this.hex;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s:%s", this.alg(), this.hex());
         }
     }
 
     /**
      * Digest parsed from string.
      * <p>
-     * See <a href="https://docs.docker.com/registry/spec/api/#introduction#content-digests">Content Digests</a>
+     * See <a href="https://docs.docker.com/registry/spec/api/#content-digests">Content Digests</a>
      * <p>
      * Docker registry digest is a string with digest formatted
      * by joining algorithm name with hex string using {@code :} as separator.
@@ -105,8 +112,13 @@ public interface Digest {
         }
 
         @Override
-        public String digest() {
+        public String hex() {
             return this.part(1);
+        }
+
+        @Override
+        public String toString() {
+            return this.original;
         }
 
         /**

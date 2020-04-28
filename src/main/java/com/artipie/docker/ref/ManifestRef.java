@@ -71,7 +71,7 @@ public interface ManifestRef {
         @Override
         public Key link() {
             return new Key.From(
-                Arrays.asList("revisions", this.digest.alg(), this.digest.digest(), "link")
+                Arrays.asList("revisions", this.digest.alg(), this.digest.hex(), "link")
             );
         }
     }
