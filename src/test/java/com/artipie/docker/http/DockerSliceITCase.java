@@ -143,6 +143,33 @@ final class DockerSliceITCase {
         );
     }
 
+    @Test
+    @Disabled("Not implemented")
+    void shouldPushExisting() throws Exception {
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
+        );
+        final String original = String.format("alpine@%s", digest);
+        this.run("pull", original);
+        final String remote = String.format("%s/my-alpine", this.repo);
+        this.run("tag", original, remote);
+        final String output = this.run("push", remote);
+        MatcherAssert.assertThat(
+            output,
+            new AllOf<>(
+                Arrays.asList(
+                    new StringContains(false, "beee9f30bc1f: Layer already exists"),
+                    new StringContains(
+                        false,
+                        String.format("latest: digest: %s", digest)
+                    )
+                )
+            )
+        );
+    }
+
     private String run(final String... args) throws Exception {
         final Path stdout = this.temp.resolve(
             String.format("%s-stdout.txt", UUID.randomUUID().toString())
