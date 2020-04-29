@@ -79,7 +79,7 @@ public final class UploadEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            final RepoName name = new UploadRequest(line).name();
+            final RepoName name = new Request(line).name();
             final String uuid = UUID.randomUUID().toString();
             return new StatusResponse(name, uuid, 0);
         }
@@ -112,7 +112,7 @@ public final class UploadEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            final UploadRequest request = new UploadRequest(line);
+            final Request request = new Request(line);
             final RepoName name = request.name();
             final String uuid = request.uuid();
             final Upload upload = this.docker.repo(name).upload(uuid);
@@ -143,8 +143,11 @@ public final class UploadEntity {
      * HTTP request to upload blob entity.
      *
      * @since 0.2
+     * @todo #54:30min Add unit tests for UploadEntity.Request class.
+     *  Now this class responsible for UploadEntity requests parsing has no unit tests coverage.
+     *  It should be made accessible for testing and tested.
      */
-    private static final class UploadRequest {
+    private static final class Request {
 
         /**
          * HTTP request line.
@@ -156,7 +159,7 @@ public final class UploadEntity {
          *
          * @param line HTTP request line.
          */
-        UploadRequest(final String line) {
+        Request(final String line) {
             this.line = line;
         }
 
