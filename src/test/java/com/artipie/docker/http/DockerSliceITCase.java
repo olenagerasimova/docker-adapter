@@ -32,11 +32,10 @@ import com.jcabi.log.Logger;
 import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.AllOf;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
 import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
@@ -127,16 +126,14 @@ final class DockerSliceITCase {
         final String output = this.run("push", remote);
         MatcherAssert.assertThat(
             output,
-            new AllOf<>(
-                Arrays.asList(
-                    new StringContains(false, "5b0d2d635df8: Pushed"),
-                    new StringContains(
-                        false,
-                        String.format(
-                            "latest: digest: %s:%s",
-                            "sha256",
-                            "d52901359e0a4002c4cd84d7a391325cf6e4816042e1960298015bbec0069da0"
-                        )
+            Matchers.allOf(
+                new StringContains(false, "5b0d2d635df8: Pushed"),
+                new StringContains(
+                    false,
+                    String.format(
+                        "latest: digest: %s:%s",
+                        "sha256",
+                        "d52901359e0a4002c4cd84d7a391325cf6e4816042e1960298015bbec0069da0"
                     )
                 )
             )
@@ -158,13 +155,11 @@ final class DockerSliceITCase {
         final String output = this.run("push", remote);
         MatcherAssert.assertThat(
             output,
-            new AllOf<>(
-                Arrays.asList(
-                    new StringContains(false, "beee9f30bc1f: Layer already exists"),
-                    new StringContains(
-                        false,
-                        String.format("latest: digest: %s", digest)
-                    )
+            Matchers.allOf(
+                new StringContains(false, "beee9f30bc1f: Layer already exists"),
+                new StringContains(
+                    false,
+                    String.format("latest: digest: %s", digest)
                 )
             )
         );
