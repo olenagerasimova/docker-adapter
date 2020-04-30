@@ -45,6 +45,14 @@ public interface Digest {
     String hex();
 
     /**
+     * Digest string.
+     * @return Digest string representation
+     */
+    default String string() {
+        return String.format("%s:%s", this.alg(), this.hex());
+    }
+
+    /**
      * SHA256 digest implementation.
      * @since 0.1
      */
@@ -75,7 +83,7 @@ public interface Digest {
 
         @Override
         public String toString() {
-            return String.format("%s:%s", this.alg(), this.hex());
+            return this.string();
         }
     }
 

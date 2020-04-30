@@ -55,4 +55,15 @@ public final class DigestTest {
             IllegalStateException.class, () -> dgst.hex(), "digest() didn't fail"
         );
     }
+
+    @Test
+    void shouldHaveExpectedStringRepresentation() {
+        final Digest.Sha256 digest = new Digest.Sha256(
+            "6c3c624b58dbbcd3c0dd82b4c53f04194d1247c6eebdaab7c610cf7d66709b3b"
+        );
+        MatcherAssert.assertThat(
+            digest.string(),
+            new IsEqual<>("sha256:6c3c624b58dbbcd3c0dd82b4c53f04194d1247c6eebdaab7c610cf7d66709b3b")
+        );
+    }
 }
