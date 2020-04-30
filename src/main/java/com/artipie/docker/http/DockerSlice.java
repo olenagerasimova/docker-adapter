@@ -100,7 +100,7 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(UploadEntity.PATH),
                         new RtRule.ByMethod(RqMethod.PATCH)
                     ),
-                    new UploadEntity.Patch()
+                    new UploadEntity.Patch(docker)
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
