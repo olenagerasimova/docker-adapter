@@ -79,7 +79,7 @@ class UploadEntityPostTest {
                             "Location",
                             new StringStartsWith(false, "/v2/test/blobs/uploads/")
                         ),
-                        new IsHeader("Range", "bytes=0-0"),
+                        new IsHeader("Range", "0-0"),
                         new IsHeader("Content-Length", "0"),
                         new IsHeader("Docker-Upload-UUID", new IsNot<>(Matchers.emptyString()))
                     )
