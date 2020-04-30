@@ -46,10 +46,7 @@ final class DigestHeader implements Map.Entry<String, String> {
      * @param digest Digest value.
      */
     DigestHeader(final Digest digest) {
-        this.delegate = new Header(
-            "Docker-Content-Digest",
-            String.format("%s:%s", digest.alg(), digest.hex())
-        );
+        this.delegate = new Header("Docker-Content-Digest", digest.string());
     }
 
     @Override

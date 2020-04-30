@@ -49,8 +49,9 @@ import org.reactivestreams.Publisher;
  * and <a href="https://docs.docker.com/registry/spec/api/#blob-upload">Blob Upload</a>.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (3 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class UploadEntity {
 
     /**
@@ -129,13 +130,45 @@ public final class UploadEntity {
      */
     public static final class Put implements Slice {
 
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Put(final Docker docker) {
+            this.docker = docker;
+        }
+
         @Override
         public Response response(
             final String line,
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            return new RsWithStatus(RsStatus.CREATED);
+            final Request request = new Request(line);
+            final RepoName name = request.name();
+            final String uuid = request.uuid();
+            final Upload upload = this.docker.repo(new RepoName.Valid(name)).upload(uuid);
+            return new AsyncResponse(
+                upload.content()
+                    .thenCompose(content -> this.docker.blobStore().put(content))
+                    .thenApply(
+                        digest -> new RsWithHeaders(
+                            new RsWithStatus(RsStatus.CREATED),
+                            new Header(
+                                "Location",
+                                String.format("/v2/%s/blobs/%s", name.value(), digest.string())
+                            ),
+                            new Header("Content-Length", "0"),
+                            new DigestHeader(digest)
+                        )
+                    )
+            );
         }
     }
 

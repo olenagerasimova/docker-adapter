@@ -23,15 +23,24 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.docker.ExampleStorage;
+import com.artipie.asto.Storage;
+import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.asto.AstoUpload;
 import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,8 +49,14 @@ import org.junit.jupiter.api.Test;
  * Upload PUT endpoint.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 class UploadEntityPutTest {
+
+    /**
+     * Storage used in tests.
+     */
+    private Storage storage;
 
     /**
      * Slice being tested.
@@ -50,19 +65,43 @@ class UploadEntityPutTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.storage = new InMemoryStorage();
+        this.slice = new DockerSlice(new AstoDocker(this.storage));
     }
 
     @Test
-    void shouldReturnInitialUploadStatus() {
+    void shouldFinishUpload() {
+        final String name = "test";
+        final String uuid = UUID.randomUUID().toString();
+        new AstoUpload(this.storage, new RepoName.Valid(name), uuid)
+            .append(Flowable.just(ByteBuffer.wrap("data".getBytes())))
+            .toCompletableFuture().join();
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
+        );
         final Response response = this.slice.response(
-            new RequestLine("PUT", "/v2/test/blobs/uploads/", "HTTP/1.1").toString(),
+            new RequestLine(
+                "PUT",
+                String.format("/v2/%s/blobs/uploads/%s", name, uuid),
+                "HTTP/1.1"
+            ).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             response,
-            new RsHasStatus(RsStatus.CREATED)
+            new AllOf<>(
+                Arrays.asList(
+                    new RsHasStatus(RsStatus.CREATED),
+                    new RsHasHeaders(
+                        new Header("Location", String.format("/v2/%s/blobs/%s", name, digest)),
+                        new Header("Content-Length", "0"),
+                        new Header("Docker-Content-Digest", digest)
+                    )
+                )
+            )
         );
     }
 
