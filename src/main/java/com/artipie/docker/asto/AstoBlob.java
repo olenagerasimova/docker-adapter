@@ -21,31 +21,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-package com.artipie.docker;
+package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
-import java.util.Optional;
+import com.artipie.asto.Storage;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker registry blob store.
- * @since 0.1
+ * Asto implementation of {@link Blob}.
+ *
+ * @since 0.2
  */
-public interface BlobStore {
+public final class AstoBlob implements Blob {
 
     /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
+     * Storage.
      */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
+    private final Storage storage;
 
     /**
-     * Put data into blob store and calculate its digest.
-     * @param blob Data flow
-     * @return Future with digest
+     * Blob digest.
      */
-    CompletionStage<Blob> put(Content blob);
+    private final Digest dig;
+
+    /**
+     * Ctor.
+     *
+     * @param storage Storage.
+     * @param digest Blob digest.
+     */
+    public AstoBlob(final Storage storage, final Digest digest) {
+        this.storage = storage;
+        this.dig = digest;
+    }
+
+    @Override
+    public Digest digest() {
+        return this.dig;
+    }
+
+    @Override
+    public CompletionStage<Long> size() {
+        return this.storage.size(new BlobKey(this.dig));
+    }
+
+    @Override
+    public CompletionStage<Content> content() {
+        return this.storage.value(new BlobKey(this.dig));
+    }
 }
-

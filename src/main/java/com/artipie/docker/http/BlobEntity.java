@@ -103,9 +103,15 @@ final class BlobEntity {
         ) {
             return new AsyncResponse(
                 this.docker.blobStore().blob(digest(line)).thenApply(
-                    layer -> layer.<Response>map(
-                        bytes -> new RsWithBody(new RsWithStatus(RsStatus.OK), bytes)
-                    ).orElseGet(() -> new RsWithStatus(RsStatus.NOT_FOUND))
+                    found -> found.<Response>map(
+                        blob -> new AsyncResponse(
+                            blob.content().thenApply(
+                                bytes -> new RsWithBody(new RsWithStatus(RsStatus.OK), bytes)
+                            )
+                        )
+                    ).orElseGet(
+                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
+                    )
                 )
             );
         }

@@ -25,9 +25,9 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.RxFile;
+import com.artipie.docker.Blob;
 import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
@@ -79,24 +79,23 @@ public final class AstoBlobs implements BlobStore {
     }
 
     @Override
-    public CompletableFuture<Optional<Content>> blob(final Digest digest) {
-        final Key key = new BlobKey(digest);
-        return this.asto.exists(key).thenCompose(
+    public CompletionStage<Optional<Blob>> blob(final Digest digest) {
+        return this.asto.exists(new BlobKey(digest)).thenApply(
             exists -> {
-                final CompletionStage<Optional<Content>> stage;
+                final Optional<Blob> blob;
                 if (exists) {
-                    stage = this.asto.value(key).thenApply(Optional::of);
+                    blob = Optional.of(new AstoBlob(this.asto, digest));
                 } else {
-                    stage = CompletableFuture.completedStage(Optional.empty());
+                    blob = Optional.empty();
                 }
-                return stage;
+                return blob;
             }
         );
     }
 
     @Override
     @SuppressWarnings("PMD.OnlyOneReturn")
-    public CompletableFuture<Digest> put(final Content blob) {
+    public CompletionStage<Blob> put(final Content blob) {
         final MessageDigest sha;
         try {
             sha = MessageDigest.getInstance("SHA-256");
@@ -138,7 +137,7 @@ public final class AstoBlobs implements BlobStore {
                     this.asto.save(
                         new BlobKey(digest),
                         new Content.From(new RxFile(tmp, AstoBlobs.FILE_SYSTEM).flow())
-                    ).thenApply(none -> digest)
+                    ).<Blob>thenApply(ignored -> new AstoBlob(this.asto, digest))
                 )
             ).doOnTerminate(() -> Files.delete(tmp))
             .to(SingleInterop.get()).toCompletableFuture();

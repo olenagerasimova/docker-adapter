@@ -21,31 +21,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.docker;
 
 import com.artipie.asto.Content;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker registry blob store.
- * @since 0.1
+ * Blob stored in {@link BlobStore}.
+ *
+ * @since 0.2
  */
-public interface BlobStore {
+public interface Blob {
 
     /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
+     * Blob digest.
+     *
+     * @return Digest.
      */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
+    Digest digest();
 
     /**
-     * Put data into blob store and calculate its digest.
-     * @param blob Data flow
-     * @return Future with digest
+     * Read blob size.
+     *
+     * @return Size of blob in bytes.
      */
-    CompletionStage<Blob> put(Content blob);
+    CompletionStage<Long> size();
+
+    /**
+     * Read blob content.
+     *
+     * @return Content.
+     */
+    CompletionStage<Content> content();
 }
-

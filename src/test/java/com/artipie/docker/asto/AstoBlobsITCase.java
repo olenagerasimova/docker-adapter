@@ -46,7 +46,9 @@ final class AstoBlobsITCase {
         final InMemoryStorage storage = new InMemoryStorage();
         final BlobStore blobs = new AstoBlobs(storage);
         final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
-        final Digest digest = blobs.put(new Content.From(Flowable.fromArray(buf))).get();
+        final Digest digest = blobs.put(new Content.From(Flowable.fromArray(buf)))
+            .toCompletableFuture().get()
+            .digest();
         MatcherAssert.assertThat(
             "Digest alg is not correct",
             digest.alg(), Matchers.equalTo("sha256")
@@ -70,9 +72,14 @@ final class AstoBlobsITCase {
     void writeAndReadBlob() throws Exception {
         final BlobStore blobs = new AstoBlobs(new InMemoryStorage());
         final ByteBuffer buf = ByteBuffer.wrap(new byte[] {0x05, 0x06, 0x07, 0x08});
-        final Digest digest = blobs.put(new Content.From(Flowable.fromArray(buf))).get();
+        final Digest digest = blobs.put(new Content.From(Flowable.fromArray(buf)))
+            .toCompletableFuture().get()
+            .digest();
         final byte[] read = Flowable.fromPublisher(
-            blobs.blob(digest).get().get()
+            blobs.blob(digest)
+                .toCompletableFuture().get()
+                .get().content()
+                .toCompletableFuture().get()
         ).toList().blockingGet().get(0).array();
         MatcherAssert.assertThat(read, Matchers.equalTo(buf.array()));
     }
@@ -84,7 +91,7 @@ final class AstoBlobsITCase {
             "0123456789012345678901234567890123456789012345678901234567890123"
         );
         MatcherAssert.assertThat(
-            blobs.blob(digest).get().isPresent(),
+            blobs.blob(digest).toCompletableFuture().get().isPresent(),
             new IsEqual<>(false)
         );
     }
