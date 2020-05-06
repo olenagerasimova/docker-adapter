@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
@@ -158,15 +159,18 @@ public final class UploadEntity {
                 upload.content()
                     .thenCompose(content -> this.docker.blobStore().put(content))
                     .thenApply(
-                        digest -> new RsWithHeaders(
-                            new RsWithStatus(RsStatus.CREATED),
-                            new Header(
-                                "Location",
-                                String.format("/v2/%s/blobs/%s", name.value(), digest.string())
-                            ),
-                            new Header("Content-Length", "0"),
-                            new DigestHeader(digest)
-                        )
+                        blob -> {
+                            final Digest digest = blob.digest();
+                            return new RsWithHeaders(
+                                new RsWithStatus(RsStatus.CREATED),
+                                new Header(
+                                    "Location",
+                                    String.format("/v2/%s/blobs/%s", name.value(), digest.string())
+                                ),
+                                new Header("Content-Length", "0"),
+                                new DigestHeader(digest)
+                            );
+                        }
                     )
             );
         }
