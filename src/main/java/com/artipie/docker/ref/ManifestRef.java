@@ -48,6 +48,13 @@ public interface ManifestRef {
     Key link();
 
     /**
+     * String representation.
+     *
+     * @return Reference as string.
+     */
+    String string();
+
+    /**
      * Manifest reference from {@link Digest}.
      *
      * @since 0.2
@@ -73,6 +80,11 @@ public interface ManifestRef {
             return new Key.From(
                 Arrays.asList("revisions", this.digest.alg(), this.digest.hex(), "link")
             );
+        }
+
+        @Override
+        public String string() {
+            return this.digest.string();
         }
     }
 
@@ -102,6 +114,11 @@ public interface ManifestRef {
             return new Key.From(
                 Arrays.asList("tags", this.tag.value(), "current", "link")
             );
+        }
+
+        @Override
+        public String string() {
+            return this.tag.value();
         }
     }
 
@@ -143,6 +160,11 @@ public interface ManifestRef {
                 );
             }
             return ref.link();
+        }
+
+        @Override
+        public String string() {
+            return this.value;
         }
     }
 }
