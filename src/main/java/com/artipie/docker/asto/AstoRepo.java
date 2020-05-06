@@ -24,8 +24,10 @@
 
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -40,6 +42,7 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Asto implementation of {@link Repo}.
+ *
  * @since 0.1
  */
 public final class AstoRepo implements Repo {
@@ -56,6 +59,7 @@ public final class AstoRepo implements Repo {
 
     /**
      * Ctor.
+     *
      * @param asto Asto storage
      * @param name Repository name
      */
@@ -70,11 +74,17 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public CompletionStage<Optional<Manifest>> manifest(final ManifestRef ref) {
-        final Key key = new Key.From(
-            RegistryRoot.V2, "repositories", this.name.value(),
-            "_manifests", ref.link().string()
+    public CompletionStage<Void> addManifest(final ManifestRef ref, final Blob blob) {
+        final Digest digest = blob.digest();
+        return CompletableFuture.allOf(
+            this.addLink(new ManifestRef.FromDigest(digest), digest).toCompletableFuture(),
+            this.addLink(ref, digest).toCompletableFuture()
         );
+    }
+
+    @Override
+    public CompletionStage<Optional<Manifest>> manifest(final ManifestRef ref) {
+        final Key key = this.link(ref);
         return this.asto.exists(key).thenCompose(
             exists -> {
                 final CompletionStage<Optional<Manifest>> stage;
@@ -99,5 +109,29 @@ public final class AstoRepo implements Repo {
     @Override
     public Upload upload(final String uuid) {
         return new AstoUpload(this.asto, this.name, uuid);
+    }
+
+    /**
+     * Puts link to blob to manifest reference path.
+     *
+     * @param ref Manifest reference.
+     * @param digest Blob digest.
+     * @return Link key.
+     */
+    private CompletionStage<Void> addLink(final ManifestRef ref, final Digest digest) {
+        return this.asto.save(this.link(ref), new Content.From(digest.string().getBytes()));
+    }
+
+    /**
+     * Create link key from manifest reference.
+     *
+     * @param ref Manifest reference.
+     * @return Link key.
+     */
+    private Key link(final ManifestRef ref) {
+        return new Key.From(
+            RegistryRoot.V2, "repositories", this.name.value(),
+            "_manifests", ref.link().string()
+        );
     }
 }
