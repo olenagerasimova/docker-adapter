@@ -79,7 +79,7 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(BlobEntity.PATH),
                         new RtRule.ByMethod(RqMethod.HEAD)
                     ),
-                    new BlobEntity.Head()
+                    new BlobEntity.Head(docker)
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
