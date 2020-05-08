@@ -112,4 +112,13 @@ public final class ManifestRefTest {
             Matchers.equalTo(tag)
         );
     }
+
+    @Test
+    void stringFromStringRef() {
+        final String value = "whatever";
+        MatcherAssert.assertThat(
+            new ManifestRef.FromString(value).string(),
+            Matchers.equalTo(value)
+        );
+    }
 }
