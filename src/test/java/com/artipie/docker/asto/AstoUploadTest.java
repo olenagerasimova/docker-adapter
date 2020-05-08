@@ -62,6 +62,14 @@ class AstoUploadTest {
     }
 
     @Test
+    void shouldReturnOffsetWhenAppendedChunk() {
+        final byte[] chunk = "sample".getBytes();
+        final Long offset = this.upload.append(Flowable.just(ByteBuffer.wrap(chunk)))
+            .toCompletableFuture().join();
+        MatcherAssert.assertThat(offset, new IsEqual<>((long) chunk.length - 1));
+    }
+
+    @Test
     void shouldReadAppendedChunk() throws Exception {
         final byte[] chunk = "chunk".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
