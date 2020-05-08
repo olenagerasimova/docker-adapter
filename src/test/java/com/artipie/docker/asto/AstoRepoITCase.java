@@ -25,7 +25,10 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Concatenation;
+import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
+import com.artipie.asto.Storage;
+import com.artipie.docker.Blob;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -43,8 +46,14 @@ import org.junit.jupiter.api.Test;
 /**
  * Integration tests for {@link AstoRepo}.
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 final class AstoRepoITCase {
+
+    /**
+     * Storage used in tests.
+     */
+    private Storage storage;
 
     /**
      * Repository being tested.
@@ -53,24 +62,14 @@ final class AstoRepoITCase {
 
     @BeforeEach
     void setUp() {
-        this.repo = new AstoRepo(
-            new ExampleStorage(),
-            new RepoName.Simple("my-alpine")
-        );
+        this.storage = new ExampleStorage();
+        this.repo = new AstoRepo(this.storage, new RepoName.Simple("my-alpine"));
     }
 
     @Test
-    void shouldReadManifest() throws Exception {
+    void shouldReadManifest() {
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("1"));
-        final byte[] manifest = this.repo.manifest(ref)
-            .thenApply(Optional::get)
-            .thenApply(Manifest::content)
-            .thenApply(Concatenation::new)
-            .thenCompose(c -> c.single().to(SingleInterop.get()))
-            .thenApply(Remaining::new)
-            .thenApply(Remaining::bytes)
-            .toCompletableFuture()
-            .get();
+        final byte[] manifest = this.manifest(ref);
         // @checkstyle MagicNumberCheck (1 line)
         MatcherAssert.assertThat(manifest.length, Matchers.equalTo(528));
     }
@@ -81,5 +80,31 @@ final class AstoRepoITCase {
             new ManifestRef.FromTag(new Tag.Valid("2"))
         ).toCompletableFuture().get();
         MatcherAssert.assertThat(manifest.isPresent(), new IsEqual<>(false));
+    }
+
+    @Test
+    void shouldReadAddedManifest() {
+        final byte[] data = "{}".getBytes();
+        final Blob blob = new AstoBlobs(this.storage).put(new Content.From(data))
+            .toCompletableFuture().join();
+        final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("some-tag"));
+        this.repo.addManifest(ref, blob).toCompletableFuture().join();
+        MatcherAssert.assertThat(this.manifest(ref), new IsEqual<>(data));
+        MatcherAssert.assertThat(
+            this.manifest(new ManifestRef.FromDigest(blob.digest())),
+            new IsEqual<>(data)
+        );
+    }
+
+    private byte[] manifest(final ManifestRef ref) {
+        return this.repo.manifest(ref)
+            .thenApply(Optional::get)
+            .thenApply(Manifest::content)
+            .thenApply(Concatenation::new)
+            .thenCompose(c -> c.single().to(SingleInterop.get()))
+            .thenApply(Remaining::new)
+            .thenApply(Remaining::bytes)
+            .toCompletableFuture()
+            .join();
     }
 }
