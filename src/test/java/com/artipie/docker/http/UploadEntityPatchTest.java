@@ -61,7 +61,7 @@ class UploadEntityPatchTest {
     }
 
     @Test
-    void shouldReturnInitialUploadStatus() {
+    void shouldReturnUpdatedUploadStatus() {
         final byte[] data = "data".getBytes();
         final String uuid = UUID.randomUUID().toString();
         final String path = String.format("/v2/test/blobs/uploads/%s", uuid);
@@ -77,7 +77,7 @@ class UploadEntityPatchTest {
                     new RsHasStatus(RsStatus.ACCEPTED),
                     new RsHasHeaders(
                         new Header("Location", path),
-                        new Header("Range", String.format("0-%d", data.length)),
+                        new Header("Range", String.format("0-%d", data.length - 1)),
                         new Header("Content-Length", "0"),
                         new Header("Docker-Upload-UUID", uuid)
                     )

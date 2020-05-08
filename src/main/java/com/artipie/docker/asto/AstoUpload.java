@@ -79,7 +79,7 @@ public final class AstoUpload implements Upload {
                 return this.storage.save(tmp, new Content.From(chunk)).thenCompose(
                     ignored -> this.storage.move(tmp, this.data())
                 ).thenCompose(
-                    ignored -> this.storage.size(this.data())
+                    ignored -> this.storage.size(this.data()).thenApply(size -> size - 1)
                 );
             }
         );
