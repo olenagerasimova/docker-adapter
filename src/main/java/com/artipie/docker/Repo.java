@@ -49,6 +49,15 @@ public interface Repo {
     Digest layer(String alg, String digest);
 
     /**
+     * Adds manifest stored as blob.
+     *
+     * @param ref Manifest reference.
+     * @param blob Blob with manifest content.
+     * @return Completion of manifest adding process.
+     */
+    CompletionStage<Void> addManifest(ManifestRef ref, Blob blob);
+
+    /**
      * Resolve docker image manifest file by reference.
      * @param ref Manifest reference
      * @return Flow with manifest data, or empty if absent
