@@ -23,17 +23,21 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
+import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
@@ -124,13 +128,70 @@ final class BlobEntity {
      */
     static final class Head implements Slice {
 
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Head(final Docker docker) {
+            this.docker = docker;
+        }
+
         @Override
         public Response response(
             final String line,
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            return new RsWithStatus(RsStatus.OK);
+            final Digest digest = digest(line);
+            return new AsyncResponse(
+                this.docker.blobStore().blob(digest).thenApply(
+                    found -> found.<Response>map(BlobResponse::new).orElseGet(
+                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
+                    )
+                )
+            );
+        }
+
+        /**
+         * Blob HEAD response.
+         *
+         * @since 0.2
+         */
+        private static class BlobResponse implements Response {
+
+            /**
+             * Blob.
+             */
+            private final Blob blob;
+
+            /**
+             * Ctor.
+             *
+             * @param blob Blob.
+             */
+            BlobResponse(final Blob blob) {
+                this.blob = blob;
+            }
+
+            @Override
+            public CompletionStage<Void> send(final Connection connection) {
+                return new AsyncResponse(
+                    this.blob.size().thenApply(
+                        size -> new RsWithHeaders(
+                            new RsWithStatus(RsStatus.OK),
+                            new ContentLength(String.valueOf(size)),
+                            new DigestHeader(this.blob.digest()),
+                            new ContentType("application/octet-stream")
+                        )
+                    )
+                ).send(connection);
+            }
         }
     }
 }
