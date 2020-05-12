@@ -88,11 +88,11 @@ final class AstoRepoITCase {
 
     @Test
     void shouldReadAddedManifest() {
-        final Blob layer = new AstoBlobs(this.storage).put(new Content.From("layer".getBytes()))
+        final Blob config = new AstoBlobs(this.storage).put(new Content.From("config".getBytes()))
             .toCompletableFuture().join();
         final byte[] data = String.format(
-            "{\"layers\":[{\"digest\":\"%s\"}]}",
-            layer.digest().string()
+            "{\"config\":{\"digest\":\"%s\"},\"layers\":[]}",
+            config.digest().string()
         ).getBytes();
         final Blob blob = new AstoBlobs(this.storage).put(new Content.From(data))
             .toCompletableFuture().join();
