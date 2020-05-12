@@ -31,7 +31,6 @@ import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
-import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -186,9 +185,9 @@ final class BlobEntity {
                     this.blob.size().thenApply(
                         size -> new RsWithHeaders(
                             new RsWithStatus(RsStatus.OK),
-                            new Header("Content-Length", size.toString()),
+                            new ContentLength(String.valueOf(size)),
                             new DigestHeader(this.blob.digest()),
-                            new Header("Content-Type", "application/octet-stream")
+                            new ContentType("application/octet-stream")
                         )
                     )
                 ).send(connection);
