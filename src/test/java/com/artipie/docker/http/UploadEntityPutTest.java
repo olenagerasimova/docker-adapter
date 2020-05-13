@@ -84,7 +84,7 @@ class UploadEntityPutTest {
         final Response response = this.slice.response(
             new RequestLine(
                 "PUT",
-                String.format("/v2/%s/blobs/uploads/%s", name, uuid),
+                String.format("/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest),
                 "HTTP/1.1"
             ).toString(),
             Collections.emptyList(),
