@@ -26,7 +26,6 @@ package com.artipie.docker.http;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
-import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.manifest.Manifest;
@@ -185,39 +184,18 @@ final class ManifestEntity {
                     .thenCompose(bytes -> this.docker.blobStore().put(new Content.From(bytes)))
                     .thenCompose(
                         blob -> this.docker.repo(name).addManifest(ref, blob).thenApply(
-                            ignored -> new PutResponse(name, ref, blob.digest())
+                            ignored -> new RsWithHeaders(
+                                new RsWithStatus(RsStatus.CREATED),
+                                new Header(
+                                    "Location",
+                                    String.format("/v2/%s/manifests/%s", name.value(), ref.string())
+                                ),
+                                new ContentLength("0"),
+                                new DigestHeader(blob.digest())
+                            )
                         )
                     )
             );
-        }
-
-        /**
-         * Manifest put HTTP response.
-         *
-         * @since 0.2
-         */
-        private static class PutResponse extends Response.Wrap {
-
-            /**
-             * Ctor.
-             *
-             * @param name Repository name.
-             * @param reference Manifest reference.
-             * @param digest Manifest digest.
-             */
-            PutResponse(final RepoName name, final ManifestRef reference, final Digest digest) {
-                super(
-                    new RsWithHeaders(
-                        new RsWithStatus(RsStatus.CREATED),
-                        new Header(
-                            "Location",
-                            String.format("/v2/%s/manifests/%s", name.value(), reference.string())
-                        ),
-                        new ContentLength("0"),
-                        new DigestHeader(digest)
-                    )
-                );
-            }
         }
     }
 
