@@ -25,12 +25,16 @@ package com.artipie.docker.http;
 
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,8 +42,8 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link DockerSlice}.
  * Manifest PUT endpoint.
  *
- * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @since 0.2
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class ManifestEntityPutTest {
@@ -56,32 +60,49 @@ class ManifestEntityPutTest {
 
     @Test
     void shouldPushManifestByTag() {
+        final String path = "/v2/my-alpine/manifests/1";
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("PUT", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
+                new RequestLine("PUT", path, "HTTP/1.1").toString(),
                 Collections.emptyList(),
-                Flowable.empty()
+                Flowable.just(ByteBuffer.wrap("{}".getBytes()))
             ),
-            new RsHasStatus(RsStatus.CREATED)
+            Matchers.allOf(
+                new RsHasStatus(RsStatus.CREATED),
+                new RsHasHeaders(
+                    new Header("Location", path),
+                    new Header("Content-Length", "0"),
+                    new Header(
+                        "Docker-Content-Digest",
+                        "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                    )
+                )
+            )
         );
     }
 
     @Test
     void shouldPushManifestByDigest() {
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        );
+        final String path = String.format("/v2/my-alpine/manifests/%s", digest);
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine(
-                    "PUT",
-                    String.format(
-                        "/v2/my-alpine/manifests/%s",
-                        "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
-                    ),
-                    "HTTP/1.1"
-                ).toString(),
+                new RequestLine("PUT", path, "HTTP/1.1").toString(),
                 Collections.emptyList(),
-                Flowable.empty()
+                Flowable.just(ByteBuffer.wrap("{}".getBytes()))
             ),
-            new RsHasStatus(RsStatus.CREATED)
+            Matchers.allOf(
+                new RsHasStatus(RsStatus.CREATED),
+                new RsHasHeaders(
+                    new Header("Location", path),
+                    new Header("Content-Length", "0"),
+                    new Header("Docker-Content-Digest", digest)
+                )
+            )
         );
     }
 }

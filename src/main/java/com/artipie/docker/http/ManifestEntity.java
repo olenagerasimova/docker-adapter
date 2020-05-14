@@ -23,6 +23,9 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Concatenation;
+import com.artipie.asto.Content;
+import com.artipie.asto.Remaining;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.manifest.Manifest;
@@ -32,10 +35,12 @@ import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqHeaders;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -109,15 +114,9 @@ final class ManifestEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            final String path = new RequestLineFrom(line).uri().getPath();
-            final Matcher matcher = PATH.matcher(path);
-            if (!matcher.find()) {
-                throw new IllegalStateException(
-                    String.format("Unexpected path: %s", path)
-                );
-            }
-            final RepoName name = new RepoName.Valid(matcher.group("name"));
-            final ManifestRef ref = new ManifestRef.FromString(matcher.group("reference"));
+            final Request request = new Request(line);
+            final RepoName name = request.name();
+            final ManifestRef ref = request.reference();
             return new AsyncResponse(
                 this.docker.repo(name).manifest(ref).thenCompose(
                     manifest -> manifest.map(
@@ -153,13 +152,104 @@ final class ManifestEntity {
      */
     public static class Put implements Slice {
 
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Put(final Docker docker) {
+            this.docker = docker;
+        }
+
         @Override
         public Response response(
             final String line,
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            return new RsWithStatus(RsStatus.CREATED);
+            final Request request = new Request(line);
+            final RepoName name = request.name();
+            final ManifestRef ref = request.reference();
+            return new AsyncResponse(
+                new Concatenation(body)
+                    .single()
+                    .map(Remaining::new)
+                    .map(Remaining::bytes)
+                    .to(SingleInterop.get())
+                    .thenCompose(bytes -> this.docker.blobStore().put(new Content.From(bytes)))
+                    .thenCompose(
+                        blob -> this.docker.repo(name).addManifest(ref, blob).thenApply(
+                            ignored -> new RsWithHeaders(
+                                new RsWithStatus(RsStatus.CREATED),
+                                new Header(
+                                    "Location",
+                                    String.format("/v2/%s/manifests/%s", name.value(), ref.string())
+                                ),
+                                new ContentLength("0"),
+                                new DigestHeader(blob.digest())
+                            )
+                        )
+                    )
+            );
+        }
+    }
+
+    /**
+     * HTTP request to manifest entity.
+     *
+     * @since 0.2
+     */
+    private static final class Request {
+
+        /**
+         * HTTP request line.
+         */
+        private final String line;
+
+        /**
+         * Ctor.
+         *
+         * @param line HTTP request line.
+         */
+        Request(final String line) {
+            this.line = line;
+        }
+
+        /**
+         * Get repository name.
+         *
+         * @return Repository name.
+         */
+        RepoName name() {
+            return new RepoName.Valid(this.path().group("name"));
+        }
+
+        /**
+         * Get manifest reference.
+         *
+         * @return Manifest reference.
+         */
+        ManifestRef reference() {
+            return new ManifestRef.FromString(this.path().group("reference"));
+        }
+
+        /**
+         * Matches request path by RegEx pattern.
+         *
+         * @return Path matcher.
+         */
+        private Matcher path() {
+            final String path = new RequestLineFrom(this.line).uri().getPath();
+            final Matcher matcher = PATH.matcher(path);
+            if (!matcher.find()) {
+                throw new IllegalStateException(String.format("Unexpected path: %s", path));
+            }
+            return matcher;
         }
     }
 }

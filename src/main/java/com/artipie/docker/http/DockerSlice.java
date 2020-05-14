@@ -72,7 +72,7 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.PUT)
                     ),
-                    new ManifestEntity.Put()
+                    new ManifestEntity.Put(docker)
                 ),
                 new SliceRoute.Path(
                     new RtRule.Multiple(
