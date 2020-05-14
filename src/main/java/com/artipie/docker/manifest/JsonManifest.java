@@ -76,7 +76,7 @@ public final class JsonManifest implements Manifest {
     public CompletionStage<Collection<Digest>> layers() {
         return this.json().thenApply(
             root -> root.getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
-                .map(obj -> obj.getString("digest"))
+                .map(layer -> layer.getString("digest"))
                 .map(Digest.FromString::new)
                 .collect(Collectors.toList())
         );
