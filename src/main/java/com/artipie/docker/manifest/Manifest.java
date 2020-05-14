@@ -24,6 +24,7 @@
 package com.artipie.docker.manifest;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Digest;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
 
@@ -49,6 +50,13 @@ public interface Manifest {
      * @return Converted manifest.
      */
     CompletionStage<Manifest> convert(Collection<String> options);
+
+    /**
+     * Read layer digests.
+     *
+     * @return Layer digests.
+     */
+    CompletionStage<Collection<Digest>> layers();
 
     /**
      * Read manifest binary content.

@@ -26,10 +26,15 @@ package com.artipie.docker.manifest;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
+import com.artipie.docker.Digest;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.json.Json;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
@@ -76,6 +81,29 @@ class JsonManifestTest {
         MatcherAssert.assertThat(
             exception.getCause(),
             new IsInstanceOf(IllegalArgumentException.class)
+        );
+    }
+
+    @Test
+    void shouldReadLayers() {
+        final String[] digests = {"sha256:123", "sha256:abc"};
+        final JsonManifest manifest = new JsonManifest(
+            new Content.From(
+                Json.createObjectBuilder().add(
+                    "layers",
+                    Json.createArrayBuilder(
+                        Stream.of(digests)
+                            .map(dig -> Collections.singletonMap("digest", dig))
+                            .collect(Collectors.toList())
+                    )
+                ).build().toString().getBytes()
+            )
+        );
+        MatcherAssert.assertThat(
+            manifest.layers().toCompletableFuture().join().stream()
+                .map(Digest::string)
+                .collect(Collectors.toList()),
+            Matchers.containsInAnyOrder(digests)
         );
     }
 

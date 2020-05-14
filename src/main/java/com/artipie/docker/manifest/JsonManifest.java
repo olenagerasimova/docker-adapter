@@ -24,9 +24,13 @@
 package com.artipie.docker.manifest;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Digest;
 import com.artipie.docker.misc.Json;
 import java.util.Collection;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 
 /**
  * Image manifest in JSON format.
@@ -51,7 +55,7 @@ public final class JsonManifest implements Manifest {
 
     @Override
     public CompletionStage<String> mediaType() {
-        return new Json(this.source).object().thenApply(root -> root.getString("mediaType"));
+        return this.json().thenApply(root -> root.getString("mediaType"));
     }
 
     @Override
@@ -69,7 +73,26 @@ public final class JsonManifest implements Manifest {
     }
 
     @Override
+    public CompletionStage<Collection<Digest>> layers() {
+        return this.json().thenApply(
+            root -> root.getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
+                .map(layer -> layer.getString("digest"))
+                .map(Digest.FromString::new)
+                .collect(Collectors.toList())
+        );
+    }
+
+    @Override
     public Content content() {
         return this.source;
+    }
+
+    /**
+     * Read manifest content as JSON object.
+     *
+     * @return JSON object.
+     */
+    private CompletionStage<JsonObject> json() {
+        return new Json(this.source).object();
     }
 }
