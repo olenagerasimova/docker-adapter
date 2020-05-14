@@ -23,10 +23,8 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
-import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
@@ -37,7 +35,7 @@ import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
@@ -105,12 +103,21 @@ final class BlobEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
+            final Digest digest = digest(line);
             return new AsyncResponse(
-                this.docker.blobStore().blob(digest(line)).thenApply(
+                this.docker.blobStore().blob(digest).thenApply(
                     found -> found.<Response>map(
                         blob -> new AsyncResponse(
-                            blob.content().thenApply(
-                                bytes -> new RsWithBody(new RsWithStatus(RsStatus.OK), bytes)
+                            blob.content().thenCompose(
+                                content -> content.size()
+                                    .map(CompletableFuture::completedStage)
+                                    .orElseGet(blob::size)
+                                    .thenApply(
+                                        size -> new RsWithBody(
+                                            new BaseResponse(digest, size),
+                                            content
+                                        )
+                                    )
                             )
                         )
                     ).orElseGet(
@@ -151,47 +158,40 @@ final class BlobEntity {
             final Digest digest = digest(line);
             return new AsyncResponse(
                 this.docker.blobStore().blob(digest).thenApply(
-                    found -> found.<Response>map(BlobResponse::new).orElseGet(
+                    found -> found.<Response>map(
+                        blob -> new AsyncResponse(
+                            blob.size().thenApply(size -> new BaseResponse(blob.digest(), size))
+                        )
+                    ).orElseGet(
                         () -> new RsWithStatus(RsStatus.NOT_FOUND)
                     )
                 )
             );
         }
+    }
+
+    /**
+     * Blob base response.
+     *
+     * @since 0.2
+     */
+    private static class BaseResponse extends Response.Wrap {
 
         /**
-         * Blob HEAD response.
+         * Ctor.
          *
-         * @since 0.2
+         * @param digest Blob digest.
+         * @param size Blob size.
          */
-        private static class BlobResponse implements Response {
-
-            /**
-             * Blob.
-             */
-            private final Blob blob;
-
-            /**
-             * Ctor.
-             *
-             * @param blob Blob.
-             */
-            BlobResponse(final Blob blob) {
-                this.blob = blob;
-            }
-
-            @Override
-            public CompletionStage<Void> send(final Connection connection) {
-                return new AsyncResponse(
-                    this.blob.size().thenApply(
-                        size -> new RsWithHeaders(
-                            new RsWithStatus(RsStatus.OK),
-                            new ContentLength(String.valueOf(size)),
-                            new DigestHeader(this.blob.digest()),
-                            new ContentType("application/octet-stream")
-                        )
-                    )
-                ).send(connection);
-            }
+        BaseResponse(final Digest digest, final long size) {
+            super(
+                new RsWithHeaders(
+                    new RsWithStatus(RsStatus.OK),
+                    new ContentLength(String.valueOf(size)),
+                    new DigestHeader(digest),
+                    new ContentType("application/octet-stream")
+                )
+            );
         }
     }
 }
