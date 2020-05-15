@@ -245,7 +245,7 @@ public final class UploadEntity {
                 String.format("No query in request: %s", this.line)
             );
             final Matcher matcher = QUERY.matcher(query);
-            if (!matcher.find()) {
+            if (!matcher.matches()) {
                 throw new IllegalStateException(String.format("Unexpected query: %s", query));
             }
             return new Digest.FromString(matcher.group("digest"));
@@ -259,7 +259,7 @@ public final class UploadEntity {
         private Matcher path() {
             final String path = new RequestLineFrom(this.line).uri().getPath();
             final Matcher matcher = PATH.matcher(path);
-            if (!matcher.find()) {
+            if (!matcher.matches()) {
                 throw new IllegalStateException(String.format("Unexpected path: %s", path));
             }
             return matcher;
