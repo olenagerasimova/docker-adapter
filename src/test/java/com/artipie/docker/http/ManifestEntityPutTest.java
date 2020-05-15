@@ -65,7 +65,7 @@ class ManifestEntityPutTest {
             this.slice.response(
                 new RequestLine("PUT", path, "HTTP/1.1").toString(),
                 Collections.emptyList(),
-                Flowable.just(ByteBuffer.wrap("{}".getBytes()))
+                this.manifest()
             ),
             Matchers.allOf(
                 new RsHasStatus(RsStatus.CREATED),
@@ -74,7 +74,7 @@ class ManifestEntityPutTest {
                     new Header("Content-Length", "0"),
                     new Header(
                         "Docker-Content-Digest",
-                        "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+                        "sha256:c824a9aa7d2e3471306648c6d4baa1abbcb97ff0276181ab4722ca27127cdba0"
                     )
                 )
             )
@@ -86,14 +86,14 @@ class ManifestEntityPutTest {
         final String digest = String.format(
             "%s:%s",
             "sha256",
-            "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+            "c824a9aa7d2e3471306648c6d4baa1abbcb97ff0276181ab4722ca27127cdba0"
         );
         final String path = String.format("/v2/my-alpine/manifests/%s", digest);
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine("PUT", path, "HTTP/1.1").toString(),
                 Collections.emptyList(),
-                Flowable.just(ByteBuffer.wrap("{}".getBytes()))
+                this.manifest()
             ),
             Matchers.allOf(
                 new RsHasStatus(RsStatus.CREATED),
@@ -104,5 +104,10 @@ class ManifestEntityPutTest {
                 )
             )
         );
+    }
+
+    private Flowable<ByteBuffer> manifest() {
+        final byte[] data = "{\"layers\":[]}".getBytes();
+        return Flowable.just(ByteBuffer.wrap(data));
     }
 }

@@ -88,7 +88,12 @@ final class AstoRepoITCase {
 
     @Test
     void shouldReadAddedManifest() {
-        final byte[] data = "{}".getBytes();
+        final Blob layer = new AstoBlobs(this.storage).put(new Content.From("layer".getBytes()))
+            .toCompletableFuture().join();
+        final byte[] data = String.format(
+            "{\"layers\":[{\"digest\":\"%s\"}]}",
+            layer.digest().string()
+        ).getBytes();
         final Blob blob = new AstoBlobs(this.storage).put(new Content.From(data))
             .toCompletableFuture().join();
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("some-tag"));
