@@ -63,7 +63,11 @@ final class AstoRepoITCase {
     @BeforeEach
     void setUp() {
         this.storage = new ExampleStorage();
-        this.repo = new AstoRepo(this.storage, new RepoName.Simple("my-alpine"));
+        this.repo = new AstoRepo(
+            this.storage,
+            new AstoBlobs(this.storage),
+            new RepoName.Simple("my-alpine")
+        );
     }
 
     @Test

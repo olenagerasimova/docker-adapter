@@ -28,6 +28,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
+import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -58,13 +59,20 @@ public final class AstoRepo implements Repo {
     private final RepoName name;
 
     /**
+     * Blobs storage.
+     */
+    private final BlobStore blobs;
+
+    /**
      * Ctor.
      *
      * @param asto Asto storage
+     * @param blobs Blobs storage.
      * @param name Repository name
      */
-    public AstoRepo(final Storage asto, final RepoName name) {
+    public AstoRepo(final Storage asto, final BlobStore blobs, final RepoName name) {
         this.asto = asto;
+        this.blobs = blobs;
         this.name = name;
     }
 
@@ -84,25 +92,19 @@ public final class AstoRepo implements Repo {
 
     @Override
     public CompletionStage<Optional<Manifest>> manifest(final ManifestRef ref) {
-        final Key key = this.link(ref);
-        return this.asto.exists(key).thenCompose(
-            exists -> {
-                final CompletionStage<Optional<Manifest>> stage;
-                if (exists) {
-                    stage = this.asto.value(key)
-                        .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
-                        .thenApply(Digest.FromString::new)
-                        .thenApply(BlobKey::new)
-                        .thenCompose(
-                            data -> this.asto.value(data)
-                                .thenApply(JsonManifest::new)
-                                .thenApply(Optional::of)
-                        );
-                } else {
-                    stage = CompletableFuture.completedFuture(Optional.empty());
-                }
-                return stage;
-            }
+        return this.readLink(ref).thenCompose(
+            digestOpt -> digestOpt.map(
+                digest -> this.blobs.blob(digest)
+                    .thenCompose(
+                        blobOpt -> blobOpt
+                            .map(
+                                blob -> blob.content()
+                                    .<Manifest>thenApply(JsonManifest::new)
+                                    .thenApply(Optional::of)
+                            )
+                            .orElseGet(() -> CompletableFuture.completedFuture(Optional.empty()))
+                    )
+            ).orElseGet(() -> CompletableFuture.completedFuture(Optional.empty()))
         );
     }
 
@@ -120,6 +122,30 @@ public final class AstoRepo implements Repo {
      */
     private CompletionStage<Void> addLink(final ManifestRef ref, final Digest digest) {
         return this.asto.save(this.link(ref), new Content.From(digest.string().getBytes()));
+    }
+
+    /**
+     * Reads link to blob by manifest reference.
+     *
+     * @param ref Manifest reference.
+     * @return Blob digest, empty if no link found.
+     */
+    private CompletableFuture<Optional<Digest>> readLink(final ManifestRef ref) {
+        final Key key = this.link(ref);
+        return this.asto.exists(key).thenCompose(
+            exists -> {
+                final CompletionStage<Optional<Digest>> stage;
+                if (exists) {
+                    stage = this.asto.value(key)
+                        .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
+                        .<Digest>thenApply(Digest.FromString::new)
+                        .thenApply(Optional::of);
+                } else {
+                    stage = CompletableFuture.completedFuture(Optional.empty());
+                }
+                return stage;
+            }
+        );
     }
 
     /**
