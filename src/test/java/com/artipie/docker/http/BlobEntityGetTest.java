@@ -29,8 +29,10 @@ import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasBody;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Arrays;
@@ -62,13 +64,15 @@ class BlobEntityGetTest {
 
     @Test
     void shouldReturnLayer() {
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "aad63a9339440e7c3e1fff2b988991b9bfb81280042fa7f39a5e327023056819"
+        );
         final Response response = this.slice.response(
             new RequestLine(
                 "GET",
-                String.format(
-                    "/v2/test/blobs/%s",
-                    "sha256:aad63a9339440e7c3e1fff2b988991b9bfb81280042fa7f39a5e327023056819"
-                ),
+                String.format("/v2/test/blobs/%s", digest),
                 "HTTP/1.1"
             ).toString(),
             Collections.emptyList(),
@@ -83,6 +87,11 @@ class BlobEntityGetTest {
             new AllOf<>(
                 Arrays.asList(
                     new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new Header("Content-Length", "2803255"),
+                        new Header("Docker-Content-Digest", digest),
+                        new Header("Content-Type", "application/octet-stream")
+                    ),
                     new RsHasBody(
                         new BlockingStorage(new ExampleStorage()).value(expected)
                     )
