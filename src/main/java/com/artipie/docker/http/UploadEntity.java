@@ -38,6 +38,7 @@ import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
@@ -160,16 +161,26 @@ public final class UploadEntity {
                     .thenCompose(content -> this.docker.blobStore().put(content))
                     .thenApply(
                         blob -> {
+                            final Response response;
                             final Digest digest = blob.digest();
-                            return new RsWithHeaders(
-                                new RsWithStatus(RsStatus.CREATED),
-                                new Header(
-                                    "Location",
-                                    String.format("/v2/%s/blobs/%s", name.value(), digest.string())
-                                ),
-                                new Header("Content-Length", "0"),
-                                new DigestHeader(digest)
-                            );
+                            if (digest.string().equals(request.digest().string())) {
+                                response = new RsWithHeaders(
+                                    new RsWithStatus(RsStatus.CREATED),
+                                    new Header(
+                                        "Location",
+                                        String.format(
+                                            "/v2/%s/blobs/%s",
+                                            name.value(),
+                                            digest.string()
+                                        )
+                                    ),
+                                    new Header("Content-Length", "0"),
+                                    new DigestHeader(digest)
+                                );
+                            } else {
+                                response = new RsWithStatus(RsStatus.BAD_REQUEST);
+                            }
+                            return response;
                         }
                     )
             );
@@ -185,6 +196,11 @@ public final class UploadEntity {
      *  It should be made accessible for testing and tested.
      */
     private static final class Request {
+
+        /**
+         * RegEx pattern for path.
+         */
+        public static final Pattern QUERY = Pattern.compile("digest=(?<digest>[^=]*)");
 
         /**
          * HTTP request line.
@@ -219,6 +235,23 @@ public final class UploadEntity {
         }
 
         /**
+         * Get digest.
+         *
+         * @return Digest.
+         */
+        Digest digest() {
+            final String query = Objects.requireNonNull(
+                new RequestLineFrom(this.line).uri().getQuery(),
+                String.format("No query in request: %s", this.line)
+            );
+            final Matcher matcher = QUERY.matcher(query);
+            if (!matcher.matches()) {
+                throw new IllegalStateException(String.format("Unexpected query: %s", query));
+            }
+            return new Digest.FromString(matcher.group("digest"));
+        }
+
+        /**
          * Matches request path by RegEx pattern.
          *
          * @return Path matcher.
@@ -226,7 +259,7 @@ public final class UploadEntity {
         private Matcher path() {
             final String path = new RequestLineFrom(this.line).uri().getPath();
             final Matcher matcher = PATH.matcher(path);
-            if (!matcher.find()) {
+            if (!matcher.matches()) {
                 throw new IllegalStateException(String.format("Unexpected path: %s", path));
             }
             return matcher;

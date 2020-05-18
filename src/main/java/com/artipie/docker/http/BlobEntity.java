@@ -70,7 +70,7 @@ final class BlobEntity {
     private static Digest digest(final String line) {
         final String path = new RequestLineFrom(line).uri().getPath();
         final Matcher matcher = PATH.matcher(path);
-        if (!matcher.find()) {
+        if (!matcher.matches()) {
             throw new IllegalStateException(String.format("Unexpected path: %s", path));
         }
         return new Digest.FromString(matcher.group("digest"));
