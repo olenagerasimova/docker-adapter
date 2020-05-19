@@ -40,6 +40,7 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
+import com.artipie.http.rs.StandardRs;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -54,6 +55,10 @@ import org.reactivestreams.Publisher;
  * See <a href="https://docs.docker.com/registry/spec/api/#manifest">Manifest</a>.
  *
  * @since 0.2
+ * @todo #119:30min Manifest GET and HEAD endpoints have to add Docker-Content-Digest header into
+ *  response. Implement this functionality, for more details read about digest
+ *  https://docs.docker.com/registry/spec/api/#content-digests and manifest endpoints
+ *  https://docs.docker.com/registry/spec/api/#manifest.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class ManifestEntity {
@@ -78,12 +83,39 @@ final class ManifestEntity {
      */
     public static class Head implements Slice {
 
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Head(final Docker docker) {
+            this.docker = docker;
+        }
+
         @Override
         public Response response(
             final String line,
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body) {
-            return new RsWithStatus(RsStatus.OK);
+            final Request request = new Request(line);
+            return new AsyncResponse(
+                this.docker.repo(request.name()).manifest(request.reference()).thenCompose(
+                    manifest -> manifest.<CompletionStage<Response>>map(
+                        original -> original.mediaType().thenApply(
+                            type -> new RsWithHeaders(
+                                StandardRs.EMPTY, new ContentType(type)
+                            )
+                        )
+                    ).orElseGet(
+                        () -> CompletableFuture.completedStage(StandardRs.NOT_FOUND)
+                    )
+                )
+            );
         }
     }
 
