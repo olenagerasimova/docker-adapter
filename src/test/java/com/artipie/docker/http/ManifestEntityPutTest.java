@@ -107,7 +107,6 @@ class ManifestEntityPutTest {
     }
 
     private Flowable<ByteBuffer> manifest() {
-        final byte[] data = "{\"layers\":[]}".getBytes();
-        return Flowable.just(ByteBuffer.wrap(data));
+        return Flowable.just(ByteBuffer.wrap("{\"layers\":[]}".getBytes()));
     }
 }
