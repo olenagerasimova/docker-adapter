@@ -79,10 +79,15 @@ public final class AstoRepo implements Repo {
     @Override
     public CompletionStage<Void> addManifest(final ManifestRef ref, final Blob blob) {
         final Digest digest = blob.digest();
-        return CompletableFuture.allOf(
-            this.addLink(new ManifestRef.FromDigest(digest), digest).toCompletableFuture(),
-            this.addLink(ref, digest).toCompletableFuture()
-        );
+        return blob.content()
+            .thenApply(JsonManifest::new)
+            .thenCompose(this::validate)
+            .thenCompose(
+                ignored -> CompletableFuture.allOf(
+                    this.addLink(new ManifestRef.FromDigest(digest), digest).toCompletableFuture(),
+                    this.addLink(ref, digest).toCompletableFuture()
+                )
+            );
     }
 
     @Override
@@ -106,6 +111,31 @@ public final class AstoRepo implements Repo {
     @Override
     public Upload upload(final String uuid) {
         return new AstoUpload(this.asto, this.name, uuid);
+    }
+
+    /**
+     * Validates manifest by checking all referenced blobs exist.
+     *
+     * @param manifest Manifest.
+     * @return Validation completion.
+     */
+    private CompletionStage<Void> validate(final Manifest manifest) {
+        return manifest.layers().thenCompose(
+            digests -> CompletableFuture.allOf(
+                digests.stream().map(
+                    digest -> this.blobs.blob(digest).thenCompose(
+                        opt -> {
+                            if (opt.isEmpty()) {
+                                throw new IllegalArgumentException(
+                                    String.format("Blob not exists: %s", digest)
+                                );
+                            }
+                            return CompletableFuture.allOf();
+                        }
+                    ).toCompletableFuture()
+                ).toArray(CompletableFuture[]::new)
+            )
+        );
     }
 
     /**
