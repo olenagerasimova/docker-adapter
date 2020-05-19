@@ -191,11 +191,8 @@ public final class UploadEntity {
      * HTTP request to upload blob entity.
      *
      * @since 0.2
-     * @todo #54:30min Add unit tests for UploadEntity.Request class.
-     *  Now this class responsible for UploadEntity requests parsing has no unit tests coverage.
-     *  It should be made accessible for testing and tested.
      */
-    private static final class Request {
+    static final class Request {
 
         /**
          * RegEx pattern for path.
