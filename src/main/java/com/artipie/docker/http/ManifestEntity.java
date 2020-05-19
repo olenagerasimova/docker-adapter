@@ -55,10 +55,6 @@ import org.reactivestreams.Publisher;
  * See <a href="https://docs.docker.com/registry/spec/api/#manifest">Manifest</a>.
  *
  * @since 0.2
- * @todo #119:30min Manifest GET and HEAD endpoints have to add Docker-Content-Digest header into
- *  response. Implement this functionality, for more details read about digest
- *  https://docs.docker.com/registry/spec/api/#content-digests and manifest endpoints
- *  https://docs.docker.com/registry/spec/api/#manifest.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class ManifestEntity {
@@ -106,16 +102,26 @@ final class ManifestEntity {
             return new AsyncResponse(
                 this.docker.repo(request.name()).manifest(request.reference()).thenCompose(
                     manifest -> manifest.<CompletionStage<Response>>map(
-                        original -> original.mediaType().thenApply(
-                            type -> new RsWithHeaders(
-                                StandardRs.EMPTY, new ContentType(type)
+                        found -> found.convert(Head.acceptHeader(headers))
+                            .thenCompose(
+                                original -> CompletableFuture.completedStage(
+                                    new BaseResponse(original)
+                                )
                             )
-                        )
                     ).orElseGet(
-                        () -> CompletableFuture.completedStage(StandardRs.NOT_FOUND)
+                        () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
                 )
             );
+        }
+
+        /**
+         * Gets accept header.
+         * @param headers Request headers
+         * @return Accept headers
+         */
+        private static RqHeaders acceptHeader(final Iterable<Map.Entry<String, String>> headers) {
+            return new RqHeaders(headers, "Accept");
         }
     }
 
@@ -151,9 +157,13 @@ final class ManifestEntity {
             final ManifestRef ref = request.reference();
             return new AsyncResponse(
                 this.docker.repo(name).manifest(ref).thenCompose(
-                    manifest -> manifest.map(
-                        original -> original.convert(new RqHeaders(headers, "Accept"))
-                            .thenCompose(Get::response)
+                    manifest -> manifest.<CompletionStage<Response>>map(
+                        found -> found.convert(Head.acceptHeader(headers))
+                            .thenCompose(
+                                original -> CompletableFuture.completedStage(
+                                    new RsWithBody(new BaseResponse(original), original.content())
+                                )
+                            )
                     ).orElseGet(
                         () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
@@ -161,20 +171,6 @@ final class ManifestEntity {
             );
         }
 
-        /**
-         * Create HTTP response from {@link Manifest}.
-         *
-         * @param manifest Manifest.
-         * @return HTTP response.
-         */
-        private static CompletionStage<Response> response(final Manifest manifest) {
-            return manifest.mediaType().thenApply(
-                type -> new RsWithBody(
-                    new RsWithHeaders(new RsWithStatus(RsStatus.OK), "Content-Type", type),
-                    manifest.content()
-                )
-            );
-        }
     }
 
     /**
@@ -283,5 +279,32 @@ final class ManifestEntity {
             }
             return matcher;
         }
+    }
+
+    /**
+     * Manifest base response.
+     * @since 0.2
+     * @todo #119:30min Manifest GET and HEAD endpoints have to add Docker-Content-Digest header
+     *  into response. Implement this functionality, for more details read about digest
+     *  https://docs.docker.com/registry/spec/api/#content-digests and manifest endpoints
+     *  https://docs.docker.com/registry/spec/api/#manifest.
+     */
+    static final class BaseResponse extends Response.Wrap {
+
+        /**
+         * Ctor.
+         *
+         * @param mnf Manifest
+         */
+        BaseResponse(final Manifest mnf) {
+            super(
+                new AsyncResponse(
+                    mnf.mediaType().thenApply(
+                        type -> new RsWithHeaders(StandardRs.EMPTY, new ContentType(type))
+                    )
+                )
+            );
+        }
+
     }
 }

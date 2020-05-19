@@ -62,18 +62,21 @@ class ManifestEntityHeadTest {
 
     @Test
     void shouldRespondOkWhenManifestFoundByTag() {
-        ManifestEntityHeadTest.assertion(
+        MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine("HEAD", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
-                Collections.emptyList(),
+                Collections.singleton(
+                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                ),
                 Flowable.empty()
-            )
+            ),
+            new ResponseMatcher()
         );
     }
 
     @Test
     void shouldRespondOkWhenManifestFoundByDigest() {
-        ManifestEntityHeadTest.assertion(
+        MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
                     "HEAD",
@@ -83,9 +86,12 @@ class ManifestEntityHeadTest {
                     ),
                     "HTTP/1.1"
                 ).toString(),
-                Collections.emptyList(),
+                Collections.singleton(
+                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                ),
                 Flowable.empty()
-            )
+            ),
+            new ResponseMatcher()
         );
     }
 
@@ -102,13 +108,16 @@ class ManifestEntityHeadTest {
     }
 
     /**
-     * Assertion.
-     * @param response Actual
+     * Response matcher.
+     * @since 0.2
      */
-    private static void assertion(final Response response) {
-        MatcherAssert.assertThat(
-            response,
-            new AllOf<>(
+    private static class ResponseMatcher extends AllOf<Response> {
+
+        /**
+         * Ctor.
+         */
+        ResponseMatcher() {
+            super(
                 new ListOf<Matcher<? super Response>>(
                     new RsHasStatus(RsStatus.OK),
                     new RsHasHeaders(
@@ -117,7 +126,7 @@ class ManifestEntityHeadTest {
                         )
                     )
                 )
-            )
-        );
+            );
+        }
     }
 }
