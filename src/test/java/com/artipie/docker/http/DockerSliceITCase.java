@@ -56,7 +56,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-@SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.AvoidDuplicateLiterals"})
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class DockerSliceITCase {
 
     // @checkstyle VisibilityModifierCheck (5 lines)
