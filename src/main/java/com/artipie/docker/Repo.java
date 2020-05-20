@@ -36,19 +36,6 @@ import java.util.concurrent.CompletionStage;
 public interface Repo {
 
     /**
-     * Layer link by algorithm and digest.
-     * <p>
-     * layerLinkPathSpec:
-     * <code>repositories/&lt;name&gt;/_layers/
-     * &lt;algorithm&gt;/&lt;hex digest&gt;/link</code>
-     * </p>
-     * @param alg Digest algorithm
-     * @param digest Digest hex string
-     * @return Digest of layer blob
-     */
-    Digest layer(String alg, String digest);
-
-    /**
      * Adds manifest stored as blob.
      *
      * @param ref Manifest reference.
