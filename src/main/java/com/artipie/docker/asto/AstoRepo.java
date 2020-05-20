@@ -77,11 +77,6 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public Digest layer(final String alg, final String digest) {
-        throw new UnsupportedOperationException("not implemented");
-    }
-
-    @Override
     public CompletionStage<Void> addManifest(final ManifestRef ref, final Blob blob) {
         final Digest digest = blob.digest();
         return blob.content()
