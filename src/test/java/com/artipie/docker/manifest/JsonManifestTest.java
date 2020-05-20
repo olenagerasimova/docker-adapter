@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.2
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class JsonManifestTest {
 
     @Test
@@ -81,6 +82,23 @@ class JsonManifestTest {
         MatcherAssert.assertThat(
             exception.getCause(),
             new IsInstanceOf(IllegalArgumentException.class)
+        );
+    }
+
+    @Test
+    void shouldReadConfig() {
+        final String digest = "sha256:def";
+        final JsonManifest manifest = new JsonManifest(
+            new Content.From(
+                Json.createObjectBuilder().add(
+                    "config",
+                    Json.createObjectBuilder().add("digest", digest)
+                ).build().toString().getBytes()
+            )
+        );
+        MatcherAssert.assertThat(
+            manifest.config().toCompletableFuture().join().string(),
+            new IsEqual<>(digest)
         );
     }
 
