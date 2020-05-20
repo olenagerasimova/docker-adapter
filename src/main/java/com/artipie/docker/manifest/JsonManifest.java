@@ -73,11 +73,15 @@ public final class JsonManifest implements Manifest {
     }
 
     @Override
+    public CompletionStage<Digest> config() {
+        return this.json().thenApply(root -> digest(root.getJsonObject("config")));
+    }
+
+    @Override
     public CompletionStage<Collection<Digest>> layers() {
         return this.json().thenApply(
             root -> root.getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
-                .map(layer -> layer.getString("digest"))
-                .map(Digest.FromString::new)
+                .map(JsonManifest::digest)
                 .collect(Collectors.toList())
         );
     }
@@ -94,5 +98,15 @@ public final class JsonManifest implements Manifest {
      */
     private CompletionStage<JsonObject> json() {
         return new Json(this.source).object();
+    }
+
+    /**
+     * Read digest field of JSON object.
+     *
+     * @param json JSON object.
+     * @return Digest read from JSON.
+     */
+    private static Digest digest(final JsonObject json) {
+        return new Digest.FromString(json.getString("digest"));
     }
 }

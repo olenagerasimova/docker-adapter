@@ -52,6 +52,13 @@ public interface Manifest {
     CompletionStage<Manifest> convert(Collection<String> options);
 
     /**
+     * Read config digest.
+     *
+     * @return Config digests.
+     */
+    CompletionStage<Digest> config();
+
+    /**
      * Read layer digests.
      *
      * @return Layer digests.
