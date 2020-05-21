@@ -39,8 +39,8 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -48,10 +48,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 /**
  * Integration test for {@link DockerSlice}.
  *
+ * @todo #54:30min Support tests running on Windows platform
+ *  Docker client on Windows cannot pull Linux images.
+ *  This requires to select image for tests depending on `os.name` property
+ *  and redesign pull tests to push images first.
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings({"PMD.TestClassWithoutTestCases", "PMD.AvoidDuplicateLiterals"})
+@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class DockerSliceITCase {
 
     // @checkstyle VisibilityModifierCheck (5 lines)
@@ -103,7 +108,6 @@ final class DockerSliceITCase {
         "my-alpine:latest",
         "my-alpine@sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
     })
-    @Disabled("Not implemented")
     void shouldPull(final String name) throws Exception {
         final String image = String.format("%s/%s", this.repo, name);
         final String output = this.run("pull", image);
@@ -117,7 +121,6 @@ final class DockerSliceITCase {
     }
 
     @Test
-    @Disabled("Not implemented")
     void shouldPush() throws Exception {
         final String original = "busybox";
         this.run("pull", original);
@@ -127,13 +130,13 @@ final class DockerSliceITCase {
         MatcherAssert.assertThat(
             output,
             Matchers.allOf(
-                new StringContains(false, "5b0d2d635df8: Pushed"),
+                new StringContains(false, "1079c30efc82: Pushed"),
                 new StringContains(
                     false,
                     String.format(
                         "latest: digest: %s:%s",
                         "sha256",
-                        "d52901359e0a4002c4cd84d7a391325cf6e4816042e1960298015bbec0069da0"
+                        "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
                     )
                 )
             )
@@ -141,7 +144,6 @@ final class DockerSliceITCase {
     }
 
     @Test
-    @Disabled("Not implemented")
     void shouldPushExisting() throws Exception {
         final String digest = String.format(
             "%s:%s",
