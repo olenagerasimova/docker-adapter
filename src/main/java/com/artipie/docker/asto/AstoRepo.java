@@ -40,6 +40,7 @@ import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 /**
  * Asto implementation of {@link Repo}.
@@ -120,22 +121,28 @@ public final class AstoRepo implements Repo {
      * @return Validation completion.
      */
     private CompletionStage<Void> validate(final Manifest manifest) {
-        return manifest.layers().thenCompose(
-            digests -> CompletableFuture.allOf(
-                digests.stream().map(
-                    digest -> this.blobs.blob(digest).thenCompose(
-                        opt -> {
-                            if (opt.isEmpty()) {
-                                throw new IllegalArgumentException(
-                                    String.format("Blob not exists: %s", digest)
-                                );
-                            }
-                            return CompletableFuture.allOf();
-                        }
-                    ).toCompletableFuture()
-                ).toArray(CompletableFuture[]::new)
+        return manifest.config()
+            .thenCompose(
+                config -> manifest.layers().thenApply(
+                    layers -> Stream.concat(Stream.of(config), layers.stream())
+                )
             )
-        );
+            .thenCompose(
+                digests -> CompletableFuture.allOf(
+                    digests.map(
+                        digest -> this.blobs.blob(digest).thenCompose(
+                            opt -> {
+                                if (opt.isEmpty()) {
+                                    throw new IllegalArgumentException(
+                                        String.format("Blob does not exist: %s", digest)
+                                    );
+                                }
+                                return CompletableFuture.allOf();
+                            }
+                        ).toCompletableFuture()
+                    ).toArray(CompletableFuture[]::new)
+                )
+            );
     }
 
     /**

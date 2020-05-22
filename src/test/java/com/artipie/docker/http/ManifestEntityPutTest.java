@@ -23,7 +23,11 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
+import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.Blob;
+import com.artipie.docker.asto.AstoBlobs;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
@@ -42,7 +46,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link DockerSlice}.
  * Manifest PUT endpoint.
  *
- * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @since 0.2
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
@@ -53,9 +57,15 @@ class ManifestEntityPutTest {
      */
     private DockerSlice slice;
 
+    /**
+     * Storage used in tests.
+     */
+    private Storage storage;
+
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
+        this.storage = new InMemoryStorage();
+        this.slice = new DockerSlice(new AstoDocker(this.storage));
     }
 
     @Test
@@ -74,7 +84,7 @@ class ManifestEntityPutTest {
                     new Header("Content-Length", "0"),
                     new Header(
                         "Docker-Content-Digest",
-                        "sha256:c824a9aa7d2e3471306648c6d4baa1abbcb97ff0276181ab4722ca27127cdba0"
+                        "sha256:02b9f91901050f814adfb19b1a8f5d599b07504998c2d665baa82e364322b566"
                     )
                 )
             )
@@ -86,7 +96,7 @@ class ManifestEntityPutTest {
         final String digest = String.format(
             "%s:%s",
             "sha256",
-            "c824a9aa7d2e3471306648c6d4baa1abbcb97ff0276181ab4722ca27127cdba0"
+            "02b9f91901050f814adfb19b1a8f5d599b07504998c2d665baa82e364322b566"
         );
         final String path = String.format("/v2/my-alpine/manifests/%s", digest);
         MatcherAssert.assertThat(
@@ -106,7 +116,18 @@ class ManifestEntityPutTest {
         );
     }
 
+    /**
+     * Create manifest content.
+     *
+     * @return Manifest content.
+     */
     private Flowable<ByteBuffer> manifest() {
-        return Flowable.just(ByteBuffer.wrap("{\"layers\":[]}".getBytes()));
+        final Blob config = new AstoBlobs(this.storage).put(new Content.From("config".getBytes()))
+            .toCompletableFuture().join();
+        final byte[] data = String.format(
+            "{\"config\":{\"digest\":\"%s\"},\"layers\":[]}",
+            config.digest().string()
+        ).getBytes();
+        return Flowable.just(ByteBuffer.wrap(data));
     }
 }
