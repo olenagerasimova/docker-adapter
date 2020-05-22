@@ -134,7 +134,7 @@ public final class AstoRepo implements Repo {
                             opt -> {
                                 if (opt.isEmpty()) {
                                     throw new IllegalArgumentException(
-                                        String.format("Blob not exists: %s", digest)
+                                        String.format("Blob does not exist: %s", digest)
                                     );
                                 }
                                 return CompletableFuture.allOf();
