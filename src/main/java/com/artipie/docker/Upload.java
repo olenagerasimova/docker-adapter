@@ -37,6 +37,13 @@ import org.reactivestreams.Publisher;
 public interface Upload {
 
     /**
+     * Read UUID.
+     *
+     * @return UUID.
+     */
+    String uuid();
+
+    /**
      * Appends a chunk of data to upload.
      *
      * @param chunk Chunk of data.

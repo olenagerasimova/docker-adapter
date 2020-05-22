@@ -38,6 +38,7 @@ import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.BytesFlowAs;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
@@ -107,6 +108,12 @@ public final class AstoRepo implements Repo {
                     )
             ).orElseGet(() -> CompletableFuture.completedFuture(Optional.empty()))
         );
+    }
+
+    @Override
+    public CompletionStage<Upload> startUpload() {
+        final String uuid = UUID.randomUUID().toString();
+        return CompletableFuture.completedFuture(new AstoUpload(this.asto, this.name, uuid));
     }
 
     @Override

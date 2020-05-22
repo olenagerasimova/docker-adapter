@@ -52,6 +52,13 @@ public interface Repo {
     CompletionStage<Optional<Manifest>> manifest(ManifestRef ref);
 
     /**
+     * Start new upload.
+     *
+     * @return Upload.
+     */
+    CompletionStage<Upload> startUpload();
+
+    /**
      * Find upload by UUID.
      *
      * @param uuid Upload UUID.
