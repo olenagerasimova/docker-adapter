@@ -23,52 +23,28 @@
  */
 package com.artipie.docker.manifest;
 
-import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
+import java.net.URL;
 import java.util.Collection;
-import java.util.concurrent.CompletionStage;
 
 /**
- * Image manifest.
- * See <a href="https://docs.docker.com/engine/reference/commandline/manifest/">docker manifest</a>
+ * Image layer.
  *
  * @since 0.2
  */
-public interface Manifest {
+public interface Layer {
 
     /**
-     * Read manifest type.
+     * Read layer content digest.
      *
-     * @return Type string.
+     * @return Layer content digest..
      */
-    CompletionStage<String> mediaType();
+    Digest digest();
 
     /**
-     * Converts manifest to one of types.
+     * Provides a list of URLs from which the content may be fetched.
      *
-     * @param options Types the manifest may be converted to.
-     * @return Converted manifest.
+     * @return URLs, might be empty
      */
-    CompletionStage<Manifest> convert(Collection<String> options);
-
-    /**
-     * Read config digest.
-     *
-     * @return Config digests.
-     */
-    CompletionStage<Digest> config();
-
-    /**
-     * Read layer digests.
-     *
-     * @return Layer digests.
-     */
-    CompletionStage<Collection<Layer>> layers();
-
-    /**
-     * Read manifest binary content.
-     *
-     * @return Manifest binary content.
-     */
-    Content content();
+    Collection<URL> urls();
 }

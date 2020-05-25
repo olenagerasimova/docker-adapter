@@ -34,6 +34,7 @@ import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.manifest.JsonManifest;
+import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.BytesFlowAs;
 import com.artipie.docker.ref.ManifestRef;
@@ -124,7 +125,7 @@ public final class AstoRepo implements Repo {
         return manifest.config()
             .thenCompose(
                 config -> manifest.layers().thenApply(
-                    layers -> Stream.concat(Stream.of(config), layers.stream())
+                    layers -> Stream.concat(Stream.of(config), layers.stream().map(Layer::digest))
                 )
             )
             .thenCompose(

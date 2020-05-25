@@ -27,8 +27,10 @@ import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -103,7 +105,7 @@ class JsonManifestTest {
     }
 
     @Test
-    void shouldReadLayers() {
+    void shouldReadLayerDigests() {
         final String[] digests = {"sha256:123", "sha256:abc"};
         final JsonManifest manifest = new JsonManifest(
             new Content.From(
@@ -119,9 +121,36 @@ class JsonManifestTest {
         );
         MatcherAssert.assertThat(
             manifest.layers().toCompletableFuture().join().stream()
+                .map(Layer::digest)
                 .map(Digest::string)
                 .collect(Collectors.toList()),
             Matchers.containsInAnyOrder(digests)
+        );
+    }
+
+    @Test
+    void shouldReadLayerUrls() throws Exception {
+        final String url = "https://artipie.com/";
+        final JsonManifest manifest = new JsonManifest(
+            new Content.From(
+                Json.createObjectBuilder().add(
+                    "layers",
+                    Json.createArrayBuilder().add(
+                        Json.createObjectBuilder()
+                            .add("digest", "sha256:12345")
+                            .add(
+                                "urls",
+                                Json.createArrayBuilder().add(url)
+                            )
+                    )
+                ).build().toString().getBytes()
+            )
+        );
+        MatcherAssert.assertThat(
+            manifest.layers().toCompletableFuture().join().stream()
+                .flatMap(layer -> layer.urls().stream())
+                .findFirst(),
+            new IsEqual<>(Optional.of(new URL(url)))
         );
     }
 
