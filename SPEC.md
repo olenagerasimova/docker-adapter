@@ -9,8 +9,8 @@ repository to blobstore.
 A repository is made up of layers, manifests and tags. The layers component
 is just a directory of layers which are "linked" into a repository. A layer
 can only be accessed through a qualified repository name if it is linked in
-the repository. Uploads of layers are managed in the uploads directory,
-which is key by upload id. When all data for an upload is received, the
+the repository. Uploads of layers are stored in `_uploads` directory by upload UUID. 
+When all data for an upload is received, the
 data is moved into the blob store and the upload directory is deleted.
 Abandoned uploads can be garbage collected by reading the startedat file
 and removing uploads that have been active for longer than a certain time.
@@ -18,8 +18,9 @@ and removing uploads that have been active for longer than a certain time.
 The third component of the repository directory is the manifests store,
 which is made up of a revision store and tag store. Manifests are stored in
 the blob store and linked into the revision store.
-While the registry can save all revisions of a manifest, no relationship is
-implied as to the ordering of changes to a manifest. The tag store provides
+Registry stores all revisions of a manifest. Revisions are stored
+by digest and history of changes (which revision was first, which one was second etc.)
+is not preserved. The tag store provides
 support for name, tag lookups of manifests, using "current/link" under a
 named tag directory. An index is maintained to support deletions of all
 revisions of a given manifest tag.
