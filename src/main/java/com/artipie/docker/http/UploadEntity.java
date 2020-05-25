@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -129,6 +130,12 @@ public final class UploadEntity {
      * Slice for PUT method.
      *
      * @since 0.2
+     * @todo #137:30min Compare digests before uploading blob content: rewrite `response`
+     *  method to check digests before storing content to blob store. If digests do not match,
+     *  return BAD_REQUEST response, there is no need to upload content.
+     * @todo #137:30min Figure out whether or not should uploaded data be removed if digests do not
+     *  match. There is no direct answer in docs, so this should be check experimentally with real
+     *  docker registry.
      */
     public static final class Put implements Slice {
 
@@ -159,26 +166,30 @@ public final class UploadEntity {
             return new AsyncResponse(
                 upload.content()
                     .thenCompose(content -> this.docker.blobStore().put(content))
-                    .thenApply(
+                    .thenCompose(
                         blob -> {
-                            final Response response;
+                            final CompletionStage<Response> response;
                             final Digest digest = blob.digest();
                             if (digest.string().equals(request.digest().string())) {
-                                response = new RsWithHeaders(
-                                    new RsWithStatus(RsStatus.CREATED),
-                                    new Header(
-                                        "Location",
-                                        String.format(
-                                            "/v2/%s/blobs/%s",
-                                            name.value(),
-                                            digest.string()
-                                        )
-                                    ),
-                                    new Header("Content-Length", "0"),
-                                    new DigestHeader(digest)
+                                response = upload.delete().thenApply(
+                                    ignored -> new RsWithHeaders(
+                                        new RsWithStatus(RsStatus.CREATED),
+                                        new Header(
+                                            "Location",
+                                            String.format(
+                                                "/v2/%s/blobs/%s",
+                                                name.value(),
+                                                digest.string()
+                                            )
+                                        ),
+                                        new Header("Content-Length", "0"),
+                                        new DigestHeader(digest)
+                                    )
                                 );
                             } else {
-                                response = new RsWithStatus(RsStatus.BAD_REQUEST);
+                                response = CompletableFuture.completedStage(
+                                    new RsWithStatus(RsStatus.BAD_REQUEST)
+                                );
                             }
                             return response;
                         }

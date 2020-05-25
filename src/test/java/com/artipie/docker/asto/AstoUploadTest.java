@@ -25,15 +25,17 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Remaining;
+import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.Upload;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.jupiter.api.Assertions;
@@ -50,12 +52,18 @@ class AstoUploadTest {
     /**
      * Slice being tested.
      */
-    private Upload upload;
+    private AstoUpload upload;
+
+    /**
+     * Storage.
+     */
+    private Storage storage;
 
     @BeforeEach
     void setUp() {
+        this.storage = new InMemoryStorage();
         this.upload = new AstoUpload(
-            new InMemoryStorage(),
+            this.storage,
             new RepoName.Valid("test"),
             UUID.randomUUID().toString()
         );
@@ -133,6 +141,18 @@ class AstoUploadTest {
                 .toCompletableFuture()
                 .get(),
             new IsEqual<>(chunk)
+        );
+    }
+
+    @Test
+    void shouldRemoveUploadedFiles() throws ExecutionException, InterruptedException {
+        final byte[] chunk = "some bytes".getBytes();
+        this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().get();
+        this.upload.content().toCompletableFuture().get();
+        this.upload.delete().toCompletableFuture().get();
+        MatcherAssert.assertThat(
+            this.storage.list(this.upload.root()).get(),
+            new IsEmptyCollection<>()
         );
     }
 }
