@@ -83,7 +83,7 @@ public final class AstoRepo implements Repo {
     public CompletionStage<Void> addManifest(final ManifestRef ref, final Blob blob) {
         final Digest digest = blob.digest();
         return blob.content()
-            .thenApply(JsonManifest::new)
+            .thenApply(source -> new JsonManifest(blob.digest(), source))
             .thenCompose(this::validate)
             .thenCompose(
                 ignored -> CompletableFuture.allOf(
@@ -102,7 +102,9 @@ public final class AstoRepo implements Repo {
                         blobOpt -> blobOpt
                             .map(
                                 blob -> blob.content()
-                                    .<Manifest>thenApply(JsonManifest::new)
+                                    .<Manifest>thenApply(
+                                        source -> new JsonManifest(blob.digest(), source)
+                                    )
                                     .thenApply(Optional::of)
                             )
                             .orElseGet(() -> CompletableFuture.completedFuture(Optional.empty()))
