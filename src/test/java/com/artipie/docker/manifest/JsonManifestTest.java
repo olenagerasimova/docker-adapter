@@ -27,6 +27,7 @@ import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.ExecutionException;
@@ -37,6 +38,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
+import org.hamcrest.core.IsIterableContaining;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +46,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link JsonManifest}.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class JsonManifestTest {
@@ -103,7 +106,7 @@ class JsonManifestTest {
     }
 
     @Test
-    void shouldReadLayers() {
+    void shouldReadLayerDigests() {
         final String[] digests = {"sha256:123", "sha256:abc"};
         final JsonManifest manifest = new JsonManifest(
             new Content.From(
@@ -119,9 +122,36 @@ class JsonManifestTest {
         );
         MatcherAssert.assertThat(
             manifest.layers().toCompletableFuture().join().stream()
+                .map(Layer::digest)
                 .map(Digest::string)
                 .collect(Collectors.toList()),
             Matchers.containsInAnyOrder(digests)
+        );
+    }
+
+    @Test
+    void shouldReadLayerUrls() throws Exception {
+        final String url = "https://artipie.com/";
+        final JsonManifest manifest = new JsonManifest(
+            new Content.From(
+                Json.createObjectBuilder().add(
+                    "layers",
+                    Json.createArrayBuilder().add(
+                        Json.createObjectBuilder()
+                            .add("digest", "sha256:12345")
+                            .add(
+                                "urls",
+                                Json.createArrayBuilder().add(url)
+                            )
+                    )
+                ).build().toString().getBytes()
+            )
+        );
+        MatcherAssert.assertThat(
+            manifest.layers().toCompletableFuture().join().stream()
+                .flatMap(layer -> layer.urls().stream())
+                .collect(Collectors.toList()),
+            new IsIterableContaining<>(new IsEqual<>(new URL(url)))
         );
     }
 

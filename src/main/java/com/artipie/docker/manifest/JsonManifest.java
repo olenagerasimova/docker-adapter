@@ -26,10 +26,15 @@ package com.artipie.docker.manifest;
 import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.misc.Json;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.json.JsonObject;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 
 /**
@@ -37,6 +42,7 @@ import javax.json.JsonValue;
  *
  * @since 0.2
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class JsonManifest implements Manifest {
 
     /**
@@ -74,14 +80,16 @@ public final class JsonManifest implements Manifest {
 
     @Override
     public CompletionStage<Digest> config() {
-        return this.json().thenApply(root -> digest(root.getJsonObject("config")));
+        return this.json().thenApply(
+            root -> new Digest.FromString(root.getJsonObject("config").getString("digest"))
+        );
     }
 
     @Override
-    public CompletionStage<Collection<Digest>> layers() {
+    public CompletionStage<Collection<Layer>> layers() {
         return this.json().thenApply(
             root -> root.getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
-                .map(JsonManifest::digest)
+                .map(JsonLayer::new)
                 .collect(Collectors.toList())
         );
     }
@@ -101,12 +109,46 @@ public final class JsonManifest implements Manifest {
     }
 
     /**
-     * Read digest field of JSON object.
+     * Image layer description in JSON format.
      *
-     * @param json JSON object.
-     * @return Digest read from JSON.
+     * @since 0.2
      */
-    private static Digest digest(final JsonObject json) {
-        return new Digest.FromString(json.getString("digest"));
+    private static final class JsonLayer implements Layer {
+
+        /**
+         * JSON object.
+         */
+        private final JsonObject json;
+
+        /**
+         * Ctor.
+         *
+         * @param json JSON object.
+         */
+        private JsonLayer(final JsonObject json) {
+            this.json = json;
+        }
+
+        @Override
+        public Digest digest() {
+            return new Digest.FromString(this.json.getString("digest"));
+        }
+
+        @Override
+        public Collection<URL> urls() {
+            return Optional.ofNullable(this.json.getJsonArray("urls")).map(
+                urls -> urls.getValuesAs(JsonString.class).stream()
+                    .map(
+                        str -> {
+                            try {
+                                return new URL(str.getString());
+                            } catch (final MalformedURLException ex) {
+                                throw new IllegalArgumentException(ex);
+                            }
+                        }
+                    )
+                    .collect(Collectors.toList())
+            ).orElseGet(Collections::emptyList);
+        }
     }
 }
