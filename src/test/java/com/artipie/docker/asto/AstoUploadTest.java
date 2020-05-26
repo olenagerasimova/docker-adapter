@@ -148,7 +148,6 @@ class AstoUploadTest {
     void shouldRemoveUploadedFiles() throws ExecutionException, InterruptedException {
         final byte[] chunk = "some bytes".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().get();
-        this.upload.content().toCompletableFuture().get();
         this.upload.delete().toCompletableFuture().get();
         MatcherAssert.assertThat(
             this.storage.list(this.upload.root()).get(),
