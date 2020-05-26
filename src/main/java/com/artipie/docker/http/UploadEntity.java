@@ -39,7 +39,6 @@ import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
@@ -77,6 +76,20 @@ public final class UploadEntity {
      */
     public static final class Post implements Slice {
 
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Post(final Docker docker) {
+            this.docker = docker;
+        }
+
         @Override
         public Response response(
             final String line,
@@ -84,8 +97,11 @@ public final class UploadEntity {
             final Publisher<ByteBuffer> body
         ) {
             final RepoName name = new Request(line).name();
-            final String uuid = UUID.randomUUID().toString();
-            return new StatusResponse(name, uuid, 0);
+            return new AsyncResponse(
+                this.docker.repo(name).startUpload().thenApply(
+                    upload -> new StatusResponse(name, upload.uuid(), 0)
+                )
+            );
         }
     }
 

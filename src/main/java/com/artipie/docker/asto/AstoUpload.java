@@ -54,6 +54,7 @@ public final class AstoUpload implements Upload {
     /**
      * Upload UUID.
      */
+    @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
     private final String uuid;
 
     /**
@@ -67,6 +68,11 @@ public final class AstoUpload implements Upload {
         this.storage = storage;
         this.name = name;
         this.uuid = uuid;
+    }
+
+    @Override
+    public String uuid() {
+        return this.uuid;
     }
 
     @Override
