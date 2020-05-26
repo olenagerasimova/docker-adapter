@@ -82,11 +82,7 @@ class UploadEntityPutTest {
             "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
         );
         final Response response = this.slice.response(
-            new RequestLine(
-                "PUT",
-                String.format("/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest),
-                "HTTP/1.1"
-            ).toString(),
+            UploadEntityPutTest.requestLine(name, uuid, digest),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -103,6 +99,38 @@ class UploadEntityPutTest {
                 )
             )
         );
+    }
+
+    @Test
+    void returnsBadRequestWhenDigestsDoNotMatch() {
+        final String name = "repo";
+        final String uuid = UUID.randomUUID().toString();
+        new AstoUpload(this.storage, new RepoName.Valid(name), uuid)
+            .append(Flowable.just(ByteBuffer.wrap("something".getBytes())))
+            .toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            this.slice.response(
+                UploadEntityPutTest.requestLine(name, uuid, "sha256:0000"),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.BAD_REQUEST)
+        );
+    }
+
+    /**
+     * Returns request line.
+     * @param name Repo name
+     * @param uuid Upload uuid
+     * @param digest Digest
+     * @return RequestLine instance
+     */
+    private static String requestLine(final String name, final String uuid, final String digest) {
+        return new RequestLine(
+            "PUT",
+            String.format("/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest),
+            "HTTP/1.1"
+        ).toString();
     }
 
 }
