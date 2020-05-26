@@ -30,6 +30,7 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
 
@@ -97,12 +98,23 @@ public final class AstoUpload implements Upload {
         );
     }
 
+    @Override
+    public CompletionStage<Void> delete() {
+        return this.storage.list(this.root())
+            .thenCompose(
+                list -> CompletableFuture.allOf(
+                    list.stream().map(file -> this.storage.delete(file).toCompletableFuture())
+                        .toArray(CompletableFuture[]::new)
+                )
+            );
+    }
+
     /**
      * Root key for upload chunks.
      *
      * @return Root key.
      */
-    private Key root() {
+    Key root() {
         return new Key.From(
             RegistryRoot.V2, "repositories", this.name.value(),
             "_uploads", this.uuid

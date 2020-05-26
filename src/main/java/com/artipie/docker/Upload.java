@@ -50,4 +50,11 @@ public interface Upload {
      * @return Content.
      */
     CompletionStage<Content> content();
+
+    /**
+     * Deletes upload blob data.
+     *
+     * @return Completion or error signal.
+     */
+    CompletionStage<Void> delete();
 }
