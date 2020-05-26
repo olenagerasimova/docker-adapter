@@ -46,6 +46,11 @@ import javax.json.JsonValue;
 public final class JsonManifest implements Manifest {
 
     /**
+     * Manifest digest.
+     */
+    private final Digest dgst;
+
+    /**
      * JSON bytes.
      */
     private final Content source;
@@ -53,9 +58,11 @@ public final class JsonManifest implements Manifest {
     /**
      * Ctor.
      *
+     * @param dgst Manifest digest.
      * @param source JSON bytes.
      */
-    public JsonManifest(final Content source) {
+    public JsonManifest(final Digest dgst, final Content source) {
+        this.dgst = dgst;
         this.source = source;
     }
 
@@ -92,6 +99,11 @@ public final class JsonManifest implements Manifest {
                 .map(JsonLayer::new)
                 .collect(Collectors.toList())
         );
+    }
+
+    @Override
+    public Digest digest() {
+        return this.dgst;
     }
 
     @Override

@@ -54,6 +54,7 @@ class JsonManifestTest {
     @Test
     void shouldReadMediaType() throws Exception {
         final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"),
             new Content.From("{\"mediaType\":\"something\"}".getBytes())
         );
         MatcherAssert.assertThat(
@@ -65,6 +66,7 @@ class JsonManifestTest {
     @Test
     void shouldConvertToSameType() throws Exception {
         final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"),
             new Content.From("{\"mediaType\":\"type2\"}".getBytes())
         );
         MatcherAssert.assertThat(
@@ -76,6 +78,7 @@ class JsonManifestTest {
     @Test
     void shouldFailConvertToUnknownType() {
         final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"),
             new Content.From("{\"mediaType\":\"typeA\"}".getBytes())
         );
         final ExecutionException exception = Assertions.assertThrows(
@@ -92,6 +95,7 @@ class JsonManifestTest {
     void shouldReadConfig() {
         final String digest = "sha256:def";
         final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"),
             new Content.From(
                 Json.createObjectBuilder().add(
                     "config",
@@ -109,6 +113,7 @@ class JsonManifestTest {
     void shouldReadLayerDigests() {
         final String[] digests = {"sha256:123", "sha256:abc"};
         final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("12345"),
             new Content.From(
                 Json.createObjectBuilder().add(
                     "layers",
@@ -133,6 +138,7 @@ class JsonManifestTest {
     void shouldReadLayerUrls() throws Exception {
         final String url = "https://artipie.com/";
         final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"),
             new Content.From(
                 Json.createObjectBuilder().add(
                     "layers",
@@ -156,9 +162,25 @@ class JsonManifestTest {
     }
 
     @Test
+    void shouldReadDigest() {
+        final String digest = "sha256:123";
+        final JsonManifest manifest = new JsonManifest(
+            new Digest.FromString(digest),
+            new Content.From("something".getBytes())
+        );
+        MatcherAssert.assertThat(
+            manifest.digest().string(),
+            new IsEqual<>(digest)
+        );
+    }
+
+    @Test
     void shouldReadContent() {
         final byte[] data = "data".getBytes();
-        final JsonManifest manifest = new JsonManifest(new Content.From(data));
+        final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"),
+            new Content.From(data)
+        );
         MatcherAssert.assertThat(
             new Remaining(new Concatenation(manifest.content()).single().blockingGet()).bytes(),
             new IsEqual<>(data)

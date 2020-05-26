@@ -66,6 +66,13 @@ public interface Manifest {
     CompletionStage<Collection<Layer>> layers();
 
     /**
+     * Manifest digest.
+     *
+     * @return Digest.
+     */
+    Digest digest();
+
+    /**
      * Read manifest binary content.
      *
      * @return Manifest binary content.
