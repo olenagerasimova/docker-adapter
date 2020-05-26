@@ -113,7 +113,7 @@ class JsonManifestTest {
     void shouldReadLayerDigests() {
         final String[] digests = {"sha256:123", "sha256:abc"};
         final JsonManifest manifest = new JsonManifest(
-            new Digest.Sha256("123"),
+            new Digest.Sha256("12345"),
             new Content.From(
                 Json.createObjectBuilder().add(
                     "layers",

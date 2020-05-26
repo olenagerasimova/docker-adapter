@@ -48,7 +48,7 @@ public final class JsonManifest implements Manifest {
     /**
      * Manifest digest.
      */
-    private final Digest dig;
+    private final Digest dgst;
 
     /**
      * JSON bytes.
@@ -58,11 +58,11 @@ public final class JsonManifest implements Manifest {
     /**
      * Ctor.
      *
-     * @param dig Manifest digest.
+     * @param dgst Manifest digest.
      * @param source JSON bytes.
      */
-    public JsonManifest(final Digest dig, final Content source) {
-        this.dig = dig;
+    public JsonManifest(final Digest dgst, final Content source) {
+        this.dgst = dgst;
         this.source = source;
     }
 
@@ -103,7 +103,7 @@ public final class JsonManifest implements Manifest {
 
     @Override
     public Digest digest() {
-        return this.dig;
+        return this.dgst;
     }
 
     @Override
