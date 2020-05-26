@@ -37,6 +37,7 @@ import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Optional;
+import javax.json.Json;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
@@ -45,9 +46,11 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Integration tests for {@link AstoRepo}.
+ *
  * @since 0.1
- * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class AstoRepoITCase {
 
     /**
@@ -90,10 +93,26 @@ final class AstoRepoITCase {
     void shouldReadAddedManifest() {
         final Blob config = new AstoBlobs(this.storage).put(new Content.From("config".getBytes()))
             .toCompletableFuture().join();
-        final byte[] data = String.format(
-            "{\"config\":{\"digest\":\"%s\"},\"layers\":[]}",
-            config.digest().string()
-        ).getBytes();
+        final Blob layer = new AstoBlobs(this.storage).put(new Content.From("layer".getBytes()))
+            .toCompletableFuture().join();
+        final byte[] data = Json.createObjectBuilder()
+            .add(
+                "config",
+                Json.createObjectBuilder().add("digest", config.digest().string())
+            )
+            .add(
+                "layers",
+                Json.createArrayBuilder()
+                    .add(
+                        Json.createObjectBuilder().add("digest", layer.digest().string())
+                    )
+                    .add(
+                        Json.createObjectBuilder()
+                            .add("digest", "sha256:123")
+                            .add("urls", Json.createArrayBuilder().add("https://artipie.com/"))
+                    )
+            )
+            .build().toString().getBytes();
         final Blob blob = new AstoBlobs(this.storage).put(new Content.From(data))
             .toCompletableFuture().join();
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("some-tag"));
