@@ -21,47 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker;
+package com.artipie.docker.manifest;
 
-import com.artipie.asto.Content;
-import java.nio.ByteBuffer;
-import java.util.concurrent.CompletionStage;
-import org.reactivestreams.Publisher;
+import com.artipie.docker.Digest;
+import java.net.URL;
+import java.util.Collection;
 
 /**
- * Blob upload.
- * See <a href="https://docs.docker.com/registry/spec/api/#blob-upload">Blob Upload</a>
+ * Image layer.
  *
  * @since 0.2
  */
-public interface Upload {
+public interface Layer {
 
     /**
-     * Read UUID.
+     * Read layer content digest.
      *
-     * @return UUID.
+     * @return Layer content digest..
      */
-    String uuid();
+    Digest digest();
 
     /**
-     * Appends a chunk of data to upload.
+     * Provides a list of URLs from which the content may be fetched.
      *
-     * @param chunk Chunk of data.
-     * @return Offset after appending chunk.
+     * @return URLs, might be empty
      */
-    CompletionStage<Long> append(Publisher<ByteBuffer> chunk);
-
-    /**
-     * Get uploaded content.
-     *
-     * @return Content.
-     */
-    CompletionStage<Content> content();
-
-    /**
-     * Deletes upload blob data.
-     *
-     * @return Completion or error signal.
-     */
-    CompletionStage<Void> delete();
+    Collection<URL> urls();
 }

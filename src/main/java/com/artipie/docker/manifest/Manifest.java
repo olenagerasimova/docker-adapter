@@ -63,7 +63,7 @@ public interface Manifest {
      *
      * @return Layer digests.
      */
-    CompletionStage<Collection<Digest>> layers();
+    CompletionStage<Collection<Layer>> layers();
 
     /**
      * Read manifest binary content.
