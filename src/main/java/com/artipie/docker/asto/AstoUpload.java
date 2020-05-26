@@ -76,17 +76,22 @@ public final class AstoUpload implements Upload {
     }
 
     @Override
+    public CompletionStage<Void> start() {
+        return this.storage.save(this.data(), new Content.From(new byte[0]));
+    }
+
+    @Override
     public CompletionStage<Long> append(final Publisher<ByteBuffer> chunk) {
-        return this.storage.exists(this.data()).thenCompose(
-            exists -> {
-                if (exists) {
+        return this.storage.size(this.data()).thenCompose(
+            size -> {
+                if (size > 0) {
                     throw new UnsupportedOperationException("Multiple chunks are not supported");
                 }
                 final Key tmp = new Key.From(this.root(), UUID.randomUUID().toString());
                 return this.storage.save(tmp, new Content.From(chunk)).thenCompose(
                     ignored -> this.storage.move(tmp, this.data())
                 ).thenCompose(
-                    ignored -> this.storage.size(this.data()).thenApply(size -> size - 1)
+                    ignored -> this.storage.size(this.data()).thenApply(updated -> updated - 1)
                 );
             }
         );
@@ -94,12 +99,13 @@ public final class AstoUpload implements Upload {
 
     @Override
     public CompletionStage<Content> content() {
-        return this.storage.exists(this.data()).thenCompose(
-            exists -> {
-                if (!exists) {
+        return this.storage.size(this.data()).thenCompose(
+            size -> {
+                if (size > 0) {
+                    return this.storage.value(this.data());
+                } else {
                     throw new IllegalStateException("No content was uploaded yet");
                 }
-                return this.storage.value(this.data());
             }
         );
     }

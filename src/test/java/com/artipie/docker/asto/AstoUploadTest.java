@@ -70,8 +70,18 @@ class AstoUploadTest {
     }
 
     @Test
+    void shouldCreateDataOnStart() {
+        this.upload.start().toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            this.storage.list(this.upload.root()).join().isEmpty(),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
     void shouldReturnOffsetWhenAppendedChunk() {
         final byte[] chunk = "sample".getBytes();
+        this.upload.start().toCompletableFuture().join();
         final Long offset = this.upload.append(Flowable.just(ByteBuffer.wrap(chunk)))
             .toCompletableFuture().join();
         MatcherAssert.assertThat(offset, new IsEqual<>((long) chunk.length - 1));
@@ -80,6 +90,7 @@ class AstoUploadTest {
     @Test
     void shouldReadAppendedChunk() throws Exception {
         final byte[] chunk = "chunk".getBytes();
+        this.upload.start().toCompletableFuture().join();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
             this.upload.content()
@@ -96,6 +107,7 @@ class AstoUploadTest {
 
     @Test
     void shouldFailReadEmptyContent() {
+        this.upload.start().toCompletableFuture().join();
         MatcherAssert.assertThat(
             Assertions.assertThrows(
                 CompletionException.class,
@@ -107,6 +119,7 @@ class AstoUploadTest {
 
     @Test
     void shouldFailAppendedSecondChunk() {
+        this.upload.start().toCompletableFuture().join();
         this.upload.append(Flowable.just(ByteBuffer.wrap("one".getBytes())))
             .toCompletableFuture()
             .join();
@@ -123,6 +136,7 @@ class AstoUploadTest {
 
     @Test
     void shouldAppendedSecondChunkIfFirstOneFailed() throws Exception {
+        this.upload.start().toCompletableFuture().join();
         try {
             this.upload.append(Flowable.error(new IllegalStateException()))
                 .toCompletableFuture()
@@ -146,6 +160,7 @@ class AstoUploadTest {
 
     @Test
     void shouldRemoveUploadedFiles() throws ExecutionException, InterruptedException {
+        this.upload.start().toCompletableFuture().join();
         final byte[] chunk = "some bytes".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().get();
         this.upload.delete().toCompletableFuture().get();
