@@ -154,7 +154,7 @@ public final class UploadEntity {
      * @todo #137:30min Figure out whether or not should uploaded data be removed if digests do not
      *  match. There is no direct answer in docs, so this should be check experimentally with real
      *  docker registry.
-     * @todo 142:30min Content is read twice while blob is added: now we first read it to compare
+     * @todo #142:30min Content is read twice while blob is added: now we first read it to compare
      *  digests and then to write upload as a blob. Such approach is inefficient and should be
      *  fixed. One of the possible solution is moving the comparison logic inside
      *  BlobStore.put() method.
