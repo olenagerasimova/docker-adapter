@@ -85,11 +85,8 @@ class ManifestEntityGetTest {
 
     @Test
     void shouldReturnManifestByDigest() {
-        final String digest = String.format(
-            "%s:%s",
-            "sha256",
-            "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
-        );
+        final String hex = "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221";
+        final String digest = String.format("%s:%s", "sha256", hex);
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
@@ -104,10 +101,7 @@ class ManifestEntityGetTest {
             ),
             success(
                 digest,
-                new Key.From(
-                    "docker", "registry", "v2", "blobs", "sha256", "cb",
-                    "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
-                )
+                new Key.From("docker", "registry", "v2", "blobs", "sha256", "cb", hex, "data")
             )
         );
     }
