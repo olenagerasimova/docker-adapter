@@ -23,6 +23,9 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Concatenation;
+import com.artipie.asto.Content;
+import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
@@ -36,13 +39,18 @@ import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.cactoos.io.BytesOf;
+import org.cactoos.text.HexOf;
 import org.reactivestreams.Publisher;
 
 /**
@@ -51,7 +59,7 @@ import org.reactivestreams.Publisher;
  * and <a href="https://docs.docker.com/registry/spec/api/#blob-upload">Blob Upload</a>.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (3 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class UploadEntity {
@@ -146,9 +154,6 @@ public final class UploadEntity {
      * Slice for PUT method.
      *
      * @since 0.2
-     * @todo #137:30min Compare digests before uploading blob content: rewrite `response`
-     *  method to check digests before storing content to blob store. If digests do not match,
-     *  return BAD_REQUEST response, there is no need to upload content.
      * @todo #137:30min Figure out whether or not should uploaded data be removed if digests do not
      *  match. There is no direct answer in docs, so this should be check experimentally with real
      *  docker registry.
@@ -181,36 +186,62 @@ public final class UploadEntity {
             final Upload upload = this.docker.repo(new RepoName.Valid(name)).upload(uuid);
             return new AsyncResponse(
                 upload.content()
-                    .thenCompose(content -> this.docker.blobStore().put(content))
                     .thenCompose(
-                        blob -> {
-                            final CompletionStage<Response> response;
-                            final Digest digest = blob.digest();
-                            if (digest.string().equals(request.digest().string())) {
-                                response = upload.delete().thenApply(
-                                    ignored -> new RsWithHeaders(
-                                        new RsWithStatus(RsStatus.CREATED),
-                                        new Header(
-                                            "Location",
-                                            String.format(
-                                                "/v2/%s/blobs/%s",
-                                                name.value(),
-                                                digest.string()
-                                            )
-                                        ),
-                                        new Header("Content-Length", "0"),
-                                        new DigestHeader(digest)
-                                    )
-                                );
-                            } else {
-                                response = CompletableFuture.completedStage(
-                                    new RsWithStatus(RsStatus.BAD_REQUEST)
-                                );
+                        content -> Put.digestFromContent(content).thenApply(
+                            digest -> {
+                                final Optional<Content> res;
+                                if (digest.string().equals(request.digest().string())) {
+                                    res = Optional.of(content);
+                                } else {
+                                    res = Optional.empty();
+                                }
+                                return res;
                             }
-                            return response;
-                        }
+                            )
+                    ).thenCompose(
+                        opt -> opt.<CompletionStage<Response>>map(
+                            content -> this.docker.blobStore().put(content).thenCompose(
+                                blob -> {
+                                    final Digest digest = blob.digest();
+                                    return upload.delete().thenApply(
+                                        ignored -> new RsWithHeaders(
+                                            new RsWithStatus(RsStatus.CREATED),
+                                            new Header(
+                                                "Location",
+                                                String.format(
+                                                    "/v2/%s/blobs/%s",
+                                                    name.value(),
+                                                    digest.string()
+                                                )
+                                            ),
+                                            new Header("Content-Length", "0"),
+                                            new DigestHeader(digest)
+                                        )
+                                    );
+                                }
+                            )
+                        ).orElse(
+                            CompletableFuture.completedStage(new RsWithStatus(RsStatus.BAD_REQUEST))
+                        )
                     )
             );
+        }
+
+        /**
+         * Calculates digest from content.
+         * @param content Publisher byte buffer
+         * @return CompletionStage of digest
+         */
+        private static CompletionStage<Digest> digestFromContent(final Content content) {
+            return new Concatenation(content)
+                .single()
+                .map(buf -> new Remaining(buf, true))
+                .map(Remaining::bytes)
+                .<Digest>map(
+                    bytes -> new Digest.Sha256(
+                        new HexOf(new BytesOf(DigestUtils.sha256(bytes))).asString()
+                    )
+                ).to(SingleInterop.get());
         }
     }
 
