@@ -41,7 +41,6 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsEqual;
@@ -115,9 +114,9 @@ class UploadEntityPutTest {
     void returnsBadRequestWhenDigestsDoNotMatch() {
         final String name = "repo";
         final String uuid = UUID.randomUUID().toString();
-        final String content = "something";
+        final byte[] content = "something".getBytes();
         new AstoUpload(this.storage, new RepoName.Valid(name), uuid)
-            .append(Flowable.just(ByteBuffer.wrap(content.getBytes())))
+            .append(Flowable.just(ByteBuffer.wrap(content)))
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
             "Returns 400 status",
@@ -131,7 +130,7 @@ class UploadEntityPutTest {
         MatcherAssert.assertThat(
             "Does not put blob into storage",
             this.storage.exists(
-                new BlobKey(new Digest.Sha256(DigestUtils.sha256Hex(content)))
+                new BlobKey(new Digest.Sha256(content))
             ).join(),
             new IsEqual<>(false)
         );

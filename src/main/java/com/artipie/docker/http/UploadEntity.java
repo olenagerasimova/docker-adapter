@@ -48,9 +48,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.cactoos.io.BytesOf;
-import org.cactoos.text.HexOf;
 import org.reactivestreams.Publisher;
 
 /**
@@ -157,6 +154,10 @@ public final class UploadEntity {
      * @todo #137:30min Figure out whether or not should uploaded data be removed if digests do not
      *  match. There is no direct answer in docs, so this should be check experimentally with real
      *  docker registry.
+     * @todo 142:30min Content is read twice while blob is added: now we first read it to compare
+     *  digests and then to write upload as a blob. Such approach is inefficient and should be
+     *  fixed. One of the possible solution is moving the comparison logic inside
+     *  BlobStore.put() method.
      */
     public static final class Put implements Slice {
 
@@ -187,7 +188,7 @@ public final class UploadEntity {
             return new AsyncResponse(
                 upload.content()
                     .thenCompose(
-                        content -> Put.digestFromContent(content).thenApply(
+                        content -> Put.digest(content).thenApply(
                             digest -> {
                                 final Optional<Content> res;
                                 if (digest.string().equals(request.digest().string())) {
@@ -231,16 +232,17 @@ public final class UploadEntity {
          * Calculates digest from content.
          * @param content Publisher byte buffer
          * @return CompletionStage of digest
+         * @todo #142:30min Introduce separate class from this method: the class can accept
+         *  Content instance as a field and have method to calculate sha256 digest from it. Create
+         *  proper unit test for this class and use it here and in `AstoBlobs#put` method.
          */
-        private static CompletionStage<Digest> digestFromContent(final Content content) {
+        private static CompletionStage<Digest> digest(final Content content) {
             return new Concatenation(content)
                 .single()
                 .map(buf -> new Remaining(buf, true))
                 .map(Remaining::bytes)
                 .<Digest>map(
-                    bytes -> new Digest.Sha256(
-                        new HexOf(new BytesOf(DigestUtils.sha256(bytes))).asString()
-                    )
+                    Digest.Sha256::new
                 ).to(SingleInterop.get());
         }
     }
