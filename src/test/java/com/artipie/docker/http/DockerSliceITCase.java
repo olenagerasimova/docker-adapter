@@ -41,20 +41,14 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration test for {@link DockerSlice}.
  *
- * @todo #54:30min Support tests running on Windows platform
- *  Docker client on Windows cannot pull Linux images.
- *  This requires to select image for tests depending on `os.name` property
- *  and redesign pull tests to push images first.
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class DockerSliceITCase {
 
@@ -189,16 +183,31 @@ final class DockerSliceITCase {
     }
 
     private Image prepareImage() throws Exception {
-        final String digest = String.format(
-            "%s:%s",
-            "sha256",
-            "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
-        );
-        final String original = String.format("busybox@%s", digest);
+        final String name;
+        final String digest;
+        final String layer;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            name = "mcr.microsoft.com/dotnet/core/runtime";
+            digest = String.format(
+                "%s:%s",
+                "sha256",
+                "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
+            );
+            layer = "d9e06d032060";
+        } else {
+            name = "busybox";
+            digest = String.format(
+                "%s:%s",
+                "sha256",
+                "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
+            );
+            layer = "1079c30efc82";
+        }
+        final String original = String.format("%s@%s", name, digest);
         this.run("pull", original);
         final String local = "my-test";
         this.run("tag", original, String.format("%s:latest", local));
-        final Image img = new Image(local, digest, "1079c30efc82");
+        final Image img = new Image(local, digest, layer);
         this.run("tag", original, img.remote());
         return img;
     }
