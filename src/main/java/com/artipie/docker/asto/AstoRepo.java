@@ -134,7 +134,10 @@ public final class AstoRepo implements Repo {
         return manifest.config()
             .thenCompose(
                 config -> manifest.layers().thenApply(
-                    layers -> Stream.concat(Stream.of(config), layers.stream().map(Layer::digest))
+                    layers -> Stream.concat(
+                        Stream.of(config),
+                        layers.stream().filter(layer -> layer.urls().isEmpty()).map(Layer::digest)
+                    )
                 )
             )
             .thenCompose(
