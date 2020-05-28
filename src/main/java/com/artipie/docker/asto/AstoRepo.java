@@ -116,7 +116,8 @@ public final class AstoRepo implements Repo {
     @Override
     public CompletionStage<Upload> startUpload() {
         final String uuid = UUID.randomUUID().toString();
-        return CompletableFuture.completedFuture(new AstoUpload(this.asto, this.name, uuid));
+        final AstoUpload upload = new AstoUpload(this.asto, this.name, uuid);
+        return upload.start().thenApply(ignored -> upload);
     }
 
     @Override

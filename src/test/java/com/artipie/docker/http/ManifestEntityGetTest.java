@@ -74,6 +74,7 @@ class ManifestEntityGetTest {
                 Flowable.empty()
             ),
             success(
+                "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221",
                 new Key.From(
                     "docker", "registry", "v2", "blobs", "sha256", "cb",
                     "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
@@ -84,14 +85,13 @@ class ManifestEntityGetTest {
 
     @Test
     void shouldReturnManifestByDigest() {
+        final String hex = "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221";
+        final String digest = String.format("%s:%s", "sha256", hex);
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
                     "GET",
-                    String.format(
-                        "/v2/my-alpine/manifests/%s",
-                        "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
-                    ),
+                    String.format("/v2/my-alpine/manifests/%s", digest),
                     "HTTP/1.1"
                 ).toString(),
                 Collections.singleton(
@@ -100,10 +100,8 @@ class ManifestEntityGetTest {
                 Flowable.empty()
             ),
             success(
-                new Key.From(
-                    "docker", "registry", "v2", "blobs", "sha256", "cb",
-                    "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
-                )
+                digest,
+                new Key.From("docker", "registry", "v2", "blobs", "sha256", "cb", hex, "data")
             )
         );
     }
@@ -139,7 +137,10 @@ class ManifestEntityGetTest {
         );
     }
 
-    private static Matcher<Response> success(final Key content) {
+    private static Matcher<Response> success(
+        final String digest,
+        final Key content
+    ) {
         return new AllOf<>(
             Arrays.asList(
                 new RsHasStatus(RsStatus.OK),
@@ -147,7 +148,8 @@ class ManifestEntityGetTest {
                     new Header(
                         "Content-Type",
                         "application/vnd.docker.distribution.manifest.v2+json"
-                    )
+                    ),
+                    new Header("Docker-Content-Digest", digest)
                 ),
                 new RsHasBody(
                     new BlockingStorage(new ExampleStorage()).value(content)

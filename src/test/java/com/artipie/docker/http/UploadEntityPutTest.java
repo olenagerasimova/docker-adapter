@@ -26,9 +26,10 @@ package com.artipie.docker.http;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
+import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
-import com.artipie.docker.asto.AstoUpload;
 import com.artipie.docker.asto.BlobKey;
 import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
@@ -40,7 +41,6 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.UUID;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsEqual;
@@ -62,6 +62,11 @@ class UploadEntityPutTest {
     private Storage storage;
 
     /**
+     * Docker registry used in tests.
+     */
+    private Docker docker;
+
+    /**
      * Slice being tested.
      */
     private DockerSlice slice;
@@ -69,15 +74,17 @@ class UploadEntityPutTest {
     @BeforeEach
     void setUp() {
         this.storage = new InMemoryStorage();
-        this.slice = new DockerSlice(new AstoDocker(this.storage));
+        this.docker = new AstoDocker(this.storage);
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
     void shouldFinishUpload() {
         final String name = "test";
-        final String uuid = UUID.randomUUID().toString();
-        new AstoUpload(this.storage, new RepoName.Valid(name), uuid)
-            .append(Flowable.just(ByteBuffer.wrap("data".getBytes())))
+        final Upload upload = this.docker.repo(new RepoName.Valid(name))
+            .startUpload()
+            .toCompletableFuture().join();
+        upload.append(Flowable.just(ByteBuffer.wrap("data".getBytes())))
             .toCompletableFuture().join();
         final String digest = String.format(
             "%s:%s",
@@ -85,7 +92,7 @@ class UploadEntityPutTest {
             "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
         );
         final Response response = this.slice.response(
-            UploadEntityPutTest.requestLine(name, uuid, digest),
+            UploadEntityPutTest.requestLine(name, upload.uuid(), digest),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -113,15 +120,15 @@ class UploadEntityPutTest {
     @Test
     void returnsBadRequestWhenDigestsDoNotMatch() {
         final String name = "repo";
-        final String uuid = UUID.randomUUID().toString();
         final byte[] content = "something".getBytes();
-        new AstoUpload(this.storage, new RepoName.Valid(name), uuid)
-            .append(Flowable.just(ByteBuffer.wrap(content)))
+        final Upload upload = this.docker.repo(new RepoName.Valid(name)).startUpload()
+            .toCompletableFuture().join();
+        upload.append(Flowable.just(ByteBuffer.wrap(content)))
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
             "Returns 400 status",
             this.slice.response(
-                UploadEntityPutTest.requestLine(name, uuid, "sha256:0000"),
+                UploadEntityPutTest.requestLine(name, upload.uuid(), "sha256:0000"),
                 Collections.emptyList(),
                 Flowable.empty()
             ),

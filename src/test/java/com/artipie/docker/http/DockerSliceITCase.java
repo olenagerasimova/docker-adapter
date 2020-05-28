@@ -41,21 +41,19 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration test for {@link DockerSlice}.
  *
- * @todo #54:30min Support tests running on Windows platform
- *  Docker client on Windows cannot pull Linux images.
- *  This requires to select image for tests depending on `os.name` property
- *  and redesign pull tests to push images first.
  * @since 0.2
+ * @todo #131:30min Refactor DockerSliceITCase to have less methods.
+ *  DockerSliceITCase became too big, containing both tests cases and image preparation logic.
+ *  It would be nice to extract logic regarding image preparation and docker client running
+ *  to separate classes.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@DisabledIfSystemProperty(named = "os.name", matches = "Windows.*")
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.AvoidDuplicateLiterals"})
 final class DockerSliceITCase {
 
     // @checkstyle VisibilityModifierCheck (5 lines)
@@ -189,16 +187,59 @@ final class DockerSliceITCase {
     }
 
     private Image prepareImage() throws Exception {
-        final String digest = String.format(
-            "%s:%s",
-            "sha256",
-            "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
+        final Image img;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            img = this.windowsImage();
+        } else {
+            img = this.linuxImage();
+        }
+        return img;
+    }
+
+    /**
+     * Prepare `mcr.microsoft.com/dotnet/core/runtime:3.1.4-nanoserver-1809` image
+     * for Windows Server 2019 amd64 architecture.
+     *
+     * @return Prepared image.
+     * @throws Exception In case preparation fails.
+     */
+    private Image windowsImage() throws Exception {
+        return this.prepare(
+            "mcr.microsoft.com/dotnet/core/runtime",
+            String.format(
+                "%s:%s",
+                "sha256",
+                "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
+            ),
+            "d9e06d032060"
         );
-        final String original = String.format("busybox@%s", digest);
+    }
+
+    /**
+     * Prepare `amd64/busybox:1.31.1` image for linux/amd64 architecture.
+     *
+     * @return Prepared image.
+     * @throws Exception In case preparation fails.
+     */
+    private Image linuxImage() throws Exception {
+        return this.prepare(
+            "busybox",
+            String.format(
+                "%s:%s",
+                "sha256",
+                "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
+            ),
+            "1079c30efc82"
+        );
+    }
+
+    private Image prepare(final String name, final String digest, final String layer)
+        throws Exception {
+        final String original = String.format("%s@%s", name, digest);
         this.run("pull", original);
         final String local = "my-test";
         this.run("tag", original, String.format("%s:latest", local));
-        final Image img = new Image(local, digest, "1079c30efc82");
+        final Image img = new Image(local, digest, layer);
         this.run("tag", original, img.remote());
         return img;
     }
