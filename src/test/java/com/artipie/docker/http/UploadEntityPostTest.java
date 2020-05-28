@@ -23,7 +23,7 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.docker.ExampleStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
 import com.artipie.http.hm.IsHeader;
@@ -59,7 +59,7 @@ class UploadEntityPostTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
     }
 
     @Test

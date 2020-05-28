@@ -44,6 +44,13 @@ public interface Upload {
     String uuid();
 
     /**
+     * Start upload.
+     *
+     * @return Completion or error signal.
+     */
+    CompletionStage<Void> start();
+
+    /**
      * Appends a chunk of data to upload.
      *
      * @param chunk Chunk of data.
