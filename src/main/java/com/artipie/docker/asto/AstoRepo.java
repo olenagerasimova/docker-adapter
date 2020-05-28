@@ -24,8 +24,10 @@
 
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.BlobStore;
@@ -36,8 +38,8 @@ import com.artipie.docker.Upload;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.misc.BytesFlowAs;
 import com.artipie.docker.ref.ManifestRef;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -182,7 +184,13 @@ public final class AstoRepo implements Repo {
                 final CompletionStage<Optional<Digest>> stage;
                 if (exists) {
                     stage = this.asto.value(key)
-                        .thenCompose(pub -> new BytesFlowAs.Text(pub).future())
+                        .thenCompose(
+                            pub -> new Concatenation(pub).single()
+                                .map(buf -> new Remaining(buf, true))
+                                .map(Remaining::bytes)
+                                .map(String::new)
+                                .to(SingleInterop.get())
+                        )
                         .<Digest>thenApply(Digest.FromString::new)
                         .thenApply(Optional::of);
                 } else {
