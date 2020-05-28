@@ -127,10 +127,7 @@ public final class AstoUpload implements Upload {
      * @return Root key.
      */
     Key root() {
-        return new Key.From(
-            RegistryRoot.V2, "repositories", this.name.value(),
-            "_uploads", this.uuid
-        );
+        return new UploadKey(this.name, this.uuid);
     }
 
     /**
