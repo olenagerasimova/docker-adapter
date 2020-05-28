@@ -47,9 +47,13 @@ import org.junit.jupiter.api.io.TempDir;
  * Integration test for {@link DockerSlice}.
  *
  * @since 0.2
+ * @todo #131:30min Refactor DockerSliceITCase to have less methods.
+ *  DockerSliceITCase became too big, containing both tests cases and image preparation logic.
+ *  It would be nice to extract logic regarding image preparation and docker client running
+ *  to separate classes.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.AvoidDuplicateLiterals"})
 final class DockerSliceITCase {
 
     // @checkstyle VisibilityModifierCheck (5 lines)
@@ -183,26 +187,54 @@ final class DockerSliceITCase {
     }
 
     private Image prepareImage() throws Exception {
-        final String name;
-        final String digest;
-        final String layer;
+        final Image img;
         if (System.getProperty("os.name").startsWith("Windows")) {
-            name = "mcr.microsoft.com/dotnet/core/runtime";
-            digest = String.format(
+            img = this.windowsImage();
+        } else {
+            img = this.linuxImage();
+        }
+        return img;
+    }
+
+    /**
+     * Prepare `mcr.microsoft.com/dotnet/core/runtime:3.1.4-nanoserver-1809` image
+     * for Windows Server 2019 amd64 architecture.
+     *
+     * @return Prepared image.
+     * @throws Exception In case preparation fails.
+     */
+    private Image windowsImage() throws Exception {
+        return this.prepare(
+            "mcr.microsoft.com/dotnet/core/runtime",
+            String.format(
                 "%s:%s",
                 "sha256",
                 "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
-            );
-            layer = "d9e06d032060";
-        } else {
-            name = "busybox";
-            digest = String.format(
+            ),
+            "d9e06d032060"
+        );
+    }
+
+    /**
+     * Prepare `amd64/busybox:1.31.1` image for linux/amd64 architecture.
+     *
+     * @return Prepared image.
+     * @throws Exception In case preparation fails.
+     */
+    private Image linuxImage() throws Exception {
+        return this.prepare(
+            "busybox",
+            String.format(
                 "%s:%s",
                 "sha256",
                 "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
-            );
-            layer = "1079c30efc82";
-        }
+            ),
+            "1079c30efc82"
+        );
+    }
+
+    private Image prepare(final String name, final String digest, final String layer)
+        throws Exception {
         final String original = String.format("%s@%s", name, digest);
         this.run("pull", original);
         final String local = "my-test";
