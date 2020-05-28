@@ -284,10 +284,6 @@ final class ManifestEntity {
     /**
      * Manifest base response.
      * @since 0.2
-     * @todo #119:30min Manifest GET and HEAD endpoints have to add Docker-Content-Digest header
-     *  into response. Implement this functionality, for more details read about digest
-     *  https://docs.docker.com/registry/spec/api/#content-digests and manifest endpoints
-     *  https://docs.docker.com/registry/spec/api/#manifest.
      */
     static final class BaseResponse extends Response.Wrap {
 
@@ -300,7 +296,11 @@ final class ManifestEntity {
             super(
                 new AsyncResponse(
                     mnf.mediaType().thenApply(
-                        type -> new RsWithHeaders(StandardRs.EMPTY, new ContentType(type))
+                        type -> new RsWithHeaders(
+                            StandardRs.EMPTY,
+                            new ContentType(type),
+                            new DigestHeader(mnf.digest())
+                        )
                     )
                 )
             );
