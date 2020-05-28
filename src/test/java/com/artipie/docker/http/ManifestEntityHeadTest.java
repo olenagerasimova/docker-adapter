@@ -65,20 +65,24 @@ class ManifestEntityHeadTest {
                 ),
                 Flowable.empty()
             ),
-            new ResponseMatcher()
+            new ResponseMatcher(
+                "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
+            )
         );
     }
 
     @Test
     void shouldRespondOkWhenManifestFoundByDigest() {
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
+        );
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
                     "HEAD",
-                    String.format(
-                        "/v2/my-alpine/manifests/%s",
-                        "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
-                    ),
+                    String.format("/v2/my-alpine/manifests/%s", digest),
                     "HTTP/1.1"
                 ).toString(),
                 Collections.singleton(
@@ -86,7 +90,7 @@ class ManifestEntityHeadTest {
                 ),
                 Flowable.empty()
             ),
-            new ResponseMatcher()
+            new ResponseMatcher(digest)
         );
     }
 

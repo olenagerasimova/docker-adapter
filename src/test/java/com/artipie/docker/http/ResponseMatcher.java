@@ -45,15 +45,18 @@ final class ResponseMatcher extends AllOf<Response> {
 
     /**
      * Ctor.
+     *
+     * @param digest Expected `Docker-Content-Digest` header value.
      */
-    ResponseMatcher() {
+    ResponseMatcher(final String digest) {
         super(
             new ListOf<Matcher<? super Response>>(
                 new RsHasStatus(RsStatus.OK),
                 new RsHasHeaders(
                     new Header(
                         "Content-type", "application/vnd.docker.distribution.manifest.v2+json"
-                    )
+                    ),
+                    new Header("Docker-Content-Digest", digest)
                 )
             )
         );
