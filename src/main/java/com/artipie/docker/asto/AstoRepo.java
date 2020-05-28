@@ -40,6 +40,7 @@ import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -168,7 +169,10 @@ public final class AstoRepo implements Repo {
      * @return Link key.
      */
     private CompletionStage<Void> addLink(final ManifestRef ref, final Digest digest) {
-        return this.asto.save(this.link(ref), new Content.From(digest.string().getBytes()));
+        return this.asto.save(
+            this.link(ref),
+            new Content.From(digest.string().getBytes(StandardCharsets.US_ASCII))
+        );
     }
 
     /**
@@ -188,7 +192,7 @@ public final class AstoRepo implements Repo {
                             pub -> new Concatenation(pub).single()
                                 .map(buf -> new Remaining(buf, true))
                                 .map(Remaining::bytes)
-                                .map(String::new)
+                                .map(bytes -> new String(bytes, StandardCharsets.US_ASCII))
                                 .to(SingleInterop.get())
                         )
                         .<Digest>thenApply(Digest.FromString::new)
