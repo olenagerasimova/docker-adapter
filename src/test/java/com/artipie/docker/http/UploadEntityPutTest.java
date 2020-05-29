@@ -23,11 +23,14 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.asto.BlobKey;
 import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
@@ -40,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,9 +52,14 @@ import org.junit.jupiter.api.Test;
  * Upload PUT endpoint.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 class UploadEntityPutTest {
+
+    /**
+     * Storage used in tests.
+     */
+    private Storage storage;
 
     /**
      * Docker registry used in tests.
@@ -64,7 +73,8 @@ class UploadEntityPutTest {
 
     @BeforeEach
     void setUp() {
-        this.docker = new AstoDocker(new InMemoryStorage());
+        this.storage = new InMemoryStorage();
+        this.docker = new AstoDocker(this.storage);
         this.slice = new DockerSlice(this.docker);
     }
 
@@ -87,6 +97,7 @@ class UploadEntityPutTest {
             Flowable.empty()
         );
         MatcherAssert.assertThat(
+            "Returns 201 status and corresponding headers",
             response,
             new AllOf<>(
                 Arrays.asList(
@@ -99,22 +110,36 @@ class UploadEntityPutTest {
                 )
             )
         );
+        MatcherAssert.assertThat(
+            "Puts blob into storage",
+            this.storage.exists(new BlobKey(new Digest.FromString(digest))).join(),
+            new IsEqual<>(true)
+        );
     }
 
     @Test
     void returnsBadRequestWhenDigestsDoNotMatch() {
         final String name = "repo";
+        final byte[] content = "something".getBytes();
         final Upload upload = this.docker.repo(new RepoName.Valid(name)).startUpload()
             .toCompletableFuture().join();
-        upload.append(Flowable.just(ByteBuffer.wrap("something".getBytes())))
+        upload.append(Flowable.just(ByteBuffer.wrap(content)))
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
+            "Returns 400 status",
             this.slice.response(
                 UploadEntityPutTest.requestLine(name, upload.uuid(), "sha256:0000"),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.BAD_REQUEST)
+        );
+        MatcherAssert.assertThat(
+            "Does not put blob into storage",
+            this.storage.exists(
+                new BlobKey(new Digest.Sha256(content))
+            ).join(),
+            new IsEqual<>(false)
         );
     }
 

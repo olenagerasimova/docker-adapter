@@ -32,14 +32,14 @@ import com.artipie.docker.Digest;
  *
  * @since 0.2
  */
-final class BlobKey extends Key.Wrap {
+public final class BlobKey extends Key.Wrap {
 
     /**
      * Ctor.
      *
      * @param digest Blob digest
      */
-    BlobKey(final Digest digest) {
+    public BlobKey(final Digest digest) {
         super(
             new Key.From(
                 RegistryRoot.V2,

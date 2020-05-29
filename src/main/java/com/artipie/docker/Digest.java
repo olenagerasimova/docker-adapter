@@ -24,6 +24,8 @@
 
 package com.artipie.docker;
 
+import org.apache.commons.codec.digest.DigestUtils;
+
 /**
  * Content Digest.
  * See <a href="https://docs.docker.com/registry/spec/api/#content-digests">Content Digests</a>
@@ -69,6 +71,14 @@ public interface Digest {
          */
         public Sha256(final String hex) {
             this.hex = hex;
+        }
+
+        /**
+         * Ctor.
+         * @param bytes Data to calculate SHA256 digest hex
+         */
+        public Sha256(final byte[] bytes) {
+            this(DigestUtils.sha256Hex(bytes));
         }
 
         @Override
