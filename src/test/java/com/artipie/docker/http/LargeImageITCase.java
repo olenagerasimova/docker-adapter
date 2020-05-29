@@ -49,7 +49,7 @@ import org.junit.jupiter.api.io.TempDir;
  * Integration test for large file pushing scenario of {@link DockerSlice}.
  *
  * @since 0.3
- * @todo #153:45 min Extract common methods with {@link DockerSliceITCase} to parent abstract
+ * @todo #152:45 min Extract common methods with {@link DockerSliceITCase} to parent abstract
  *  class or create JUnit extension.
 */
 @DisabledOnOs(OS.WINDOWS)
