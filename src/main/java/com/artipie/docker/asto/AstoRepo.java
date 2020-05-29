@@ -51,6 +51,7 @@ import java.util.stream.Stream;
  * Asto implementation of {@link Repo}.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class AstoRepo implements Repo {
 
@@ -124,8 +125,18 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public Upload upload(final String uuid) {
-        return new AstoUpload(this.asto, this.name, uuid);
+    public CompletionStage<Optional<Upload>> upload(final String uuid) {
+        return this.asto.list(new UploadKey(this.name, uuid)).thenApply(
+            list -> {
+                final Optional<Upload> upload;
+                if (list.isEmpty()) {
+                    upload = Optional.empty();
+                } else {
+                    upload = Optional.of(new AstoUpload(this.asto, this.name, uuid));
+                }
+                return upload;
+            }
+        );
     }
 
     /**

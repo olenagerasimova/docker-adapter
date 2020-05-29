@@ -48,8 +48,9 @@ import org.junit.jupiter.api.Test;
  * Upload PATCH endpoint.
  *
  * @since 0.2
- * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class UploadEntityPatchTest {
 
     /**
@@ -98,4 +99,16 @@ class UploadEntityPatchTest {
         );
     }
 
+    @Test
+    void shouldReturnNotFoundWhenUploadNotExists() {
+        final Response response = this.slice.response(
+            new RequestLine("PATCH", "/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
+            Collections.emptyList(),
+            Flowable.empty()
+        );
+        MatcherAssert.assertThat(
+            response,
+            new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
 }
