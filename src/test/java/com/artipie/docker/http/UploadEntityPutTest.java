@@ -76,7 +76,7 @@ class UploadEntityPutTest {
     void setUp() {
         this.storage = new InMemoryStorage();
         this.docker = new AstoDocker(this.storage);
-        this.slice = new DockerSlice(this.docker);
+        this.slice = new DockerSlice("/base", this.docker);
     }
 
     @Test
@@ -147,7 +147,7 @@ class UploadEntityPutTest {
     @Test
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
-            new RequestLine("PUT", "/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
+            new RequestLine("PUT", "/base/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -167,7 +167,7 @@ class UploadEntityPutTest {
     private static String requestLine(final String name, final String uuid, final String digest) {
         return new RequestLine(
             "PUT",
-            String.format("/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest),
+            String.format("/base/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest),
             "HTTP/1.1"
         ).toString();
     }
