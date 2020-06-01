@@ -54,6 +54,7 @@ import org.junit.jupiter.api.Test;
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class UploadEntityPutTest {
 
     /**
@@ -140,6 +141,19 @@ class UploadEntityPutTest {
                 new BlobKey(new Digest.Sha256(content))
             ).join(),
             new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUploadNotExists() {
+        final Response response = this.slice.response(
+            new RequestLine("PUT", "/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
+            Collections.emptyList(),
+            Flowable.empty()
+        );
+        MatcherAssert.assertThat(
+            response,
+            new RsHasStatus(RsStatus.NOT_FOUND)
         );
     }
 

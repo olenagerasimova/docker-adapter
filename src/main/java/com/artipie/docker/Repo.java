@@ -64,5 +64,5 @@ public interface Repo {
      * @param uuid Upload UUID.
      * @return Upload.
      */
-    Upload upload(String uuid);
+    CompletionStage<Optional<Upload>> upload(String uuid);
 }

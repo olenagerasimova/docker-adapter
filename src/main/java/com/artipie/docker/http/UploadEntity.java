@@ -29,7 +29,6 @@ import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.Upload;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -140,9 +139,16 @@ public final class UploadEntity {
             final Request request = new Request(line);
             final RepoName name = request.name();
             final String uuid = request.uuid();
-            final Upload upload = this.docker.repo(name).upload(uuid);
             return new AsyncResponse(
-                upload.append(body).thenApply(offset -> new StatusResponse(name, uuid, offset))
+                this.docker.repo(name).upload(uuid).thenCompose(
+                    found -> found.<CompletionStage<Response>>map(
+                        upload -> upload.append(body).thenApply(
+                            offset -> new StatusResponse(name, uuid, offset)
+                        )
+                    ).orElseGet(
+                        () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
+                    )
+                )
             );
         }
     }
@@ -184,47 +190,52 @@ public final class UploadEntity {
             final Request request = new Request(line);
             final RepoName name = request.name();
             final String uuid = request.uuid();
-            final Upload upload = this.docker.repo(new RepoName.Valid(name)).upload(uuid);
             return new AsyncResponse(
-                upload.content()
-                    .thenCompose(
-                        content -> Put.digest(content).thenApply(
-                            digest -> {
-                                final Optional<Content> res;
-                                if (digest.string().equals(request.digest().string())) {
-                                    res = Optional.of(content);
-                                } else {
-                                    res = Optional.empty();
-                                }
-                                return res;
-                            }
-                            )
-                    ).thenCompose(
-                        opt -> opt.<CompletionStage<Response>>map(
-                            content -> this.docker.blobStore().put(content).thenCompose(
-                                blob -> {
-                                    final Digest digest = blob.digest();
-                                    return upload.delete().thenApply(
-                                        ignored -> new RsWithHeaders(
-                                            new RsWithStatus(RsStatus.CREATED),
-                                            new Header(
-                                                "Location",
-                                                String.format(
-                                                    "/v2/%s/blobs/%s",
-                                                    name.value(),
-                                                    digest.string()
-                                                )
-                                            ),
-                                            new Header("Content-Length", "0"),
-                                            new DigestHeader(digest)
+                this.docker.repo(new RepoName.Valid(name)).upload(uuid).thenCompose(
+                    found -> found.map(
+                        upload -> upload.content()
+                            .thenCompose(
+                                content -> Put.digest(content).thenApply(
+                                    digest -> {
+                                        final Optional<Content> res;
+                                        if (digest.string().equals(request.digest().string())) {
+                                            res = Optional.of(content);
+                                        } else {
+                                            res = Optional.empty();
+                                        }
+                                        return res;
+                                    }
+                                )
+                            ).thenApply(
+                                opt -> opt.<Response>map(
+                                    content -> new AsyncResponse(
+                                        this.docker.blobStore().put(content).thenCompose(
+                                            blob -> {
+                                                final Digest digest = blob.digest();
+                                                return upload.delete().thenApply(
+                                                    ignored -> new RsWithHeaders(
+                                                        new RsWithStatus(RsStatus.CREATED),
+                                                        new Header(
+                                                            "Location",
+                                                            String.format(
+                                                                "/v2/%s/blobs/%s",
+                                                                name.value(),
+                                                                digest.string()
+                                                            )
+                                                        ),
+                                                        new Header("Content-Length", "0"),
+                                                        new DigestHeader(digest)
+                                                    )
+                                                );
+                                            }
                                         )
-                                    );
-                                }
+                                    )
+                                ).orElse(new RsWithStatus(RsStatus.BAD_REQUEST))
                             )
-                        ).orElse(
-                            CompletableFuture.completedStage(new RsWithStatus(RsStatus.BAD_REQUEST))
-                        )
+                    ).orElseGet(
+                        () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
+                )
             );
         }
 
