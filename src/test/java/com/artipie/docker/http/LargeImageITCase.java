@@ -23,10 +23,7 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
-import com.artipie.docker.Digest;
-import com.artipie.docker.asto.AstoBlobs;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.vertx.VertxSliceServer;
 import com.google.common.collect.ImmutableList;
@@ -37,7 +34,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -77,17 +73,12 @@ public final class LargeImageITCase {
     private VertxSliceServer server;
 
     /**
-     * The storage.
-     */
-    private Storage storage;
-
-    /**
      * Repository URL.
      */
     private String repo;
 
     @Test
-    public void largeImageWorks() throws Exception {
+    public void largeImageUploadWorks() throws Exception {
         final Path dockerfile = Path.of(
             Objects.requireNonNull(
                 Thread.currentThread().getContextClassLoader()
@@ -99,17 +90,6 @@ public final class LargeImageITCase {
         try {
             this.run("build", ".", "-t", image);
             this.run("push", image);
-            final String repodigest = this.run(
-                "image", "inspect", "--format={{ index .RepoDigests 0 }}", image
-            );
-            final Digest digest = new Digest.FromString(
-                repodigest
-                    .replace(String.format("%s@", image), "").split("\\R")[0]
-            );
-            MatcherAssert.assertThat(
-                "Could not find blob",
-                new AstoBlobs(this.storage).blob(digest).toCompletableFuture().get().isPresent()
-            );
         } finally {
             this.run("rmi", image);
         }
@@ -118,10 +98,13 @@ public final class LargeImageITCase {
     @BeforeEach
     void setUp() {
         this.vertx = Vertx.vertx();
-        this.storage = new FileStorage(this.temp, this.vertx.fileSystem());
         this.server = new VertxSliceServer(
             this.vertx,
-            new DockerSlice(new AstoDocker(this.storage))
+            new DockerSlice(
+                new AstoDocker(
+                    new FileStorage(this.temp, this.vertx.fileSystem())
+                )
+            )
         );
         final int port = this.server.start();
         this.repo = String.format("localhost:%s", port);
