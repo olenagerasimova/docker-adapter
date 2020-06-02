@@ -52,7 +52,7 @@ public final class DockerSlice extends Slice.Wrap {
     /**
      * Ctor.
      *
-     * @param base Base path.
+     * @param base Base path. Base path should start with "/", empty string means no base path.
      * @param docker Docker repository.
      */
     public DockerSlice(final String base, final Docker docker) {
