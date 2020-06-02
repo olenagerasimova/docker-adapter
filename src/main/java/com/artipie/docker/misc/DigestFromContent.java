@@ -36,7 +36,7 @@ import org.cactoos.io.BytesOf;
 import org.cactoos.text.HexOf;
 
 /**
- * Content from digest.
+ * Digest from content.
  * @since 0.2
  */
 public final class DigestFromContent {
