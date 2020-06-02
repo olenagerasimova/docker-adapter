@@ -22,31 +22,9 @@
  * SOFTWARE.
  */
 
-package com.artipie.docker;
-
-import com.artipie.asto.Content;
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
-
 /**
- * Docker registry blob store.
- * @since 0.1
+ * Tests for misc.
+ *
+ * @since 0.2
  */
-public interface BlobStore {
-
-    /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
-     */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
-
-    /**
-     * Put data into blob store and calculate its digest.
-     * @param blob Data flow
-     * @param digest Digest of the data
-     * @return Future with digest
-     */
-    CompletionStage<Blob> put(Content blob, Digest digest);
-}
-
+package com.artipie.docker.misc;

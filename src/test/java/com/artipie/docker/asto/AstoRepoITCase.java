@@ -29,6 +29,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -91,10 +92,12 @@ final class AstoRepoITCase {
 
     @Test
     void shouldReadAddedManifest() {
-        final Blob config = new AstoBlobs(this.storage).put(new Content.From("config".getBytes()))
-            .toCompletableFuture().join();
-        final Blob layer = new AstoBlobs(this.storage).put(new Content.From("layer".getBytes()))
-            .toCompletableFuture().join();
+        final byte[] conf = "config".getBytes();
+        final Blob config = new AstoBlobs(this.storage)
+            .put(new Content.From(conf), new Digest.Sha256(conf)).toCompletableFuture().join();
+        final byte[] lyr = "layer".getBytes();
+        final Blob layer = new AstoBlobs(this.storage)
+            .put(new Content.From(lyr), new Digest.Sha256(lyr)).toCompletableFuture().join();
         final byte[] data = Json.createObjectBuilder()
             .add(
                 "config",
@@ -113,8 +116,8 @@ final class AstoRepoITCase {
                     )
             )
             .build().toString().getBytes();
-        final Blob blob = new AstoBlobs(this.storage).put(new Content.From(data))
-            .toCompletableFuture().join();
+        final Blob blob = new AstoBlobs(this.storage)
+            .put(new Content.From(data), new Digest.Sha256(data)).toCompletableFuture().join();
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("some-tag"));
         this.repo.addManifest(ref, blob).toCompletableFuture().join();
         MatcherAssert.assertThat(this.manifest(ref), new IsEqual<>(data));

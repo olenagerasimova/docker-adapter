@@ -21,32 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-package com.artipie.docker;
+package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import com.artipie.docker.Digest;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Test;
 
 /**
- * Docker registry blob store.
- * @since 0.1
+ * Test for {@link DigestFromContent}.
+ * @since 0.2
  */
-public interface BlobStore {
+class DigestFromContentTest {
 
-    /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
-     */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
+    @Test
+    void calculatesHexCorrectly() {
+        final byte[] data = "abc123".getBytes();
+        MatcherAssert.assertThat(
+            new DigestFromContent(new Content.From(data))
+                .digest().toCompletableFuture().join().string(),
+            new IsEqual<>(new Digest.Sha256(data).toString())
+        );
+    }
 
-    /**
-     * Put data into blob store and calculate its digest.
-     * @param blob Data flow
-     * @param digest Digest of the data
-     * @return Future with digest
-     */
-    CompletionStage<Blob> put(Content blob, Digest digest);
 }
-

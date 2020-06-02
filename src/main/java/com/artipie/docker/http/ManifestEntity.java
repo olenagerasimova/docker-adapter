@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
+import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.manifest.Manifest;
@@ -209,7 +210,10 @@ final class ManifestEntity {
                     .map(Remaining::new)
                     .map(Remaining::bytes)
                     .to(SingleInterop.get())
-                    .thenCompose(bytes -> this.docker.blobStore().put(new Content.From(bytes)))
+                    .thenCompose(
+                        bytes -> this.docker.blobStore()
+                            .put(new Content.From(bytes), new Digest.Sha256(bytes))
+                    )
                     .thenCompose(
                         blob -> this.docker.repo(name).addManifest(ref, blob).thenApply(
                             ignored -> new RsWithHeaders(

@@ -21,32 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.misc;
 
-package com.artipie.docker;
-
+import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import java.util.Optional;
+import com.artipie.asto.Remaining;
+import com.artipie.docker.Digest;
+import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker registry blob store.
- * @since 0.1
+ * Content from digest.
+ * @since 0.2
  */
-public interface BlobStore {
+public final class DigestFromContent {
 
     /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
+     * Content.
      */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
+    private final Content content;
 
     /**
-     * Put data into blob store and calculate its digest.
-     * @param blob Data flow
-     * @param digest Digest of the data
-     * @return Future with digest
+     * Ctor.
+     * @param content Content publisher
      */
-    CompletionStage<Blob> put(Content blob, Digest digest);
+    public DigestFromContent(final Content content) {
+        this.content = content;
+    }
+
+    /**
+     * Calculates digest from content.
+     * @return CompletionStage from digest
+     */
+    public CompletionStage<Digest> digest() {
+        return new Concatenation(this.content)
+            .single()
+            .map(buf -> new Remaining(buf, true))
+            .map(Remaining::bytes)
+            .<Digest>map(
+                Digest.Sha256::new
+            ).to(SingleInterop.get());
+    }
+
 }
-

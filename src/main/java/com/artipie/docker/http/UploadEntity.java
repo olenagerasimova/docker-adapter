@@ -23,12 +23,11 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Concatenation;
-import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
+import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -38,11 +37,9 @@ import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
@@ -191,47 +188,26 @@ public final class UploadEntity {
             final RepoName name = request.name();
             final String uuid = request.uuid();
             return new AsyncResponse(
-                this.docker.repo(new RepoName.Valid(name)).upload(uuid).thenCompose(
+                this.docker.repo(name).upload(uuid).<Response>thenCompose(
                     found -> found.map(
-                        upload -> upload.content()
-                            .thenCompose(
-                                content -> Put.digest(content).thenApply(
-                                    digest -> {
-                                        final Optional<Content> res;
-                                        if (digest.string().equals(request.digest().string())) {
-                                            res = Optional.of(content);
-                                        } else {
-                                            res = Optional.empty();
-                                        }
-                                        return res;
+                        upload -> upload.content().thenCompose(
+                            content -> new DigestFromContent(content).digest().thenCompose(
+                                digest -> {
+                                    final CompletionStage<Response> res;
+                                    if (digest.string().equals(request.digest().string())) {
+                                        res = this.docker.blobStore().put(content, digest)
+                                            .thenCompose(
+                                                blob -> Put.delAndGetResponse(name, upload, digest)
+                                            );
+                                    } else {
+                                        res = CompletableFuture.completedStage(
+                                            new RsWithStatus(RsStatus.BAD_REQUEST)
+                                        );
                                     }
-                                )
-                            ).thenApply(
-                                opt -> opt.<Response>map(
-                                    content -> new AsyncResponse(
-                                        this.docker.blobStore().put(content).thenCompose(
-                                            blob -> {
-                                                final Digest digest = blob.digest();
-                                                return upload.delete().thenApply(
-                                                    ignored -> new RsWithHeaders(
-                                                        new RsWithStatus(RsStatus.CREATED),
-                                                        new Header(
-                                                            "Location",
-                                                            String.format(
-                                                                "/v2/%s/blobs/%s",
-                                                                name.value(),
-                                                                digest.string()
-                                                            )
-                                                        ),
-                                                        new Header("Content-Length", "0"),
-                                                        new DigestHeader(digest)
-                                                    )
-                                                );
-                                            }
-                                        )
-                                    )
-                                ).orElse(new RsWithStatus(RsStatus.BAD_REQUEST))
+                                    return res;
+                                }
                             )
+                        )
                     ).orElseGet(
                         () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
@@ -240,21 +216,30 @@ public final class UploadEntity {
         }
 
         /**
-         * Calculates digest from content.
-         * @param content Publisher byte buffer
-         * @return CompletionStage of digest
-         * @todo #142:30min Introduce separate class from this method: the class can accept
-         *  Content instance as a field and have method to calculate sha256 digest from it. Create
-         *  proper unit test for this class and use it here and in `AstoBlobs#put` method.
+         * Deletes content after upload and returns response.
+         * @param name Repo name
+         * @param upload Upload
+         * @param digest Digest
+         * @return Response as CompletionStage
          */
-        private static CompletionStage<Digest> digest(final Content content) {
-            return new Concatenation(content)
-                .single()
-                .map(buf -> new Remaining(buf, true))
-                .map(Remaining::bytes)
-                .<Digest>map(
-                    Digest.Sha256::new
-                ).to(SingleInterop.get());
+        private static CompletionStage<Response> delAndGetResponse(
+            final RepoName name, final Upload upload, final Digest digest
+        ) {
+            return upload.delete().thenApply(
+                ignored -> new RsWithHeaders(
+                    new RsWithStatus(RsStatus.CREATED),
+                    new Header(
+                        "Location",
+                        String.format(
+                            "/v2/%s/blobs/%s",
+                            name.value(),
+                            digest.string()
+                        )
+                    ),
+                    new Header("Content-Length", "0"),
+                    new DigestHeader(digest)
+                )
+            );
         }
     }
 

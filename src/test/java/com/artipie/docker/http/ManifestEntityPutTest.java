@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
 import com.artipie.docker.asto.AstoBlobs;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.hm.RsHasHeaders;
@@ -122,8 +123,10 @@ class ManifestEntityPutTest {
      * @return Manifest content.
      */
     private Flowable<ByteBuffer> manifest() {
-        final Blob config = new AstoBlobs(this.storage).put(new Content.From("config".getBytes()))
-            .toCompletableFuture().join();
+        final byte[] content = "config".getBytes();
+        final Blob config = new AstoBlobs(this.storage).put(
+            new Content.From(content), new Digest.Sha256(content)
+        ).toCompletableFuture().join();
         final byte[] data = String.format(
             "{\"config\":{\"digest\":\"%s\"},\"layers\":[]}",
             config.digest().string()
