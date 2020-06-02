@@ -24,7 +24,7 @@
 package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import com.artipie.docker.Digest;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -40,8 +40,8 @@ class DigestFromContentTest {
         final byte[] data = "abc123".getBytes();
         MatcherAssert.assertThat(
             new DigestFromContent(new Content.From(data))
-                .digest().toCompletableFuture().join().string(),
-            new IsEqual<>(new Digest.Sha256(data).toString())
+                .digest().toCompletableFuture().join().hex(),
+            new IsEqual<>(DigestUtils.sha256Hex(data))
         );
     }
 

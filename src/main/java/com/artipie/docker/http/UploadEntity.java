@@ -23,10 +23,10 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.Upload;
 import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
@@ -40,6 +40,7 @@ import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
@@ -161,6 +162,9 @@ public final class UploadEntity {
      *  digests and then to write upload as a blob. Such approach is inefficient and should be
      *  fixed. One of the possible solution is moving the comparison logic inside
      *  BlobStore.put() method.
+     * @todo #158:30min Digest is calculated twice while blob is added: first we calculate if here
+     *  and then inside AstoBlobs#put() method. One of the possible solutions here is to pass digest
+     *  to AstoBlobs#put().
      */
     public static final class Put implements Slice {
 
@@ -188,56 +192,50 @@ public final class UploadEntity {
             final RepoName name = request.name();
             final String uuid = request.uuid();
             return new AsyncResponse(
-                this.docker.repo(name).upload(uuid).<Response>thenCompose(
+                this.docker.repo(new RepoName.Valid(name)).upload(uuid).thenCompose(
                     found -> found.map(
-                        upload -> upload.content().thenCompose(
-                            content -> new DigestFromContent(content).digest().thenCompose(
-                                digest -> {
-                                    final CompletionStage<Response> res;
-                                    if (digest.string().equals(request.digest().string())) {
-                                        res = this.docker.blobStore().put(content, digest)
-                                            .thenCompose(
-                                                blob -> Put.delAndGetResponse(name, upload, digest)
-                                            );
-                                    } else {
-                                        res = CompletableFuture.completedStage(
-                                            new RsWithStatus(RsStatus.BAD_REQUEST)
-                                        );
+                        upload -> upload.content()
+                            .thenCompose(
+                                content -> new DigestFromContent(content).digest().thenApply(
+                                    digest -> {
+                                        final Optional<Content> res;
+                                        if (digest.string().equals(request.digest().string())) {
+                                            res = Optional.of(content);
+                                        } else {
+                                            res = Optional.empty();
+                                        }
+                                        return res;
                                     }
-                                    return res;
-                                }
+                                )
+                            ).thenApply(
+                                opt -> opt.<Response>map(
+                                    content -> new AsyncResponse(
+                                        this.docker.blobStore().put(content).thenCompose(
+                                            blob -> {
+                                                final Digest digest = blob.digest();
+                                                return upload.delete().thenApply(
+                                                    ignored -> new RsWithHeaders(
+                                                        new RsWithStatus(RsStatus.CREATED),
+                                                        new Header(
+                                                            "Location",
+                                                            String.format(
+                                                                "/v2/%s/blobs/%s",
+                                                                name.value(),
+                                                                digest.string()
+                                                            )
+                                                        ),
+                                                        new Header("Content-Length", "0"),
+                                                        new DigestHeader(digest)
+                                                    )
+                                                );
+                                            }
+                                        )
+                                    )
+                                ).orElse(new RsWithStatus(RsStatus.BAD_REQUEST))
                             )
-                        )
                     ).orElseGet(
                         () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
-                )
-            );
-        }
-
-        /**
-         * Deletes content after upload and returns response.
-         * @param name Repo name
-         * @param upload Upload
-         * @param digest Digest
-         * @return Response as CompletionStage
-         */
-        private static CompletionStage<Response> delAndGetResponse(
-            final RepoName name, final Upload upload, final Digest digest
-        ) {
-            return upload.delete().thenApply(
-                ignored -> new RsWithHeaders(
-                    new RsWithStatus(RsStatus.CREATED),
-                    new Header(
-                        "Location",
-                        String.format(
-                            "/v2/%s/blobs/%s",
-                            name.value(),
-                            digest.string()
-                        )
-                    ),
-                    new Header("Content-Length", "0"),
-                    new DigestHeader(digest)
                 )
             );
         }

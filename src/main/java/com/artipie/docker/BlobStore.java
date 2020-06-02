@@ -44,9 +44,8 @@ public interface BlobStore {
     /**
      * Put data into blob store and calculate its digest.
      * @param blob Data flow
-     * @param digest Digest of the data
      * @return Future with digest
      */
-    CompletionStage<Blob> put(Content blob, Digest digest);
+    CompletionStage<Blob> put(Content blob);
 }
 

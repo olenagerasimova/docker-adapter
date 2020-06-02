@@ -41,9 +41,13 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import org.cactoos.io.BytesOf;
+import org.cactoos.text.HexOf;
 
 /**
  * Asto {@link BlobStore} implementation.
@@ -91,7 +95,13 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     @SuppressWarnings("PMD.OnlyOneReturn")
-    public CompletionStage<Blob> put(final Content blob, final Digest digest) {
+    public CompletionStage<Blob> put(final Content blob) {
+        final MessageDigest sha;
+        try {
+            sha = MessageDigest.getInstance("SHA-256");
+        } catch (final NoSuchAlgorithmException err) {
+            throw new IllegalStateException("This runtime doesn't have SHA-256 algorithm", err);
+        }
         final Path tmp;
         final FileChannel out;
         try {
@@ -102,24 +112,34 @@ public final class AstoBlobs implements BlobStore {
         }
         return Flowable.fromPublisher(blob)
             .flatMapCompletable(
-                buf -> Completable.fromAction(
-                    () -> {
-                        while (buf.hasRemaining()) {
-                            out.write(buf);
+                buf -> Completable.mergeArray(
+                    Completable.fromAction(
+                        () -> {
+                            buf.mark();
+                            sha.update(buf);
+                            buf.reset();
                         }
-                    })
-            )
+                    ),
+                    Completable.fromAction(
+                        () -> {
+                            while (buf.hasRemaining()) {
+                                out.write(buf);
+                            }
+                        }
+                    )
+                )
+            ).andThen(Single.fromCallable(() -> new HexOf(new BytesOf(sha.digest())).asString()))
+            .map(Digest.Sha256::new)
+            .cast(Digest.class)
             .doOnTerminate(out::close)
-            .andThen(Single.just(out))
             .flatMap(
-                ignored -> SingleInterop.fromFuture(
+                digest -> SingleInterop.fromFuture(
                     this.asto.save(
                         new BlobKey(digest),
                         new Content.From(new RxFile(tmp, AstoBlobs.FILE_SYSTEM).flow())
-                    ).<Blob>thenApply(empty -> new AstoBlob(this.asto, digest))
+                    ).<Blob>thenApply(ignored -> new AstoBlob(this.asto, digest))
                 )
-            )
-            .doAfterTerminate(() -> Files.delete(tmp))
+            ).doOnTerminate(() -> Files.delete(tmp))
             .to(SingleInterop.get()).toCompletableFuture();
     }
 }
