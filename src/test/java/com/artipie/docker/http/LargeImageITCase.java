@@ -34,6 +34,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,7 +91,8 @@ public final class LargeImageITCase {
         final String image = String.format("%s/%s", this.repo, LargeImageITCase.IMAGE);
         try {
             this.run("build", ".", "-t", image);
-            this.run("push", image);
+            final String output = this.run("push", image);
+            MatcherAssert.assertThat(output, new StringContains(false, "Pushed"));
         } finally {
             this.run("rmi", image);
         }
