@@ -113,13 +113,12 @@ final class AstoRepoITCase {
                     )
             )
             .build().toString().getBytes();
-        final Blob blob = new AstoBlobs(this.storage).put(new Content.From(data))
-            .toCompletableFuture().join();
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("some-tag"));
-        this.repo.addManifest(ref, blob).toCompletableFuture().join();
+        final Manifest manifest = this.repo.addManifest(ref, new Content.From(data))
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(this.manifest(ref), new IsEqual<>(data));
         MatcherAssert.assertThat(
-            this.manifest(new ManifestRef.FromDigest(blob.digest())),
+            this.manifest(new ManifestRef.FromDigest(manifest.digest())),
             new IsEqual<>(data)
         );
     }

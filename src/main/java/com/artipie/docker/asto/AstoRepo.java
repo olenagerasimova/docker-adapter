@@ -29,7 +29,6 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.artipie.docker.Blob;
 import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Repo;
@@ -84,16 +83,24 @@ public final class AstoRepo implements Repo {
     }
 
     @Override
-    public CompletionStage<Void> addManifest(final ManifestRef ref, final Blob blob) {
-        final Digest digest = blob.digest();
-        return blob.content()
-            .thenApply(source -> new JsonManifest(blob.digest(), source))
-            .thenCompose(this::validate)
+    public CompletionStage<Manifest> addManifest(final ManifestRef ref, final Content content) {
+        return new Concatenation(content)
+            .single()
+            .map(Remaining::new)
+            .map(Remaining::bytes)
+            .to(SingleInterop.get())
+            .thenCompose(bytes -> this.blobs.put(new Content.From(bytes)))
             .thenCompose(
-                ignored -> CompletableFuture.allOf(
-                    this.addLink(new ManifestRef.FromDigest(digest), digest).toCompletableFuture(),
-                    this.addLink(ref, digest).toCompletableFuture()
-                )
+                blob -> {
+                    final Digest digest = blob.digest();
+                    return blob.content()
+                        .thenApply(source -> new JsonManifest(digest, source))
+                        .thenCompose(
+                            manifest -> this.validate(manifest)
+                                .thenCompose(nothing -> this.addManifestLinks(ref, digest))
+                                .thenApply(nothing -> manifest)
+                        );
+                }
             );
     }
 
@@ -171,6 +178,20 @@ public final class AstoRepo implements Repo {
                     ).toArray(CompletableFuture[]::new)
                 )
             );
+    }
+
+    /**
+     * Adds links to manifest blob by reference and by digest.
+     *
+     * @param ref Manifest reference.
+     * @param digest Blob digest.
+     * @return Signal that links are added.
+     */
+    private CompletableFuture<Void> addManifestLinks(final ManifestRef ref, final Digest digest) {
+        return CompletableFuture.allOf(
+            this.addLink(new ManifestRef.FromDigest(digest), digest).toCompletableFuture(),
+            this.addLink(ref, digest).toCompletableFuture()
+        );
     }
 
     /**
