@@ -28,7 +28,6 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.RxFile;
 import com.artipie.docker.Blob;
-import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
@@ -54,7 +53,7 @@ import java.util.concurrent.CompletionStage;
  * @checkstyle ReturnCountCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-public final class AstoBlobs implements BlobStore {
+final class AstoBlobs implements BlobStore {
 
     /**
      * Vert.x file system used for temporary files.
@@ -70,7 +69,7 @@ public final class AstoBlobs implements BlobStore {
      * Ctor.
      * @param asto Storage
      */
-    public AstoBlobs(final Storage asto) {
+    AstoBlobs(final Storage asto) {
         this.asto = asto;
     }
 
