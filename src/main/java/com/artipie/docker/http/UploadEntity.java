@@ -23,12 +23,11 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -38,7 +37,6 @@ import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
@@ -164,6 +162,9 @@ public final class UploadEntity {
      *  digests and then to write upload as a blob. Such approach is inefficient and should be
      *  fixed. One of the possible solution is moving the comparison logic inside
      *  BlobStore.put() method.
+     * @todo #158:30min Digest is calculated twice while blob is added: first we calculate if here
+     *  and then inside AstoBlobs#put() method. One of the possible solutions here is to pass digest
+     *  to AstoBlobs#put().
      */
     public static final class Put implements Slice {
 
@@ -195,7 +196,7 @@ public final class UploadEntity {
                     found -> found.map(
                         upload -> upload.content()
                             .thenCompose(
-                                content -> Put.digest(content).thenApply(
+                                content -> new DigestFromContent(content).digest().thenApply(
                                     digest -> {
                                         final Optional<Content> res;
                                         if (digest.string().equals(request.digest().string())) {
@@ -237,24 +238,6 @@ public final class UploadEntity {
                     )
                 )
             );
-        }
-
-        /**
-         * Calculates digest from content.
-         * @param content Publisher byte buffer
-         * @return CompletionStage of digest
-         * @todo #142:30min Introduce separate class from this method: the class can accept
-         *  Content instance as a field and have method to calculate sha256 digest from it. Create
-         *  proper unit test for this class and use it here and in `AstoBlobs#put` method.
-         */
-        private static CompletionStage<Digest> digest(final Content content) {
-            return new Concatenation(content)
-                .single()
-                .map(buf -> new Remaining(buf, true))
-                .map(Remaining::bytes)
-                .<Digest>map(
-                    Digest.Sha256::new
-                ).to(SingleInterop.get());
         }
     }
 
