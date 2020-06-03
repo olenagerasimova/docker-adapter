@@ -62,25 +62,25 @@ public final class DigestFromContent {
         final MessageDigest sha;
         try {
             sha = MessageDigest.getInstance("SHA-256");
-            return Flowable.fromPublisher(this.content)
-                .flatMapCompletable(
-                    buf -> Completable.fromAction(
-                        () -> {
-                            buf.mark();
-                            sha.update(buf);
-                            buf.reset();
-                        }
-                    )
-                )
-                .<Digest>andThen(
-                    Single.fromCallable(
-                        () -> new Digest.Sha256(new HexOf(new BytesOf(sha.digest())).asString())
-                    )
-                )
-                .to(SingleInterop.get()).toCompletableFuture();
         } catch (final NoSuchAlgorithmException err) {
             throw new IllegalStateException("This runtime doesn't have SHA-256 algorithm", err);
         }
+        return Flowable.fromPublisher(this.content)
+            .flatMapCompletable(
+                buf -> Completable.fromAction(
+                    () -> {
+                        buf.mark();
+                        sha.update(buf);
+                        buf.reset();
+                    }
+                )
+            )
+            .<Digest>andThen(
+                Single.fromCallable(
+                    () -> new Digest.Sha256(new HexOf(new BytesOf(sha.digest())).asString())
+                )
+            )
+            .to(SingleInterop.get()).toCompletableFuture();
     }
 
 }
