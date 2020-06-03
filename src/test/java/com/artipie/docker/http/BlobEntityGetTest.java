@@ -59,7 +59,7 @@ class BlobEntityGetTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice("/base", new AstoDocker(new ExampleStorage()));
     }
 
     @Test
@@ -72,7 +72,7 @@ class BlobEntityGetTest {
         final Response response = this.slice.response(
             new RequestLine(
                 "GET",
-                String.format("/v2/test/blobs/%s", digest),
+                String.format("/base/v2/test/blobs/%s", digest),
                 "HTTP/1.1"
             ).toString(),
             Collections.emptyList(),
@@ -107,7 +107,7 @@ class BlobEntityGetTest {
                 new RequestLine(
                     "GET",
                     String.format(
-                        "/v2/test/blobs/%s",
+                        "/base/v2/test/blobs/%s",
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
                     ),
                     "HTTP/1.1"

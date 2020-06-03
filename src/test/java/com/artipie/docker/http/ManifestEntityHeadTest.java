@@ -52,14 +52,14 @@ class ManifestEntityHeadTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice("/base", new AstoDocker(new ExampleStorage()));
     }
 
     @Test
     void shouldRespondOkWhenManifestFoundByTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("HEAD", "/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
+                new RequestLine("HEAD", "/base/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),
@@ -82,7 +82,7 @@ class ManifestEntityHeadTest {
             this.slice.response(
                 new RequestLine(
                     "HEAD",
-                    String.format("/v2/my-alpine/manifests/%s", digest),
+                    String.format("/base/v2/my-alpine/manifests/%s", digest),
                     "HTTP/1.1"
                 ).toString(),
                 Collections.singleton(
@@ -98,7 +98,7 @@ class ManifestEntityHeadTest {
     void shouldReturnNotFoundForUnknownTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("HEAD", "/v2/my-alpine/manifests/2", "HTTP/1.1").toString(),
+                new RequestLine("HEAD", "/base/v2/my-alpine/manifests/2", "HTTP/1.1").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
