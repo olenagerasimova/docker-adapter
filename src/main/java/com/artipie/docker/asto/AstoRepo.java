@@ -50,6 +50,15 @@ import java.util.stream.Stream;
  * Asto implementation of {@link Repo}.
  *
  * @since 0.1
+ * @todo #168:30min Extract reading `Content` as byte array.
+ *  This code is duplicated in many places in project:
+ *  ```
+ *  new Concatenation(content).single()
+ *             .map(Remaining::new)
+ *             .map(Remaining::bytes)
+ *             .to(SingleInterop.get())
+ *  ```
+ *  It could be extracted into class and used everywhere.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class AstoRepo implements Repo {
@@ -189,8 +198,8 @@ public final class AstoRepo implements Repo {
      */
     private CompletableFuture<Void> addManifestLinks(final ManifestRef ref, final Digest digest) {
         return CompletableFuture.allOf(
-            this.addLink(new ManifestRef.FromDigest(digest), digest).toCompletableFuture(),
-            this.addLink(ref, digest).toCompletableFuture()
+            this.addLink(new ManifestRef.FromDigest(digest), digest),
+            this.addLink(ref, digest)
         );
     }
 
@@ -201,11 +210,11 @@ public final class AstoRepo implements Repo {
      * @param digest Blob digest.
      * @return Link key.
      */
-    private CompletionStage<Void> addLink(final ManifestRef ref, final Digest digest) {
+    private CompletableFuture<Void> addLink(final ManifestRef ref, final Digest digest) {
         return this.asto.save(
             this.link(ref),
             new Content.From(digest.string().getBytes(StandardCharsets.US_ASCII))
-        );
+        ).toCompletableFuture();
     }
 
     /**
