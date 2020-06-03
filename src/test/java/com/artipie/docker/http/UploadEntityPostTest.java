@@ -59,13 +59,13 @@ class UploadEntityPostTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
+        this.slice = new DockerSlice("/base", new AstoDocker(new InMemoryStorage()));
     }
 
     @Test
     void shouldReturnInitialUploadStatus() {
         final Response response = this.slice.response(
-            new RequestLine("POST", "/v2/test/blobs/uploads/", "HTTP/1.1").toString(),
+            new RequestLine("POST", "/base/v2/test/blobs/uploads/", "HTTP/1.1").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
