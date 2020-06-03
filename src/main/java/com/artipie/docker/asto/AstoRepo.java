@@ -53,10 +53,7 @@ import java.util.stream.Stream;
  * @todo #168:30min Extract reading `Content` as byte array.
  *  This code is duplicated in many places in project:
  *  ```
- *  new Concatenation(content).single()
- *             .map(Remaining::new)
- *             .map(Remaining::bytes)
- *             .to(SingleInterop.get())
+ *  new Concatenation(content).single().map(Remaining::new).map(Remaining::bytes)
  *  ```
  *  It could be extracted into class and used everywhere.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
