@@ -24,6 +24,7 @@
 
 package com.artipie.docker;
 
+import com.artipie.asto.Content;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
@@ -39,10 +40,10 @@ public interface Repo {
      * Adds manifest stored as blob.
      *
      * @param ref Manifest reference.
-     * @param blob Blob with manifest content.
-     * @return Completion of manifest adding process.
+     * @param content Manifest content.
+     * @return Added manifest.
      */
-    CompletionStage<Void> addManifest(ManifestRef ref, Blob blob);
+    CompletionStage<Manifest> addManifest(ManifestRef ref, Content content);
 
     /**
      * Resolve docker image manifest file by reference.

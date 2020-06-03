@@ -23,9 +23,7 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.manifest.Manifest;
@@ -41,7 +39,6 @@ import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -204,25 +201,17 @@ final class ManifestEntity {
             final RepoName name = request.name();
             final ManifestRef ref = request.reference();
             return new AsyncResponse(
-                new Concatenation(body)
-                    .single()
-                    .map(Remaining::new)
-                    .map(Remaining::bytes)
-                    .to(SingleInterop.get())
-                    .thenCompose(bytes -> this.docker.blobStore().put(new Content.From(bytes)))
-                    .thenCompose(
-                        blob -> this.docker.repo(name).addManifest(ref, blob).thenApply(
-                            ignored -> new RsWithHeaders(
-                                new RsWithStatus(RsStatus.CREATED),
-                                new Header(
-                                    "Location",
-                                    String.format("/v2/%s/manifests/%s", name.value(), ref.string())
-                                ),
-                                new ContentLength("0"),
-                                new DigestHeader(blob.digest())
-                            )
-                        )
+                this.docker.repo(name).addManifest(ref, new Content.From(body)).thenApply(
+                    manifest -> new RsWithHeaders(
+                        new RsWithStatus(RsStatus.CREATED),
+                        new Header(
+                            "Location",
+                            String.format("/v2/%s/manifests/%s", name.value(), ref.string())
+                        ),
+                        new ContentLength("0"),
+                        new DigestHeader(manifest.digest())
                     )
+                )
             );
         }
     }
