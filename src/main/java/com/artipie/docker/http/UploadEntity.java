@@ -26,7 +26,6 @@ package com.artipie.docker.http;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.Upload;
 import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
@@ -197,7 +196,9 @@ public final class UploadEntity {
                                     if (digest.string().equals(request.digest().string())) {
                                         res = this.docker.blobStore().put(content, digest)
                                             .thenCompose(
-                                                blob -> Put.delAndGetResponse(name, upload, digest)
+                                                blob -> upload.delete().thenApply(
+                                                    ignored -> Put.getResponse(name,  digest)
+                                                )
                                             );
                                     } else {
                                         res = CompletableFuture.completedStage(
@@ -216,29 +217,26 @@ public final class UploadEntity {
         }
 
         /**
-         * Deletes content after upload and returns response.
+         * Returns response.
          * @param name Repo name
-         * @param upload Upload
          * @param digest Digest
          * @return Response as CompletionStage
          */
-        private static CompletionStage<Response> delAndGetResponse(
-            final RepoName name, final Upload upload, final Digest digest
+        private static Response getResponse(
+            final RepoName name, final Digest digest
         ) {
-            return upload.delete().thenApply(
-                ignored -> new RsWithHeaders(
-                    new RsWithStatus(RsStatus.CREATED),
-                    new Header(
-                        "Location",
-                        String.format(
-                            "/v2/%s/blobs/%s",
-                            name.value(),
-                            digest.string()
-                        )
-                    ),
-                    new Header("Content-Length", "0"),
-                    new DigestHeader(digest)
-                )
+            return new RsWithHeaders(
+                new RsWithStatus(RsStatus.CREATED),
+                new Header(
+                    "Location",
+                    String.format(
+                        "/v2/%s/blobs/%s",
+                        name.value(),
+                        digest.string()
+                    )
+                ),
+                new Header("Content-Length", "0"),
+                new DigestHeader(digest)
             );
         }
     }
