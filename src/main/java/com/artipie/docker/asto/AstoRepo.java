@@ -83,7 +83,7 @@ public final class AstoRepo implements Repo {
     @Override
     public CompletionStage<Manifest> addManifest(final ManifestRef ref, final Content content) {
         return new ByteBufPublisher(content).bytes()
-            .thenCompose(bytes -> this.blobs.put(new Content.From(bytes)))
+            .thenCompose(bytes -> this.blobs.put(new Content.From(bytes), new Digest.Sha256(bytes)))
             .thenCompose(
                 blob -> {
                     final Digest digest = blob.digest();
