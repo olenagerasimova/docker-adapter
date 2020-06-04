@@ -24,10 +24,8 @@
 
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
@@ -37,8 +35,8 @@ import com.artipie.docker.Upload;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,12 +48,6 @@ import java.util.stream.Stream;
  * Asto implementation of {@link Repo}.
  *
  * @since 0.1
- * @todo #168:30min Extract reading `Content` as byte array.
- *  This code is duplicated in many places in project:
- *  ```
- *  new Concatenation(content).single().map(Remaining::new).map(Remaining::bytes)
- *  ```
- *  It could be extracted into class and used everywhere.
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class AstoRepo implements Repo {
@@ -90,11 +82,7 @@ public final class AstoRepo implements Repo {
 
     @Override
     public CompletionStage<Manifest> addManifest(final ManifestRef ref, final Content content) {
-        return new Concatenation(content)
-            .single()
-            .map(Remaining::new)
-            .map(Remaining::bytes)
-            .to(SingleInterop.get())
+        return new ByteBufPublisher(content).bytes()
             .thenCompose(bytes -> this.blobs.put(new Content.From(bytes), new Digest.Sha256(bytes)))
             .thenCompose(
                 blob -> {
@@ -228,11 +216,7 @@ public final class AstoRepo implements Repo {
                 if (exists) {
                     stage = this.asto.value(key)
                         .thenCompose(
-                            pub -> new Concatenation(pub).single()
-                                .map(buf -> new Remaining(buf, true))
-                                .map(Remaining::bytes)
-                                .map(bytes -> new String(bytes, StandardCharsets.US_ASCII))
-                                .to(SingleInterop.get())
+                            pub -> new ByteBufPublisher(pub).asciiString()
                         )
                         .<Digest>thenApply(Digest.FromString::new)
                         .thenApply(Optional::of);

@@ -24,47 +24,34 @@
 package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import java.io.ByteArrayInputStream;
-import java.util.concurrent.CompletionStage;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+import java.nio.charset.StandardCharsets;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Test;
 
 /**
- * Data in JSON format.
- *
- * @since 0.2
+ * Test for {@link ByteBufPublisher}.
+ * @since 0.3
  */
-public final class Json {
+class ByteBufPublisherTest {
 
-    /**
-     * JSON bytes.
-     */
-    private final Content source;
-
-    /**
-     * Ctor.
-     *
-     * @param source JSON bytes.
-     */
-    public Json(final Content source) {
-        this.source = source;
+    @Test
+    void readsBytes() {
+        final byte[] buf = "abc".getBytes();
+        MatcherAssert.assertThat(
+            new ByteBufPublisher(new Content.From(buf)).bytes().toCompletableFuture().join(),
+            new IsEqual<>(buf)
+        );
     }
 
-    /**
-     * Reads content as JSON object.
-     *
-     * @return JSON object.
-     */
-    public CompletionStage<JsonObject> object() {
-        return new ByteBufPublisher(this.source)
-            .bytes()
-            .thenApply(ByteArrayInputStream::new)
-            .thenApply(
-                stream -> {
-                    try (JsonReader reader = javax.json.Json.createReader(stream)) {
-                        return reader.readObject();
-                    }
-                }
-            );
+    @Test
+    void readsString() {
+        final byte[] buf = "абв".getBytes();
+        MatcherAssert.assertThat(
+            new ByteBufPublisher(new Content.From(buf)).asciiString()
+                .toCompletableFuture().join(),
+            new IsEqual<>(new String(buf, StandardCharsets.US_ASCII))
+        );
     }
+
 }
