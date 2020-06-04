@@ -27,7 +27,6 @@ import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Single;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletionStage;
@@ -38,8 +37,10 @@ import org.reactivestreams.Publisher;
  * Using this class keep in mind that it reads ByteBuffer from publisher into memory and is not
  * suitable for large content.
  * @since 0.3
+ * @todo #176:30min Find all `Concatenation` usages in the project (mostly it's used in tests) and
+ *  replace them with this class usages.
  */
-public final class ReadContentAs {
+public final class ByteBufPublisher {
 
     /**
      * Content to read bytes from.
@@ -50,7 +51,7 @@ public final class ReadContentAs {
      * Ctor.
      * @param content Content
      */
-    public ReadContentAs(final Content content) {
+    public ByteBufPublisher(final Content content) {
         this.content = content;
     }
 
@@ -58,40 +59,28 @@ public final class ReadContentAs {
      * Ctor.
      * @param content Content
      */
-    public ReadContentAs(final Publisher<ByteBuffer> content) {
+    public ByteBufPublisher(final Publisher<ByteBuffer> content) {
         this(new Content.From(content));
     }
 
     /**
      * Reads bytes from content into memory.
-     * @param restore Restore position
      * @return Byte array as CompletionStage
      */
-    public CompletionStage<byte[]> bytes(final boolean restore) {
-        return this.single(restore).to(SingleInterop.get());
-    }
-
-    /**
-     * Reads bytes from content as {@link StandardCharsets#US_ASCII} string.
-     * @param restore Restore position
-     * @return String as CompletionStage
-     */
-    public CompletionStage<String> asciiString(final boolean restore) {
-        return this.single(restore)
-            .map(bytes -> new String(bytes, StandardCharsets.US_ASCII))
+    public CompletionStage<byte[]> bytes() {
+        return new Concatenation(this.content)
+            .single()
+            .map(buf -> new Remaining(buf, true))
+            .map(Remaining::bytes)
             .to(SingleInterop.get());
     }
 
     /**
-     * Single bytes value response.
-     * @param restore Restore position
-     * @return Single of bytes
+     * Reads bytes from content as {@link StandardCharsets#US_ASCII} string.
+     * @return String as CompletionStage
      */
-    public Single<byte[]> single(final boolean restore) {
-        return new Concatenation(this.content)
-            .single()
-            .map(buf -> new Remaining(buf, restore))
-            .map(Remaining::bytes);
+    public CompletionStage<String> asciiString() {
+        return this.bytes().thenApply(bytes -> new String(bytes, StandardCharsets.US_ASCII));
     }
 
 }

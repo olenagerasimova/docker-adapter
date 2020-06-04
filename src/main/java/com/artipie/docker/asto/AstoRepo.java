@@ -35,7 +35,7 @@ import com.artipie.docker.Upload;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.misc.ReadContentAs;
+import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -82,7 +82,7 @@ public final class AstoRepo implements Repo {
 
     @Override
     public CompletionStage<Manifest> addManifest(final ManifestRef ref, final Content content) {
-        return new ReadContentAs(content).bytes(false)
+        return new ByteBufPublisher(content).bytes()
             .thenCompose(bytes -> this.blobs.put(new Content.From(bytes)))
             .thenCompose(
                 blob -> {
@@ -216,7 +216,7 @@ public final class AstoRepo implements Repo {
                 if (exists) {
                     stage = this.asto.value(key)
                         .thenCompose(
-                            pub -> new ReadContentAs(pub).asciiString(true)
+                            pub -> new ByteBufPublisher(pub).asciiString()
                         )
                         .<Digest>thenApply(Digest.FromString::new)
                         .thenApply(Optional::of);

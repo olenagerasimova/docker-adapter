@@ -23,10 +23,7 @@
  */
 package com.artipie.docker.misc;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.CompletionStage;
 import javax.json.JsonObject;
@@ -59,18 +56,15 @@ public final class Json {
      * @return JSON object.
      */
     public CompletionStage<JsonObject> object() {
-        return new Concatenation(this.source)
-            .single()
-            .map(buf -> new Remaining(buf, true))
-            .map(Remaining::bytes)
-            .map(ByteArrayInputStream::new)
-            .map(
+        return new ByteBufPublisher(this.source)
+            .bytes()
+            .thenApply(ByteArrayInputStream::new)
+            .thenApply(
                 stream -> {
                     try (JsonReader reader = javax.json.Json.createReader(stream)) {
                         return reader.readObject();
                     }
                 }
-            )
-            .to(SingleInterop.get());
+            );
     }
 }
