@@ -95,7 +95,7 @@ public final class AstoRepo implements Repo {
             .map(Remaining::new)
             .map(Remaining::bytes)
             .to(SingleInterop.get())
-            .thenCompose(bytes -> this.blobs.put(new Content.From(bytes)))
+            .thenCompose(bytes -> this.blobs.put(new Content.From(bytes), new Digest.Sha256(bytes)))
             .thenCompose(
                 blob -> {
                     final Digest digest = blob.digest();
