@@ -23,12 +23,11 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Concatenation;
-import com.artipie.asto.Remaining;
+import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
+import com.artipie.docker.misc.ByteBufPublisher;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -88,19 +87,12 @@ class AstoUploadTest {
     }
 
     @Test
-    void shouldReadAppendedChunk() throws Exception {
+    void shouldReadAppendedChunk() {
         final byte[] chunk = "chunk".getBytes();
         this.upload.start().toCompletableFuture().join();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.upload.content()
-                .thenApply(Concatenation::new)
-                .thenApply(Concatenation::single)
-                .thenCompose(single -> single.to(SingleInterop.get()))
-                .thenApply(Remaining::new)
-                .thenApply(Remaining::bytes)
-                .toCompletableFuture()
-                .get(),
+            new ByteBufPublisher(this.contentFromUpload()).bytes().toCompletableFuture().join(),
             new IsEqual<>(chunk)
         );
     }
@@ -111,7 +103,7 @@ class AstoUploadTest {
         MatcherAssert.assertThat(
             Assertions.assertThrows(
                 CompletionException.class,
-                () -> this.upload.content().toCompletableFuture().join()
+                this::contentFromUpload
             ).getCause(),
             new IsInstanceOf(IllegalStateException.class)
         );
@@ -135,7 +127,7 @@ class AstoUploadTest {
     }
 
     @Test
-    void shouldAppendedSecondChunkIfFirstOneFailed() throws Exception {
+    void shouldAppendedSecondChunkIfFirstOneFailed() {
         this.upload.start().toCompletableFuture().join();
         try {
             this.upload.append(Flowable.error(new IllegalStateException()))
@@ -146,14 +138,7 @@ class AstoUploadTest {
         final byte[] chunk = "content".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.upload.content()
-                .thenApply(Concatenation::new)
-                .thenApply(Concatenation::single)
-                .thenCompose(single -> single.to(SingleInterop.get()))
-                .thenApply(Remaining::new)
-                .thenApply(Remaining::bytes)
-                .toCompletableFuture()
-                .get(),
+            new ByteBufPublisher(this.contentFromUpload()).bytes().toCompletableFuture().join(),
             new IsEqual<>(chunk)
         );
     }
@@ -168,5 +153,13 @@ class AstoUploadTest {
             this.storage.list(this.upload.root()).get(),
             new IsEmptyCollection<>()
         );
+    }
+
+    /**
+     * Gets content from upload.
+     * @return Content
+     */
+    private Content contentFromUpload() {
+        return this.upload.content().toCompletableFuture().join();
     }
 }
