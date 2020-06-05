@@ -37,8 +37,6 @@ import org.reactivestreams.Publisher;
  * Using this class keep in mind that it reads ByteBuffer from publisher into memory and is not
  * suitable for large content.
  * @since 0.3
- * @todo #176:30min Find all `Concatenation` usages in the project (mostly it's used in tests) and
- *  replace them with this class usages.
  */
 public final class ByteBufPublisher {
 
