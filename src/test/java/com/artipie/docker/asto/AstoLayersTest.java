@@ -23,14 +23,12 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
+import com.artipie.docker.misc.ByteBufPublisher;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -92,11 +90,8 @@ final class AstoLayersTest {
     }
 
     private static byte[] bytes(final Blob blob) {
-        return new Concatenation(blob.content().toCompletableFuture().join())
-            .single()
-            .map(Remaining::new)
-            .map(Remaining::bytes)
-            .to(SingleInterop.get())
+        return new ByteBufPublisher(blob.content().toCompletableFuture().join())
+            .bytes()
             .toCompletableFuture().join();
     }
 }
