@@ -25,6 +25,7 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
+import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.http.Connection;
@@ -186,15 +187,16 @@ public final class UploadEntity {
             final Request request = new Request(line);
             final RepoName name = request.name();
             final String uuid = request.uuid();
+            final Repo repo = this.docker.repo(name);
             return new AsyncResponse(
-                this.docker.repo(name).upload(uuid).<Response>thenCompose(
+                repo.upload(uuid).<Response>thenCompose(
                     found -> found.map(
                         upload -> upload.content().thenCompose(
                             content -> new DigestFromContent(content).digest().thenCompose(
                                 digest -> {
                                     final CompletionStage<Response> res;
                                     if (digest.string().equals(request.digest().string())) {
-                                        res = this.docker.blobStore().put(content, digest)
+                                        res = repo.layers().put(content, digest)
                                             .thenCompose(
                                                 blob -> upload.delete().thenApply(
                                                     ignored -> Put.getResponse(name,  digest)
