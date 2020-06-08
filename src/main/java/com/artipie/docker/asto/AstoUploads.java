@@ -21,24 +21,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Storage;
-import com.artipie.docker.BlobStore;
-import com.artipie.docker.Layers;
-import com.artipie.docker.Manifests;
-import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
 import com.artipie.docker.Uploads;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 
 /**
- * Asto implementation of {@link Repo}.
+ * Asto implementation of {@link Uploads}.
  *
- * @since 0.1
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @since 0.3
  */
-public final class AstoRepo implements Repo {
+public final class AstoUploads implements Uploads {
 
     /**
      * Asto storage.
@@ -51,35 +49,35 @@ public final class AstoRepo implements Repo {
     private final RepoName name;
 
     /**
-     * Blobs storage.
-     */
-    private final BlobStore blobs;
-
-    /**
      * Ctor.
      *
      * @param asto Asto storage
-     * @param blobs Blobs storage.
      * @param name Repository name
      */
-    public AstoRepo(final Storage asto, final BlobStore blobs, final RepoName name) {
+    public AstoUploads(final Storage asto, final RepoName name) {
         this.asto = asto;
-        this.blobs = blobs;
         this.name = name;
     }
 
     @Override
-    public Layers layers() {
-        return new AstoLayers(this.blobs);
+    public CompletionStage<Upload> start() {
+        final String uuid = UUID.randomUUID().toString();
+        final AstoUpload upload = new AstoUpload(this.asto, this.name, uuid);
+        return upload.start().thenApply(ignored -> upload);
     }
 
     @Override
-    public Manifests manifests() {
-        return new AstoManifests(this.asto, this.blobs, this.name);
-    }
-
-    @Override
-    public Uploads uploads() {
-        return new AstoUploads(this.asto, this.name);
+    public CompletionStage<Optional<Upload>> get(final String uuid) {
+        return this.asto.list(new UploadKey(this.name, uuid)).thenApply(
+            list -> {
+                final Optional<Upload> upload;
+                if (list.isEmpty()) {
+                    upload = Optional.empty();
+                } else {
+                    upload = Optional.of(new AstoUpload(this.asto, this.name, uuid));
+                }
+                return upload;
+            }
+        );
     }
 }

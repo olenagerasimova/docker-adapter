@@ -99,7 +99,7 @@ public final class UploadEntity {
         ) {
             final RepoName name = new Request(line).name();
             return new AsyncResponse(
-                this.docker.repo(name).startUpload().thenApply(
+                this.docker.repo(name).uploads().start().thenApply(
                     upload -> new StatusResponse(name, upload.uuid(), 0)
                 )
             );
@@ -137,7 +137,7 @@ public final class UploadEntity {
             final RepoName name = request.name();
             final String uuid = request.uuid();
             return new AsyncResponse(
-                this.docker.repo(name).upload(uuid).thenCompose(
+                this.docker.repo(name).uploads().get(uuid).thenCompose(
                     found -> found.<CompletionStage<Response>>map(
                         upload -> upload.append(body).thenApply(
                             offset -> new StatusResponse(name, uuid, offset)
@@ -189,7 +189,7 @@ public final class UploadEntity {
             final String uuid = request.uuid();
             final Repo repo = this.docker.repo(name);
             return new AsyncResponse(
-                repo.upload(uuid).<Response>thenCompose(
+                repo.uploads().get(uuid).<Response>thenCompose(
                     found -> found.map(
                         upload -> upload.content().thenCompose(
                             content -> new DigestFromContent(content).digest().thenCompose(

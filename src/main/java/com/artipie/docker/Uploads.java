@@ -24,30 +24,28 @@
 
 package com.artipie.docker;
 
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+
 /**
  * Docker repository files and metadata.
- * @since 0.1
+ *
+ * @since 0.3
  */
-public interface Repo {
+public interface Uploads {
 
     /**
-     * Repository layers.
+     * Start new upload.
      *
-     * @return Layers.
+     * @return Upload.
      */
-    Layers layers();
+    CompletionStage<Upload> start();
 
     /**
-     * Repository manifests.
+     * Find upload by UUID.
      *
-     * @return Manifests.
+     * @param uuid Upload UUID.
+     * @return Upload.
      */
-    Manifests manifests();
-
-    /**
-     * Repository uploads.
-     *
-     * @return Uploads.
-     */
-    Uploads uploads();
+    CompletionStage<Optional<Upload>> get(String uuid);
 }
