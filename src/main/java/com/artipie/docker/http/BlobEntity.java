@@ -186,6 +186,9 @@ final class BlobEntity {
      * HTTP request to blob entity.
      *
      * @since 0.2
+     * @todo #167:30min Add test coverage for `BlobEntity.Request` class.
+     *  This class lacks test coverage. It should be tested both against
+     *  valid and invalid request lines.
      */
     private static final class Request {
 
