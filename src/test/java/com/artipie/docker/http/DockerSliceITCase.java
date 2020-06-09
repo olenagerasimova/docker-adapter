@@ -190,7 +190,7 @@ final class DockerSliceITCase extends AbstractDockerITCase {
      *
      * @since 0.2
      */
-    private class Image {
+    private static class Image {
 
         /**
          * Repo URL.
