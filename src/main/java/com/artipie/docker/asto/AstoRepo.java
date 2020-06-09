@@ -29,6 +29,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.docker.BlobStore;
 import com.artipie.docker.Digest;
+import com.artipie.docker.Layers;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
@@ -78,6 +79,11 @@ public final class AstoRepo implements Repo {
         this.asto = asto;
         this.blobs = blobs;
         this.name = name;
+    }
+
+    @Override
+    public Layers layers() {
+        return new AstoLayers(this.blobs);
     }
 
     @Override

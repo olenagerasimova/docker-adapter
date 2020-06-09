@@ -21,56 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+package com.artipie.docker.asto;
 
-package com.artipie.docker;
-
-import com.artipie.asto.Content;
-import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.ref.ManifestRef;
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.Repo;
+import com.artipie.docker.RepoName;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
- * Docker repository files and metadata.
- * @since 0.1
+ * Tests for {@link AstoRepo}.
+ *
+ * @since 0.3
  */
-public interface Repo {
+final class AstoRepoTest {
 
     /**
-     * Repository layers.
-     *
-     * @return Layers.
+     * Layers tested.
      */
-    Layers layers();
+    private Repo repo;
 
-    /**
-     * Adds manifest stored as blob.
-     *
-     * @param ref Manifest reference.
-     * @param content Manifest content.
-     * @return Added manifest.
-     */
-    CompletionStage<Manifest> addManifest(ManifestRef ref, Content content);
+    @BeforeEach
+    void setUp() {
+        final InMemoryStorage storage = new InMemoryStorage();
+        this.repo = new AstoRepo(storage, new AstoBlobs(storage), new RepoName.Valid("test"));
+    }
 
-    /**
-     * Resolve docker image manifest file by reference.
-     * @param ref Manifest reference
-     * @return Flow with manifest data, or empty if absent
-     */
-    CompletionStage<Optional<Manifest>> manifest(ManifestRef ref);
-
-    /**
-     * Start new upload.
-     *
-     * @return Upload.
-     */
-    CompletionStage<Upload> startUpload();
-
-    /**
-     * Find upload by UUID.
-     *
-     * @param uuid Upload UUID.
-     * @return Upload.
-     */
-    CompletionStage<Optional<Upload>> upload(String uuid);
+    @Test
+    void shouldCreateAstoLayers() {
+        MatcherAssert.assertThat(
+            this.repo.layers(),
+            Matchers.instanceOf(AstoLayers.class)
+        );
+    }
 }

@@ -112,12 +112,17 @@ public final class AstoBlobs implements BlobStore {
             .doOnTerminate(out::close)
             .andThen(Single.just(out))
             .flatMap(
-                ignored -> SingleInterop.fromFuture(
-                    this.asto.save(
-                        new BlobKey(digest),
-                        new Content.From(new RxFile(tmp, AstoBlobs.FILE_SYSTEM).flow())
-                    ).<Blob>thenApply(empty -> new AstoBlob(this.asto, digest))
-                )
+                ignored -> {
+                    final RxFile file = new RxFile(tmp, AstoBlobs.FILE_SYSTEM);
+                    return file.size().flatMap(
+                        size -> SingleInterop.fromFuture(
+                            this.asto.save(
+                                new BlobKey(digest),
+                                new Content.From(size, file.flow())
+                            ).<Blob>thenApply(empty -> new AstoBlob(this.asto, digest))
+                        )
+                    );
+                }
             )
             .doAfterTerminate(() -> Files.delete(tmp))
             .to(SingleInterop.get()).toCompletableFuture();
