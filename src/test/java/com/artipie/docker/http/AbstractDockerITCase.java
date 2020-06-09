@@ -39,7 +39,9 @@ import org.junit.jupiter.api.BeforeAll;
  * Abstract class for integration tests using docker command.
  *
  * @since 0.3
- * @todo #187:60min Implement junit extension instead of abstract claass.
+ * @todo #187:60min Implement JUnit extension instead of abstract class.
+ *  After that, remove {@link AbstractDockerITCase} and use extension in
+ *  {@link DockerSliceITCase} and {@link LargeImageITCase}.
  */
 public class AbstractDockerITCase {
     /**
