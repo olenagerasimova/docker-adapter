@@ -25,52 +25,30 @@
 package com.artipie.docker;
 
 import com.artipie.asto.Content;
-import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Docker repository files and metadata.
- * @since 0.1
+ *
+ * @since 0.3
  */
-public interface Repo {
+public interface Layers {
 
     /**
-     * Repository layers.
+     * Add layer to repository.
      *
-     * @return Layers.
+     * @param content Layer content.
+     * @param digest Layer digest.
+     * @return Added layer blob.
      */
-    Layers layers();
+    CompletionStage<Blob> put(Content content, Digest digest);
 
     /**
-     * Adds manifest stored as blob.
+     * Find layer by digest.
      *
-     * @param ref Manifest reference.
-     * @param content Manifest content.
-     * @return Added manifest.
-     */
-    CompletionStage<Manifest> addManifest(ManifestRef ref, Content content);
-
-    /**
-     * Resolve docker image manifest file by reference.
-     * @param ref Manifest reference
+     * @param digest Layer digest.
      * @return Flow with manifest data, or empty if absent
      */
-    CompletionStage<Optional<Manifest>> manifest(ManifestRef ref);
-
-    /**
-     * Start new upload.
-     *
-     * @return Upload.
-     */
-    CompletionStage<Upload> startUpload();
-
-    /**
-     * Find upload by UUID.
-     *
-     * @param uuid Upload UUID.
-     * @return Upload.
-     */
-    CompletionStage<Optional<Upload>> upload(String uuid);
+    CompletionStage<Optional<Blob>> get(Digest digest);
 }

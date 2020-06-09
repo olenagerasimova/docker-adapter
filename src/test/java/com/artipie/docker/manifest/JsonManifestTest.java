@@ -23,10 +23,9 @@
  */
 package com.artipie.docker.manifest;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.docker.Digest;
+import com.artipie.docker.misc.ByteBufPublisher;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -182,7 +181,7 @@ class JsonManifestTest {
             new Content.From(data)
         );
         MatcherAssert.assertThat(
-            new Remaining(new Concatenation(manifest.content()).single().blockingGet()).bytes(),
+            new ByteBufPublisher(manifest.content()).bytes().toCompletableFuture().join(),
             new IsEqual<>(data)
         );
     }

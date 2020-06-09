@@ -22,55 +22,44 @@
  * SOFTWARE.
  */
 
-package com.artipie.docker;
+package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
-import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.ref.ManifestRef;
+import com.artipie.docker.Blob;
+import com.artipie.docker.BlobStore;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Layers;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker repository files and metadata.
- * @since 0.1
+ * Asto implementation of {@link Layers}.
+ *
+ * @since 0.3
  */
-public interface Repo {
+public final class AstoLayers implements Layers {
 
     /**
-     * Repository layers.
+     * Blobs storage.
+     */
+    private final BlobStore blobs;
+
+    /**
+     * Ctor.
      *
-     * @return Layers.
+     * @param blobs Blobs storage.
      */
-    Layers layers();
+    public AstoLayers(final BlobStore blobs) {
+        this.blobs = blobs;
+    }
 
-    /**
-     * Adds manifest stored as blob.
-     *
-     * @param ref Manifest reference.
-     * @param content Manifest content.
-     * @return Added manifest.
-     */
-    CompletionStage<Manifest> addManifest(ManifestRef ref, Content content);
+    @Override
+    public CompletionStage<Blob> put(final Content content, final Digest digest) {
+        return this.blobs.put(content, digest);
+    }
 
-    /**
-     * Resolve docker image manifest file by reference.
-     * @param ref Manifest reference
-     * @return Flow with manifest data, or empty if absent
-     */
-    CompletionStage<Optional<Manifest>> manifest(ManifestRef ref);
-
-    /**
-     * Start new upload.
-     *
-     * @return Upload.
-     */
-    CompletionStage<Upload> startUpload();
-
-    /**
-     * Find upload by UUID.
-     *
-     * @param uuid Upload UUID.
-     * @return Upload.
-     */
-    CompletionStage<Optional<Upload>> upload(String uuid);
+    @Override
+    public CompletionStage<Optional<Blob>> get(final Digest digest) {
+        return this.blobs.blob(digest);
+    }
 }

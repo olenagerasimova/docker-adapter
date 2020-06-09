@@ -24,9 +24,7 @@
 
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Concatenation;
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
@@ -35,8 +33,8 @@ import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
 import java.util.Optional;
 import javax.json.Json;
 import org.hamcrest.MatcherAssert;
@@ -128,13 +126,12 @@ final class AstoRepoITCase {
 
     private byte[] manifest(final ManifestRef ref) {
         return this.repo.manifest(ref)
-            .thenApply(Optional::get)
-            .thenApply(Manifest::content)
-            .thenApply(Concatenation::new)
-            .thenCompose(c -> c.single().to(SingleInterop.get()))
-            .thenApply(Remaining::new)
-            .thenApply(Remaining::bytes)
-            .toCompletableFuture()
-            .join();
+            .thenApply(
+                opt ->
+                    opt.map(
+                        mnf -> new ByteBufPublisher(mnf.content())
+                            .bytes().toCompletableFuture().join()
+                    ).orElseThrow()
+            ).toCompletableFuture().join();
     }
 }
