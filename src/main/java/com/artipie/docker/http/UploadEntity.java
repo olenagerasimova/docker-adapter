@@ -244,6 +244,37 @@ public final class UploadEntity {
     }
 
     /**
+     * Slice for GET method.
+     *
+     * @since 0.3
+     */
+    public static final class Get implements Slice {
+
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Ctor.
+         *
+         * @param docker Docker repository.
+         */
+        Get(final Docker docker) {
+            this.docker = docker;
+        }
+
+        @Override
+        public Response response(
+            final String line,
+            final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body
+        ) {
+            throw new UnsupportedOperationException("Not implemented yet");
+        }
+    }
+
+    /**
      * HTTP request to upload blob entity.
      *
      * @since 0.2
