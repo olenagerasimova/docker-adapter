@@ -50,7 +50,7 @@ public interface Manifests {
      * Get manifest by reference.
      *
      * @param ref Manifest reference
-     * @return Manifest found, empty if manifest is absent.
+     * @return Manifest instance if it is found, empty if manifest is absent.
      */
     CompletionStage<Optional<Manifest>> get(ManifestRef ref);
 }
