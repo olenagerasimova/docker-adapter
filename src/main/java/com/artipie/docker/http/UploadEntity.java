@@ -270,7 +270,25 @@ public final class UploadEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            throw new UnsupportedOperationException("Not implemented yet");
+            final Request request = new Request(line);
+            final RepoName name = request.name();
+            final String uuid = request.uuid();
+            return new AsyncResponse(
+                this.docker.repo(name).upload(uuid).thenCompose(
+                    found -> found.<CompletionStage<Response>>map(
+                        upload -> upload.size().thenApply(
+                            size -> new RsWithHeaders(
+                                new RsWithStatus(RsStatus.NO_CONTENT),
+                                new Header("Content-Length", "0"),
+                                new Header("Range", String.format("0-%d", Math.max(size - 1, 0))),
+                                new Header("Docker-Upload-UUID", uuid)
+                            )
+                        )
+                    ).orElseGet(
+                        () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
+                    )
+                )
+            );
         }
     }
 
