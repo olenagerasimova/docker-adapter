@@ -103,7 +103,7 @@ public final class UploadEntityGetTest {
             .uploads()
             .start()
             .toCompletableFuture().join();
-        upload.append(new Content.From(new byte[1]));
+        upload.append(new Content.From(new byte[1])).toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
             new RequestLine("GET", String.format("/base%s", path), "HTTP/1.1").toString(),
@@ -133,7 +133,7 @@ public final class UploadEntityGetTest {
             .start()
             .toCompletableFuture().join();
         // @checkstyle MagicNumberCheck (1 line)
-        upload.append(new Content.From(new byte[128]));
+        upload.append(new Content.From(new byte[128])).toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response get = this.slice.response(
             new RequestLine("GET", String.format("/base%s", path), "HTTP/1.1").toString(),
