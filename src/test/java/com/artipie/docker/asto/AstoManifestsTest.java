@@ -41,12 +41,14 @@ import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests for {@link AstoManifests}.
  *
  * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @checkstyle MagicNumberCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class AstoManifestsTest {
@@ -72,6 +74,7 @@ final class AstoManifestsTest {
     }
 
     @Test
+    @Timeout(5)
     void shouldReadManifest() {
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("1"));
         final byte[] manifest = this.manifest(ref);
@@ -80,6 +83,7 @@ final class AstoManifestsTest {
     }
 
     @Test
+    @Timeout(5)
     void shouldReadNoManifestIfAbsent() throws Exception {
         final Optional<Manifest> manifest = this.manifests.get(
             new ManifestRef.FromTag(new Tag.Valid("2"))
@@ -88,6 +92,7 @@ final class AstoManifestsTest {
     }
 
     @Test
+    @Timeout(5)
     void shouldReadAddedManifest() {
         final byte[] conf = "config".getBytes();
         final Blob config = new AstoBlobs(this.storage)
@@ -125,12 +130,8 @@ final class AstoManifestsTest {
 
     private byte[] manifest(final ManifestRef ref) {
         return this.manifests.get(ref)
-            .thenApply(
-                opt ->
-                    opt.map(
-                        mnf -> new ByteBufPublisher(mnf.content())
-                            .bytes().toCompletableFuture().join()
-                    ).orElseThrow()
+            .thenCompose(
+                opt -> opt.map(mnf -> new ByteBufPublisher(mnf.content()).bytes()).orElseThrow()
             ).toCompletableFuture().join();
     }
 }
