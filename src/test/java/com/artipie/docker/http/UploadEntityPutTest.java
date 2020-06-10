@@ -82,8 +82,8 @@ class UploadEntityPutTest {
     @Test
     void shouldFinishUpload() {
         final String name = "test";
-        final Upload upload = this.docker.repo(new RepoName.Valid(name))
-            .startUpload()
+        final Upload upload = this.docker.repo(new RepoName.Valid(name)).uploads()
+            .start()
             .toCompletableFuture().join();
         upload.append(Flowable.just(ByteBuffer.wrap("data".getBytes())))
             .toCompletableFuture().join();
@@ -122,7 +122,7 @@ class UploadEntityPutTest {
     void returnsBadRequestWhenDigestsDoNotMatch() {
         final String name = "repo";
         final byte[] content = "something".getBytes();
-        final Upload upload = this.docker.repo(new RepoName.Valid(name)).startUpload()
+        final Upload upload = this.docker.repo(new RepoName.Valid(name)).uploads().start()
             .toCompletableFuture().join();
         upload.append(Flowable.just(ByteBuffer.wrap(content)))
             .toCompletableFuture().join();
