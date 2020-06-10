@@ -274,7 +274,7 @@ public final class UploadEntity {
             final RepoName name = request.name();
             final String uuid = request.uuid();
             return new AsyncResponse(
-                this.docker.repo(name).upload(uuid).thenCompose(
+                this.docker.repo(name).uploads().get(uuid).thenCompose(
                     found -> found.<CompletionStage<Response>>map(
                         upload -> upload.offset().thenApply(
                             offset -> new RsWithHeaders(

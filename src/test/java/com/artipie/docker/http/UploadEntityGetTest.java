@@ -72,7 +72,8 @@ public final class UploadEntityGetTest {
     void shouldReturnZeroOffsetAfterUploadStarted() {
         final String name = "test";
         final Upload upload = this.docker.repo(new RepoName.Valid(name))
-            .startUpload()
+            .uploads()
+            .start()
             .toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
@@ -99,7 +100,8 @@ public final class UploadEntityGetTest {
     void shouldReturnZeroOffsetAfterOneByteUploaded() {
         final String name = "test";
         final Upload upload = this.docker.repo(new RepoName.Valid(name))
-            .startUpload()
+            .uploads()
+            .start()
             .toCompletableFuture().join();
         upload.append(new Content.From(new byte[1]));
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
@@ -127,7 +129,8 @@ public final class UploadEntityGetTest {
     void shouldReturnOffsetDuringUpload() {
         final String name = "test";
         final Upload upload = this.docker.repo(new RepoName.Valid(name))
-            .startUpload()
+            .uploads()
+            .start()
             .toCompletableFuture().join();
         // @checkstyle MagicNumberCheck (1 line)
         upload.append(new Content.From(new byte[128]));
