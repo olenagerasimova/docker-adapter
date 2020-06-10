@@ -25,7 +25,6 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Storage;
-import com.artipie.docker.BlobStore;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -51,11 +50,6 @@ public final class AstoDocker implements Docker {
 
     @Override
     public Repo repo(final RepoName name) {
-        return new AstoRepo(this.asto, this.blobStore(), name);
-    }
-
-    @Override
-    public BlobStore blobStore() {
-        return new AstoBlobs(this.asto);
+        return new AstoRepo(this.asto, new AstoBlobs(this.asto), name);
     }
 }
