@@ -36,12 +36,10 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import io.vertx.reactivex.core.Vertx;
 import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -55,11 +53,6 @@ import org.junit.jupiter.api.Test;
 @SuppressWarnings({"PMD.AvoidThrowingRawExceptionTypes", "PMD.AvoidDuplicateLiterals"})
 public final class UploadEntityGetTest {
     /**
-     * Vertx instance.
-     */
-    private Vertx vertx;
-
-    /**
      * Docker registry used in tests.
      */
     private Docker docker;
@@ -71,14 +64,8 @@ public final class UploadEntityGetTest {
 
     @BeforeEach
     void setUp() {
-        this.vertx = Vertx.vertx();
         this.docker = new AstoDocker(new InMemoryStorage());
         this.slice = new DockerSlice("/base", this.docker);
-    }
-
-    @AfterEach
-    void tearDown() {
-        this.vertx.close();
     }
 
     @Test

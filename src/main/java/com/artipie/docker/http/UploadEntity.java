@@ -276,11 +276,11 @@ public final class UploadEntity {
             return new AsyncResponse(
                 this.docker.repo(name).upload(uuid).thenCompose(
                     found -> found.<CompletionStage<Response>>map(
-                        upload -> upload.size().thenApply(
-                            size -> new RsWithHeaders(
+                        upload -> upload.offset().thenApply(
+                            offset -> new RsWithHeaders(
                                 new RsWithStatus(RsStatus.NO_CONTENT),
                                 new Header("Content-Length", "0"),
-                                new Header("Range", String.format("0-%d", Math.max(size - 1, 0))),
+                                new Header("Range", String.format("0-%d", offset)),
                                 new Header("Docker-Upload-UUID", uuid)
                             )
                         )

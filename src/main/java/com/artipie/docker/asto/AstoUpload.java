@@ -99,8 +99,8 @@ public final class AstoUpload implements Upload {
     }
 
     @Override
-    public CompletionStage<Long> size() {
-        return this.storage.size(this.data());
+    public CompletionStage<Long> offset() {
+        return this.storage.size(this.data()).thenApply(size -> Math.max(size - 1, 0));
     }
 
     @Override
