@@ -27,7 +27,7 @@ import com.artipie.asto.Content;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Blob stored in {@link BlobStore}.
+ * Blob stored in repository.
  *
  * @since 0.2
  */

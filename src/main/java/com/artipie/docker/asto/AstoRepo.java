@@ -25,7 +25,6 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Storage;
-import com.artipie.docker.BlobStore;
 import com.artipie.docker.Layers;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;

@@ -22,9 +22,11 @@
  * SOFTWARE.
  */
 
-package com.artipie.docker;
+package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -32,7 +34,7 @@ import java.util.concurrent.CompletionStage;
  * Docker registry blob store.
  * @since 0.1
  */
-public interface BlobStore {
+interface BlobStore {
 
     /**
      * Load blob by digest.
