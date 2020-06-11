@@ -61,7 +61,7 @@ public final class UploadEntity {
      * RegEx pattern for path.
      */
     public static final Pattern PATH = Pattern.compile(
-        "^/v2/(?<name>[^/]*)/blobs/uploads/(?<uuid>.*)$"
+        "^/v2/(?<name>([a-z0-9]+([._-]?[a-z0-9]+)*/?)+)/blobs/uploads/(?<uuid>.*)$"
     );
 
     /**
