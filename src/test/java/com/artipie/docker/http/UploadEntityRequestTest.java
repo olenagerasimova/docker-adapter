@@ -63,9 +63,16 @@ class UploadEntityRequestTest {
     @Test
     void shouldReadUuid() {
         final UploadEntity.Request request = new UploadEntity.Request(
-            new RequestLine("PATCH", "/v2/my-repo/blobs/uploads/123-abc", "HTTP/1.1").toString()
+            new RequestLine(
+                "PATCH",
+                "/v2/my-repo/blobs/uploads/a9e48d2a-c939-441d-bb53-b3ad9ab67709",
+                "HTTP/1.1"
+            ).toString()
         );
-        MatcherAssert.assertThat(request.uuid(), new IsEqual<>("123-abc"));
+        MatcherAssert.assertThat(
+            request.uuid(),
+            new IsEqual<>("a9e48d2a-c939-441d-bb53-b3ad9ab67709")
+        );
     }
 
     @Test
