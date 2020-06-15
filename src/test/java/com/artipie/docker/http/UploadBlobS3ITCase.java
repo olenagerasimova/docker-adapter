@@ -24,11 +24,14 @@
 package com.artipie.docker.http;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
+import com.artipie.asto.Storage;
 import com.artipie.asto.s3.S3Storage;
+import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.asto.BlobKey;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rs.RsStatus;
@@ -38,6 +41,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.UUID;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -51,8 +55,9 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  * Integration test for uploading blob to S3.
  *
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-class UploadBlobS3IT {
+class UploadBlobS3ITCase {
 
     /**
      * Mock S3 server.
@@ -61,6 +66,11 @@ class UploadBlobS3IT {
     static final S3MockExtension MOCK = S3MockExtension.builder()
         .withSecureConnection(false)
         .build();
+
+    /**
+     * Storage used in tests.
+     */
+    private Storage storage;
 
     /**
      * Docker registry used in tests.
@@ -85,7 +95,8 @@ class UploadBlobS3IT {
             .build();
         final String bucket = UUID.randomUUID().toString();
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
-        this.docker = new AstoDocker(new S3Storage(client, bucket));
+        this.storage = new S3Storage(client, bucket);
+        this.docker = new AstoDocker(this.storage);
         this.slice = new DockerSlice("/base", this.docker);
     }
 
@@ -97,6 +108,11 @@ class UploadBlobS3IT {
             .toCompletableFuture().join();
         upload.append(Flowable.just(ByteBuffer.wrap("data".getBytes())))
             .toCompletableFuture().join();
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
+        );
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
@@ -105,7 +121,7 @@ class UploadBlobS3IT {
                         "/base/v2/%s/blobs/uploads/%s?digest=%s",
                         name,
                         upload.uuid(),
-                        "sha256:3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
+                        digest
                     ),
                     "HTTP/1.1"
                 ).toString(),
@@ -113,6 +129,10 @@ class UploadBlobS3IT {
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.CREATED)
+        );
+        MatcherAssert.assertThat(
+            this.storage.exists(new BlobKey(new Digest.FromString(digest))).join(),
+            new IsEqual<>(true)
         );
     }
 }
