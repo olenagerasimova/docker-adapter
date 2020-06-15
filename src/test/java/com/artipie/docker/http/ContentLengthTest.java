@@ -24,45 +24,37 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.Headers;
-import com.artipie.http.rq.RqHeaders;
 import com.artipie.http.rs.Header;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
- * Content-Length header.
+ * Test case for {@link ContentLength}.
  *
- * @since 0.2
+ * @since 0.3
  */
-public final class ContentLength extends Header.Wrap {
+public final class ContentLengthTest {
 
-    /**
-     * Header name.
-     */
-    private static final String NAME = "Content-Length";
-
-    /**
-     * Ctor.
-     *
-     * @param value Header value.
-     */
-    public ContentLength(final String value) {
-        super(new Header(ContentLength.NAME, value));
+    @Test
+    void shouldExtractValueFromHeaders() {
+        final long length = 123;
+        final ContentLength header = new ContentLength(
+            new Headers.From(
+                new Header("Content-Type", "application/octet-stream"),
+                new Header("Content-Length", String.valueOf(length)),
+                new Header("X-Something", "Some Value")
+            )
+        );
+        MatcherAssert.assertThat(header.value(), new IsEqual<>(length));
     }
 
-    /**
-     * Ctor.
-     *
-     * @param headers Headers to extract header from.
-     */
-    public ContentLength(final Headers headers) {
-        this(new RqHeaders.Single(headers, ContentLength.NAME).asString());
-    }
-
-    /**
-     * Read header as numeric value.
-     *
-     * @return Header value.
-     */
-    public long value() {
-        return Long.parseLong(this.getValue());
+    @Test
+    void shouldFailToExtractValueFromEmptyHeaders() {
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            () -> new ContentLength(Headers.EMPTY).value()
+        );
     }
 }
