@@ -28,6 +28,7 @@ import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.misc.DigestFromContent;
+import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -326,7 +327,9 @@ public final class UploadEntity {
          * @return Repository name.
          */
         RepoName name() {
-            return new RepoName.Valid(this.path().group("name"));
+            return new RepoName.Valid(
+                new RqByRegex(this.line, ManifestEntity.PATH).path().group("name")
+            );
         }
 
         /**
@@ -335,7 +338,7 @@ public final class UploadEntity {
          * @return Upload UUID.
          */
         String uuid() {
-            return this.path().group("uuid");
+            return new RqByRegex(this.line, ManifestEntity.PATH).path().group("uuid");
         }
 
         /**
@@ -353,20 +356,6 @@ public final class UploadEntity {
                 throw new IllegalStateException(String.format("Unexpected query: %s", query));
             }
             return new Digest.FromString(matcher.group("digest"));
-        }
-
-        /**
-         * Matches request path by RegEx pattern.
-         *
-         * @return Path matcher.
-         */
-        private Matcher path() {
-            final String path = new RequestLineFrom(this.line).uri().getPath();
-            final Matcher matcher = PATH.matcher(path);
-            if (!matcher.matches()) {
-                throw new IllegalStateException(String.format("Unexpected path: %s", path));
-            }
-            return matcher;
         }
     }
 

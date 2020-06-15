@@ -91,7 +91,7 @@ class UploadEntityRequestTest {
     void shouldThrowExceptionOnInvalidPath() {
         MatcherAssert.assertThat(
             Assertions.assertThrows(
-                IllegalStateException.class,
+                IllegalArgumentException.class,
                 () -> new UploadEntity.Request(
                     new RequestLine(
                         "PUT",
