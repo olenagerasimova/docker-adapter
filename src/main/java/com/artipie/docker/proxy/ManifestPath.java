@@ -21,48 +21,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.http;
+package com.artipie.docker.proxy;
 
-import com.artipie.http.Headers;
-import com.artipie.http.rq.RqHeaders;
-import com.artipie.http.rs.Header;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.ref.ManifestRef;
 
 /**
- * Content-Length header.
+ * Path to manifest resource.
  *
- * @since 0.2
+ * @since 0.3
  */
-public final class ContentLength extends Header.Wrap {
+final class ManifestPath {
 
     /**
-     * Header name.
+     * Repository name.
      */
-    private static final String NAME = "Content-Length";
+    private final RepoName name;
 
     /**
-     * Ctor.
-     *
-     * @param value Header value.
+     * Manifest reference.
      */
-    public ContentLength(final String value) {
-        super(new Header(ContentLength.NAME, value));
-    }
+    private final ManifestRef ref;
 
     /**
      * Ctor.
      *
-     * @param headers Headers to extract header from.
+     * @param name Repository name.
+     * @param ref Manifest reference.
      */
-    public ContentLength(final Headers headers) {
-        this(new RqHeaders.Single(headers, ContentLength.NAME).asString());
+    ManifestPath(final RepoName name, final ManifestRef ref) {
+        this.name = name;
+        this.ref = ref;
     }
 
     /**
-     * Read header as numeric value.
+     * Build path string.
      *
-     * @return Header value.
+     * @return Path string.
      */
-    public long value() {
-        return Long.parseLong(this.getValue());
+    public String string() {
+        return String.format("/v2/%s/manifests/%s", this.name.value(), this.ref.string());
     }
 }

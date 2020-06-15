@@ -21,48 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.http;
+package com.artipie.docker.proxy;
 
-import com.artipie.http.Headers;
-import com.artipie.http.rq.RqHeaders;
-import com.artipie.http.rs.Header;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.ref.ManifestRef;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Test;
 
 /**
- * Content-Length header.
+ * Tests for {@link ManifestPath}.
  *
- * @since 0.2
+ * @since 0.3
  */
-public final class ContentLength extends Header.Wrap {
+class ManifestPathTest {
 
-    /**
-     * Header name.
-     */
-    private static final String NAME = "Content-Length";
-
-    /**
-     * Ctor.
-     *
-     * @param value Header value.
-     */
-    public ContentLength(final String value) {
-        super(new Header(ContentLength.NAME, value));
-    }
-
-    /**
-     * Ctor.
-     *
-     * @param headers Headers to extract header from.
-     */
-    public ContentLength(final Headers headers) {
-        this(new RqHeaders.Single(headers, ContentLength.NAME).asString());
-    }
-
-    /**
-     * Read header as numeric value.
-     *
-     * @return Header value.
-     */
-    public long value() {
-        return Long.parseLong(this.getValue());
+    @Test
+    void shouldBuildPathString() {
+        final ManifestPath path = new ManifestPath(
+            new RepoName.Valid("some/image"),
+            new ManifestRef.FromString("my-ref")
+        );
+        MatcherAssert.assertThat(
+            path.string(),
+            new IsEqual<>("/v2/some/image/manifests/my-ref")
+        );
     }
 }
