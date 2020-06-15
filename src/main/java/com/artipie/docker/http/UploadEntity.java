@@ -191,17 +191,20 @@ public final class UploadEntity {
             return new AsyncResponse(
                 repo.uploads().get(uuid).<Response>thenCompose(
                     found -> found.map(
-                        upload -> upload.content().thenCompose(
-                            content -> new DigestFromContent(content).digest().thenCompose(
+                        upload -> upload.content()
+                            .thenCompose(content -> new DigestFromContent(content).digest())
+                            .thenCompose(
                                 digest -> {
                                     final CompletionStage<Response> res;
                                     if (digest.string().equals(request.digest().string())) {
-                                        res = repo.layers().put(content, digest)
-                                            .thenCompose(
-                                                blob -> upload.delete().thenApply(
-                                                    ignored -> Put.getResponse(name,  digest)
+                                        res = upload.content().thenCompose(
+                                            content -> repo.layers().put(content, digest)
+                                                .thenCompose(
+                                                    blob -> upload.delete().thenApply(
+                                                        ignored -> Put.getResponse(name, digest)
+                                                    )
                                                 )
-                                            );
+                                        );
                                     } else {
                                         res = CompletableFuture.completedStage(
                                             new RsWithStatus(RsStatus.BAD_REQUEST)
@@ -210,7 +213,6 @@ public final class UploadEntity {
                                     return res;
                                 }
                             )
-                        )
                     ).orElseGet(
                         () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
                     )
