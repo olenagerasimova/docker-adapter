@@ -33,8 +33,6 @@ import hu.akarnokd.rxjava2.interop.SingleInterop;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
-import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.file.FileSystem;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -54,11 +52,6 @@ import java.util.concurrent.CompletionStage;
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class AstoBlobs implements BlobStore {
-
-    /**
-     * Vert.x file system used for temporary files.
-     */
-    private static final FileSystem FILE_SYSTEM = Vertx.vertx().fileSystem();
 
     /**
      * Storage.
@@ -112,7 +105,7 @@ final class AstoBlobs implements BlobStore {
             .andThen(Single.just(out))
             .flatMap(
                 ignored -> {
-                    final RxFile file = new RxFile(tmp, AstoBlobs.FILE_SYSTEM);
+                    final RxFile file = new RxFile(tmp);
                     return file.size().flatMap(
                         size -> SingleInterop.fromFuture(
                             this.asto.save(
