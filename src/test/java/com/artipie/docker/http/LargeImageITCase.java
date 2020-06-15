@@ -57,11 +57,7 @@ public final class LargeImageITCase extends AbstractDockerITCase {
     void setUp(@TempDir final Path temp) throws Exception {
         this.repo = this.startServer(
             temp,
-            new DockerSlice(
-                new AstoDocker(
-                    new FileStorage(temp, this.vertx().fileSystem())
-                )
-            )
+            new DockerSlice(new AstoDocker(new FileStorage(temp)))
         );
     }
 
