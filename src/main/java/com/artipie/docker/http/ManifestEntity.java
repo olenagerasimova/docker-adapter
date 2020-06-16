@@ -27,11 +27,11 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.misc.RqByRegex;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
-import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqHeaders;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
@@ -43,7 +43,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -60,7 +59,7 @@ final class ManifestEntity {
      * RegEx pattern for path.
      */
     public static final Pattern PATH = Pattern.compile(
-        "^/v2/(?<name>[^/]*)/manifests/(?<reference>.*)$"
+        "^/v2/(?<name>.*)/manifests/(?<reference>.*)$"
     );
 
     /**
@@ -221,12 +220,12 @@ final class ManifestEntity {
      *
      * @since 0.2
      */
-    private static final class Request {
+    static final class Request {
 
         /**
-         * HTTP request line.
+         * HTTP request by RegEx.
          */
-        private final String line;
+        private final RqByRegex rqregex;
 
         /**
          * Ctor.
@@ -234,7 +233,7 @@ final class ManifestEntity {
          * @param line HTTP request line.
          */
         Request(final String line) {
-            this.line = line;
+            this.rqregex = new RqByRegex(line, ManifestEntity.PATH);
         }
 
         /**
@@ -243,7 +242,7 @@ final class ManifestEntity {
          * @return Repository name.
          */
         RepoName name() {
-            return new RepoName.Valid(this.path().group("name"));
+            return new RepoName.Valid(this.rqregex.path().group("name"));
         }
 
         /**
@@ -252,22 +251,9 @@ final class ManifestEntity {
          * @return Manifest reference.
          */
         ManifestRef reference() {
-            return new ManifestRef.FromString(this.path().group("reference"));
+            return new ManifestRef.FromString(this.rqregex.path().group("reference"));
         }
 
-        /**
-         * Matches request path by RegEx pattern.
-         *
-         * @return Path matcher.
-         */
-        private Matcher path() {
-            final String path = new RequestLineFrom(this.line).uri().getPath();
-            final Matcher matcher = PATH.matcher(path);
-            if (!matcher.matches()) {
-                throw new IllegalStateException(String.format("Unexpected path: %s", path));
-            }
-            return matcher;
-        }
     }
 
     /**
