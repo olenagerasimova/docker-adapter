@@ -77,20 +77,19 @@ public final class AstoManifests implements Manifests {
 
     @Override
     public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-        return new ByteBufPublisher(content).bytes()
-            .thenCompose(bytes -> this.blobs.put(new Content.From(bytes), new Digest.Sha256(bytes)))
-            .thenCompose(
-                blob -> {
-                    final Digest digest = blob.digest();
-                    return blob.content()
-                        .thenApply(source -> new JsonManifest(digest, source))
-                        .thenCompose(
-                            manifest -> this.validate(manifest)
-                                .thenCompose(nothing -> this.addManifestLinks(ref, digest))
-                                .thenApply(nothing -> manifest)
-                        );
-                }
-            );
+        return new ByteBufPublisher(content).bytes().thenCompose(
+            bytes -> {
+                final Content copy = new Content.From(bytes);
+                final Digest digest = new Digest.Sha256(bytes);
+                return this.blobs.put(copy, digest)
+                    .thenApply(blob -> new JsonManifest(digest, copy))
+                    .thenCompose(
+                        manifest -> this.validate(manifest)
+                            .thenCompose(nothing -> this.addManifestLinks(ref, digest))
+                            .thenApply(nothing -> manifest)
+                    );
+            }
+        );
     }
 
     @Override
@@ -102,6 +101,9 @@ public final class AstoManifests implements Manifests {
                         blobOpt -> blobOpt
                             .map(
                                 blob -> blob.content()
+                                    .thenApply(ByteBufPublisher::new)
+                                    .thenCompose(ByteBufPublisher::bytes)
+                                    .thenApply(Content.From::new)
                                     .<Manifest>thenApply(
                                         source -> new JsonManifest(blob.digest(), source)
                                     )

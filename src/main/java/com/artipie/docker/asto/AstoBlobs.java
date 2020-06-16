@@ -25,6 +25,7 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.RxFile;
 import com.artipie.docker.Blob;
@@ -34,6 +35,7 @@ import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,11 +97,8 @@ final class AstoBlobs implements BlobStore {
         return Flowable.fromPublisher(blob)
             .flatMapCompletable(
                 buf -> Completable.fromAction(
-                    () -> {
-                        while (buf.hasRemaining()) {
-                            out.write(buf);
-                        }
-                    })
+                    () -> out.write(ByteBuffer.wrap(new Remaining(buf, true).bytes()))
+                )
             )
             .doOnTerminate(out::close)
             .andThen(Single.just(out))
