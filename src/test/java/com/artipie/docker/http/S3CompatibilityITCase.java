@@ -24,22 +24,27 @@
 package com.artipie.docker.http;
 
 import com.adobe.testing.s3mock.junit5.S3MockExtension;
+import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.s3.S3Storage;
+import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.asto.BlobKey;
+import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.UUID;
+import javax.json.Json;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,8 +61,12 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
  *
  * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @todo #212:30min Remove S3CompatibilityITCase tests
+ *  Tests might be removed once issue resolved in ASTO: https://github.com/artipie/asto/issues/204
+ *  S3 mock dependency should be removed as well after that.
  */
-class UploadBlobS3ITCase {
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+class S3CompatibilityITCase {
 
     /**
      * Mock S3 server.
@@ -97,11 +106,11 @@ class UploadBlobS3ITCase {
         client.createBucket(CreateBucketRequest.builder().bucket(bucket).build()).join();
         this.storage = new S3Storage(client, bucket);
         this.docker = new AstoDocker(this.storage);
-        this.slice = new DockerSlice("/base", this.docker);
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
-    void shouldUpload() {
+    void shouldUploadBlob() {
         final String name = "test";
         final Upload upload = this.docker.repo(new RepoName.Valid(name)).uploads()
             .start()
@@ -118,7 +127,7 @@ class UploadBlobS3ITCase {
                 new RequestLine(
                     "PUT",
                     String.format(
-                        "/base/v2/%s/blobs/uploads/%s?digest=%s",
+                        "/v2/%s/blobs/uploads/%s?digest=%s",
                         name,
                         upload.uuid(),
                         digest
@@ -134,5 +143,53 @@ class UploadBlobS3ITCase {
             this.storage.exists(new BlobKey(new Digest.FromString(digest))).join(),
             new IsEqual<>(true)
         );
+    }
+
+    @Test
+    void shouldPutManifest() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("PUT", "/v2/test/manifests/1", "HTTP/1.1").toString(),
+                Collections.emptyList(),
+                this.manifest(new RepoName.Valid("test"))
+            ),
+            new RsHasStatus(RsStatus.CREATED)
+        );
+    }
+
+    @Test
+    void shouldGetManifest() {
+        final RepoName.Valid name = new RepoName.Valid("test");
+        this.docker.repo(name).manifests()
+            .put(new ManifestRef.FromString("2"), new Content.From(this.manifest(name)))
+            .toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine("GET", "/v2/test/manifests/2", "HTTP/1.1").toString(),
+                Collections.singleton(
+                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                ),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.OK)
+        );
+    }
+
+    private Flowable<ByteBuffer> manifest(final RepoName name) {
+        final byte[] content = "config".getBytes();
+        final Blob config = this.docker.repo(name).layers()
+            .put(new Content.From(content), new Digest.Sha256(content))
+            .toCompletableFuture().join();
+        final byte[] data = Json.createObjectBuilder()
+            .add("mediaType", "application/vnd.docker.distribution.manifest.v2+json")
+            .add(
+                "config",
+                Json.createObjectBuilder().add("digest", config.digest().string())
+            )
+            .add("layers", Json.createArrayBuilder())
+            .build()
+            .toString()
+            .getBytes();
+        return Flowable.just(ByteBuffer.wrap(data));
     }
 }
