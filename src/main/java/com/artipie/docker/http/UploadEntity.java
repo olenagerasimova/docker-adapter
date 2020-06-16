@@ -328,7 +328,7 @@ public final class UploadEntity {
          */
         RepoName name() {
             return new RepoName.Valid(
-                new RqByRegex(this.line, ManifestEntity.PATH).path().group("name")
+                new RqByRegex(this.line, UploadEntity.PATH).path().group("name")
             );
         }
 
@@ -338,7 +338,7 @@ public final class UploadEntity {
          * @return Upload UUID.
          */
         String uuid() {
-            return new RqByRegex(this.line, ManifestEntity.PATH).path().group("uuid");
+            return new RqByRegex(this.line, UploadEntity.PATH).path().group("uuid");
         }
 
         /**
