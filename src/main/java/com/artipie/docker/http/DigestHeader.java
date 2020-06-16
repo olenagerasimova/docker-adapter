@@ -24,8 +24,9 @@
 package com.artipie.docker.http;
 
 import com.artipie.docker.Digest;
+import com.artipie.http.Headers;
+import com.artipie.http.rq.RqHeaders;
 import com.artipie.http.rs.Header;
-import java.util.Map;
 
 /**
  * Docker-Content-Digest header.
@@ -33,12 +34,12 @@ import java.util.Map;
  *
  * @since 0.2
  */
-final class DigestHeader implements Map.Entry<String, String> {
+public final class DigestHeader extends Header.Wrap {
 
     /**
-     * Header delegate.
+     * Header name.
      */
-    private final Header delegate;
+    private static final String NAME = "Docker-Content-Digest";
 
     /**
      * Ctor.
@@ -46,36 +47,33 @@ final class DigestHeader implements Map.Entry<String, String> {
      * @param digest Digest value.
      */
     DigestHeader(final Digest digest) {
-        this.delegate = new Header("Docker-Content-Digest", digest.string());
+        this(digest.string());
     }
 
-    @Override
-    public String getKey() {
-        return this.delegate.getKey();
+    /**
+     * Ctor.
+     *
+     * @param headers Headers to extract header from.
+     */
+    public DigestHeader(final Headers headers) {
+        this(new RqHeaders.Single(headers, DigestHeader.NAME).asString());
     }
 
-    @Override
-    public String getValue() {
-        return this.delegate.getValue();
+    /**
+     * Ctor.
+     *
+     * @param digest Digest value.
+     */
+    private DigestHeader(final String digest) {
+        super(new Header(DigestHeader.NAME, digest));
     }
 
-    @Override
-    public String setValue(final String value) {
-        throw new UnsupportedOperationException("Value cannot be modified");
-    }
-
-    @Override
-    public boolean equals(final Object that) {
-        return this.delegate.equals(that);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.delegate.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return this.delegate.toString();
+    /**
+     * Read header as numeric value.
+     *
+     * @return Header value.
+     */
+    public Digest value() {
+        return new Digest.FromString(this.getValue());
     }
 }
