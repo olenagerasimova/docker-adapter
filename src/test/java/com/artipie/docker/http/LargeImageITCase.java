@@ -23,48 +23,39 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.fs.FileStorage;
-import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.junit.DockerClient;
+import com.artipie.docker.junit.DockerClientSupport;
+import com.artipie.docker.junit.DockerRepository;
 import java.nio.file.Path;
 import java.util.Objects;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration test for large file pushing scenario of {@link DockerSlice}.
  *
  * @since 0.3
 */
+@DockerClientSupport
 @DisabledOnOs(OS.WINDOWS)
-public final class LargeImageITCase extends AbstractDockerITCase {
+public final class LargeImageITCase {
     /**
      * Docker image name.
      */
     private static final String IMAGE = "large-image";
 
     /**
-     * Repository URL.
+     * Docker client.
      */
-    private String repo;
+    private DockerClient client;
 
-    @BeforeEach
-    void setUp(@TempDir final Path temp) throws Exception {
-        this.repo = this.startServer(
-            temp,
-            new DockerSlice(new AstoDocker(new FileStorage(temp)))
-        );
-    }
-
-    @AfterEach
-    void tearDown() {
-        this.stopServer();
-    }
+    /**
+     * Docker repository.
+     */
+    private DockerRepository repository;
 
     @Test
     void largeImageUploadWorks() throws Exception {
@@ -74,13 +65,13 @@ public final class LargeImageITCase extends AbstractDockerITCase {
                     .getResource("large-image/Dockerfile")
             ).toURI()
         );
-        final String image = String.format("%s/%s", this.repo, LargeImageITCase.IMAGE);
+        final String image = String.format("%s/%s", this.repository.url(), LargeImageITCase.IMAGE);
         try {
-            this.run("build", dockerfile.getParent().toString(), "-t", image);
-            final String output = this.run("push", image);
+            this.client.run("build", dockerfile.getParent().toString(), "-t", image);
+            final String output = this.client.run("push", image);
             MatcherAssert.assertThat(output, new StringContains(false, "Pushed"));
         } finally {
-            this.run("rmi", image);
+            this.client.run("rmi", image);
         }
     }
 }

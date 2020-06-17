@@ -21,76 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.http;
+package com.artipie.docker.junit;
 
-import com.artipie.http.slice.LoggingSlice;
-import com.artipie.vertx.VertxSliceServer;
 import com.google.common.collect.ImmutableList;
 import com.jcabi.log.Logger;
-import io.vertx.reactivex.core.Vertx;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * Abstract class for integration tests using docker command.
+ * Docker client. Allows to run docker commands and returns cli output.
+ * It contains temporary dir that will be deleted on close() call.
+ * JUnit automatically calls close on the {@link ExtensionContext.Store.CloseableResource} objects
+ * that keep in the store.
  *
  * @since 0.3
- * @todo #187:60min Implement JUnit extension instead of abstract class.
- *  After that, remove {@link AbstractDockerITCase} and use extension in
- *  {@link DockerSliceITCase} and {@link LargeImageITCase}.
  */
-public class AbstractDockerITCase {
+public final class DockerClient implements ExtensionContext.Store.CloseableResource {
     /**
-     * Vert.x instance to use in tests.
+     * Directory to store docker commands output logs.
      */
-    private static Vertx instance;
+    private final Path dir;
 
     /**
-     * Working directory for docker command.
+     * Ctor.
+     * @param dir Directory to store docker commands output logs.
      */
-    private Path dir;
+    DockerClient(final Path dir) {
+        this.dir = dir;
+    }
 
     /**
-     * HTTP server hosting repository.
-     */
-    private VertxSliceServer server;
-
-    /**
-     * Setup environment for integration tests (set working dir for
-     * <code>docker</code> command and start vertx server).
+     * Execute docker command with args.
      *
-     * @param wrkdir Working directory for docker
-     * @param slice Slice to run
-     * @return Docker repository base URL
-     * @throws Exception
+     * @param args Arguments that will be passed to docker
+     * @return Output from docker
+     * @throws Exception When something go wrong
      */
-    protected final String startServer(final Path wrkdir, final DockerSlice slice)
-        throws Exception {
-        this.dir = wrkdir;
-        this.ensureDockerInstalled();
-        this.server = new VertxSliceServer(
-            AbstractDockerITCase.instance,
-            new LoggingSlice(slice)
-        );
-        final int port = this.server.start();
-        return String.format("localhost:%s", port);
-    }
-
-    protected final void stopServer() {
-        if (this.server != null) {
-            this.server.stop();
-        }
-    }
-
-    protected final Vertx vertx() {
-        return AbstractDockerITCase.instance;
-    }
-
-    protected final String run(final String... args) throws Exception {
+    public String run(final String... args) throws Exception {
         final Path stdout = this.dir.resolve(
             String.format("%s-stdout.txt", UUID.randomUUID().toString())
         );
@@ -114,20 +85,8 @@ public class AbstractDockerITCase {
         return log;
     }
 
-    @BeforeAll
-    static void init() {
-        AbstractDockerITCase.instance = Vertx.vertx();
-    }
-
-    @AfterAll
-    static void destroy() {
-        AbstractDockerITCase.instance.close();
-    }
-
-    private void ensureDockerInstalled() throws Exception {
-        final String output = this.run("--version");
-        if (!output.startsWith("Docker version")) {
-            throw new IllegalStateException("Docker not installed");
-        }
+    @Override
+    public void close() throws Throwable {
+        FileUtils.deleteDirectory(this.dir.toFile());
     }
 }
