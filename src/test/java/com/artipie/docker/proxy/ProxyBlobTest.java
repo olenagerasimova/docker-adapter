@@ -59,7 +59,8 @@ class ProxyBlobTest {
                 );
             },
             new RepoName.Valid("test"),
-            new Digest.FromString("sha256:123")
+            new Digest.FromString("sha256:123"),
+            data.length
         ).content().toCompletableFuture().join();
         MatcherAssert.assertThat(
             new ByteBufPublisher(content).bytes().toCompletableFuture().join(),
@@ -68,6 +69,23 @@ class ProxyBlobTest {
         MatcherAssert.assertThat(
             content.size(),
             new IsEqual<>(Optional.of((long) data.length))
+        );
+    }
+
+    @Test
+    void shouldReadSize() {
+        final long size = 1235L;
+        final ProxyBlob blob = new ProxyBlob(
+            (line, headers, body) -> {
+                throw new UnsupportedOperationException();
+            },
+            new RepoName.Valid("my/test"),
+            new Digest.FromString("sha256:abc"),
+            size
+        );
+        MatcherAssert.assertThat(
+            blob.size().toCompletableFuture().join(),
+            new IsEqual<>(size)
         );
     }
 }

@@ -63,20 +63,29 @@ public final class ProxyBlob implements Blob {
     private final Digest dig;
 
     /**
+     * Blob size.
+     */
+    private final long bsize;
+
+    /**
      * Ctor.
      *
      * @param remote Remote repository.
      * @param name Repository name.
      * @param dig Blob digest.
+     * @param size Blob size.
+     * @checkstyle ParameterNumberCheck (5 lines)
      */
     public ProxyBlob(
         final Slice remote,
         final RepoName name,
-        final Digest dig
+        final Digest dig,
+        final long size
     ) {
         this.remote = remote;
         this.name = name;
         this.dig = dig;
+        this.bsize = size;
     }
 
     @Override
@@ -86,7 +95,7 @@ public final class ProxyBlob implements Blob {
 
     @Override
     public CompletionStage<Long> size() {
-        throw new UnsupportedOperationException();
+        return CompletableFuture.completedFuture(this.bsize);
     }
 
     @Override
