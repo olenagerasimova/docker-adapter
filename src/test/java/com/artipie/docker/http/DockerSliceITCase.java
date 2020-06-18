@@ -23,6 +23,8 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
@@ -30,6 +32,7 @@ import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +70,16 @@ final class DockerSliceITCase {
 
     @BeforeEach
     void setUp() throws Exception {
+        this.repository = new DockerRepository(
+            new AstoDocker(new InMemoryStorage())
+        );
+        this.repository.start();
         this.image = this.prepareImage();
+    }
+
+    @AfterEach
+    void tearDown() {
+        this.repository.stop();
     }
 
     @Test

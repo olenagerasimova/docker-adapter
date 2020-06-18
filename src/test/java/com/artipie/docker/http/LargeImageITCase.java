@@ -23,6 +23,8 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.fs.FileStorage;
+import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
@@ -30,9 +32,12 @@ import java.nio.file.Path;
 import java.util.Objects;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration test for large file pushing scenario of {@link DockerSlice}.
@@ -56,6 +61,19 @@ public final class LargeImageITCase {
      * Docker repository.
      */
     private DockerRepository repository;
+
+    @BeforeEach
+    void setUp(final @TempDir Path storage) {
+        this.repository = new DockerRepository(
+            new AstoDocker(new FileStorage(storage))
+        );
+        this.repository.start();
+    }
+
+    @AfterEach
+    void tearDown() {
+        this.repository.stop();
+    }
 
     @Test
     void largeImageUploadWorks() throws Exception {

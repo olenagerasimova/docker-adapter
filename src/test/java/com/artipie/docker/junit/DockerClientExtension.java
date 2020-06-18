@@ -23,31 +23,21 @@
  */
 package com.artipie.docker.junit;
 
-import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.docker.asto.AstoDocker;
-import com.artipie.docker.http.DockerSlice;
-import com.artipie.http.slice.LoggingSlice;
-import com.artipie.vertx.VertxSliceServer;
 import com.jcabi.log.Logger;
-import io.vertx.reactivex.core.Vertx;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * Docker client extension. When it enabled for test class:
- *  - test methods runs only when `docker --version` returns successfully (otherwise
- *    no method executed);
  *  - temporary dir is created when in BeforeAll phase and destroyed in AfterAll.
  *    Docker command output is stored there;
- *  - Vertx Slice Server with Docker slice is started for each test and stopped after execution;
- *  - DockerClient and DockerRepository fields of test class are populated.
+ *  - DockerClient field of test class are populated.
  *
  * @since 0.3
  */
@@ -57,8 +47,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
     "PMD.AvoidDuplicateLiterals",
     "PMD.AvoidCatchingThrowable"
 })
-public final class DockerClientExtension implements BeforeEachCallback, AfterEachCallback,
-    BeforeAllCallback, AfterAllCallback {
+public final class DockerClientExtension
+    implements BeforeEachCallback, BeforeAllCallback, AfterAllCallback {
+
     /**
      * Namespace for class-wide variables.
      */
@@ -75,47 +66,19 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
         Logger.debug(this, "Created docker client");
         context.getStore(DockerClientExtension.NAMESPACE).put("temp-dir", temp);
         context.getStore(DockerClientExtension.NAMESPACE).put("client", client);
-        context.getStore(DockerClientExtension.NAMESPACE).put("vertx", Vertx.vertx());
     }
 
     @Override
     public void beforeEach(final ExtensionContext context) throws Exception {
         Logger.debug(this, "beforeEach called");
-        final Vertx vertx = context.getStore(DockerClientExtension.NAMESPACE)
-            .get("vertx", Vertx.class);
-        final VertxSliceServer server = new VertxSliceServer(
-            vertx,
-            new LoggingSlice(new DockerSlice(new AstoDocker(new InMemoryStorage())))
-        );
-        Logger.debug(this, "Vertx server is created");
-        final int port = server.start();
-        Logger.debug(this, "Vertx server is listening on port %d now", port);
         final DockerClient client = context.getStore(DockerClientExtension.NAMESPACE)
             .get("client", DockerClient.class);
-        final DockerRepository repository = () -> String.format("localhost:%s", port);
-        this.injectVariables(context, client, repository);
-        context.getStore(
-            ExtensionContext.Namespace.create(getClass(), context.getRequiredTestMethod())
-        ).put("server", server);
-    }
-
-    @Override
-    public void afterEach(final ExtensionContext context) throws Exception {
-        Logger.debug(this, "afterEach called");
-        final VertxSliceServer server = context.getStore(
-            ExtensionContext.Namespace.create(getClass(), context.getRequiredTestMethod())
-        ).remove("server", VertxSliceServer.class);
-        server.close();
-        Logger.debug(this, "Vertx server is stopped");
+        this.injectVariables(context, client);
     }
 
     @Override
     public void afterAll(final ExtensionContext context) throws Exception {
         Logger.debug(this, "afterAll called");
-        final Vertx vertx = context.getStore(DockerClientExtension.NAMESPACE)
-            .remove("vertx", Vertx.class);
-        vertx.close();
-        Logger.debug(this, "Vertx instance is destroyed");
         final Path temp = context.getStore(DockerClientExtension.NAMESPACE)
             .remove("temp-dir", Path.class);
         FileUtils.deleteDirectory(temp.toFile());
@@ -124,15 +87,14 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
     }
 
     /**
-     * Injects DockerClient and Docker Repository variables in the test instance.
+     * Injects {@link DockerClient} variables in the test instance.
      *
      * @param context JUnit extension context
      * @param client Docker client instance
-     * @param repository Docker repository instance
      * @throws Exception When something get wrong
      */
-    private void injectVariables(final ExtensionContext context, final DockerClient client,
-        final DockerRepository repository) throws Exception {
+    private void injectVariables(final ExtensionContext context, final DockerClient client)
+        throws Exception {
         final Object instance = context.getRequiredTestInstance();
         for (final Field field : context.getRequiredTestClass().getDeclaredFields()) {
             if (field.getType().isAssignableFrom(DockerClient.class)) {
@@ -141,13 +103,6 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
                 );
                 this.ensureFieldIsAccessible(field, instance);
                 field.set(instance, client);
-            }
-            if (field.getType().isAssignableFrom(DockerRepository.class)) {
-                Logger.debug(
-                    this, "Found %s field. Try to set DockerRepository instance", field.getName()
-                );
-                this.ensureFieldIsAccessible(field, instance);
-                field.set(instance, repository);
             }
         }
     }
