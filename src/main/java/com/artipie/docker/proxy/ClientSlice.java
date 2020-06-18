@@ -111,6 +111,10 @@ public final class ClientSlice implements Slice {
      *
      * @param response Response to extract status from.
      * @return HTTP status.
+     * @todo #170:30min Use status code translation logic from HTTP module.
+     *  The same code for getting RsStatus from integer code is being added
+     *  to common HTTP module, see https://github.com/artipie/http/pull/178
+     *  Use it when PR is accepted and released.
      */
     private static RsStatus status(final ReactiveResponse response) {
         final String str = String.valueOf(response.getStatus());
