@@ -23,17 +23,15 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.docker.asto.AstoDocker;
-import java.nio.file.Path;
+import com.artipie.docker.junit.DockerClient;
+import com.artipie.docker.junit.DockerClientSupport;
+import com.artipie.docker.junit.DockerRepository;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Integration test for {@link DockerSlice}.
@@ -50,29 +48,31 @@ import org.junit.jupiter.api.io.TempDir;
     "PMD.AvoidDuplicateLiterals",
     "PMD.UseObjectForClearerAPI"
 })
-final class DockerSliceITCase extends AbstractDockerITCase {
+@DockerClientSupport
+final class DockerSliceITCase {
     /**
      * Example image to use in tests.
      */
     private Image image;
 
-    @BeforeEach
-    void setUp(@TempDir final Path temp) throws Exception {
-        final String repo = this.startServer(
-            temp,
-            new DockerSlice(new AstoDocker(new InMemoryStorage()))
-        );
-        this.image = this.prepareImage(repo);
-    }
+    /**
+     * Docker client.
+     */
+    private DockerClient client;
 
-    @AfterEach
-    void tearDown() {
-        this.stopServer();
+    /**
+     * Docker repository.
+     */
+    private DockerRepository repository;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        this.image = this.prepareImage();
     }
 
     @Test
     void shouldPush() throws Exception {
-        final String output = this.run("push", this.image.remote());
+        final String output = this.client.run("push", this.image.remote());
         MatcherAssert.assertThat(
             output,
             Matchers.allOf(this.image.layersPushed(), this.image.manifestPushed())
@@ -81,8 +81,8 @@ final class DockerSliceITCase extends AbstractDockerITCase {
 
     @Test
     void shouldPushExisting() throws Exception {
-        this.run("push", this.image.remote());
-        final String output = this.run("push", this.image.remote());
+        this.client.run("push", this.image.remote());
+        final String output = this.client.run("push", this.image.remote());
         MatcherAssert.assertThat(
             output,
             Matchers.allOf(this.image.layersAlreadyExist(), this.image.manifestPushed())
@@ -91,10 +91,10 @@ final class DockerSliceITCase extends AbstractDockerITCase {
 
     @Test
     void shouldPullPushedByTag() throws Exception {
-        this.run("push", this.image.remote());
-        this.run("image", "rm", this.image.local());
-        this.run("image", "rm", this.image.remote());
-        final String output = this.run("pull", this.image.remote());
+        this.client.run("push", this.image.remote());
+        this.client.run("image", "rm", this.image.local());
+        this.client.run("image", "rm", this.image.remote());
+        final String output = this.client.run("pull", this.image.remote());
         MatcherAssert.assertThat(
             output,
             new StringContains(
@@ -106,10 +106,10 @@ final class DockerSliceITCase extends AbstractDockerITCase {
 
     @Test
     void shouldPullPushedByDigest() throws Exception {
-        this.run("push", this.image.remote());
-        this.run("image", "rm", this.image.local());
-        this.run("image", "rm", this.image.remote());
-        final String output = this.run("pull", this.image.remoteByDigest());
+        this.client.run("push", this.image.remote());
+        this.client.run("image", "rm", this.image.local());
+        this.client.run("image", "rm", this.image.remote());
+        final String output = this.client.run("pull", this.image.remoteByDigest());
         MatcherAssert.assertThat(
             output,
             new StringContains(
@@ -119,12 +119,12 @@ final class DockerSliceITCase extends AbstractDockerITCase {
         );
     }
 
-    private Image prepareImage(final String repo) throws Exception {
+    private Image prepareImage() throws Exception {
         final Image img;
         if (System.getProperty("os.name").startsWith("Windows")) {
-            img = this.windowsImage(repo);
+            img = this.windowsImage();
         } else {
-            img = this.linuxImage(repo);
+            img = this.linuxImage();
         }
         return img;
     }
@@ -133,13 +133,11 @@ final class DockerSliceITCase extends AbstractDockerITCase {
      * Prepare `mcr.microsoft.com/dotnet/core/runtime:3.1.4-nanoserver-1809` image
      * for Windows Server 2019 amd64 architecture.
      *
-     * @param repo Repository URL.
      * @return Prepared image.
      * @throws Exception In case preparation fails.
      */
-    private Image windowsImage(final String repo) throws Exception {
+    private Image windowsImage() throws Exception {
         return this.prepare(
-            repo,
             "mcr.microsoft.com/dotnet/core/runtime",
             String.format(
                 "%s:%s",
@@ -153,13 +151,11 @@ final class DockerSliceITCase extends AbstractDockerITCase {
     /**
      * Prepare `amd64/busybox:1.31.1` image for linux/amd64 architecture.
      *
-     * @param repo Repository URL.
      * @return Prepared image.
      * @throws Exception In case preparation fails.
      */
-    private Image linuxImage(final String repo) throws Exception {
+    private Image linuxImage() throws Exception {
         return this.prepare(
-            repo,
             "busybox",
             String.format(
                 "%s:%s",
@@ -172,16 +168,15 @@ final class DockerSliceITCase extends AbstractDockerITCase {
 
     // @checkstyle ParameterNumberCheck (5 lines)
     private Image prepare(
-        final String repo,
         final String name,
         final String digest,
         final String layer) throws Exception {
         final String original = String.format("%s@%s", name, digest);
-        this.run("pull", original);
+        this.client.run("pull", original);
         final String local = "my-test";
-        this.run("tag", original, String.format("%s:latest", local));
-        final Image img = new Image(repo, local, digest, layer);
-        this.run("tag", original, img.remote());
+        this.client.run("tag", original, String.format("%s:latest", local));
+        final Image img = new Image(this.repository.url(), local, digest, layer);
+        this.client.run("tag", original, img.remote());
         return img;
     }
 
