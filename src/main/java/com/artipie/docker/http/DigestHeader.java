@@ -46,7 +46,7 @@ public final class DigestHeader extends Header.Wrap {
      *
      * @param digest Digest value.
      */
-    DigestHeader(final Digest digest) {
+    public DigestHeader(final Digest digest) {
         this(digest.string());
     }
 

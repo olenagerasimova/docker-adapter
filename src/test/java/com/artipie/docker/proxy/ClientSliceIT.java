@@ -25,7 +25,11 @@ package com.artipie.docker.proxy;
 
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tag;
+import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.DigestFromContent;
+import com.artipie.docker.ref.ManifestRef;
+import java.util.Optional;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.hamcrest.MatcherAssert;
@@ -38,7 +42,9 @@ import org.junit.jupiter.api.Test;
  * Integration test for {@link ClientSlice}.
  *
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class ClientSliceIT {
 
     /**
@@ -79,6 +85,32 @@ class ClientSliceIT {
                 .thenApply(Digest::string)
                 .toCompletableFuture().join(),
             new IsEqual<>("sha256:b71717fef0141577dd1588f2838d9a797e026ca20d95d0a89559a6b6af734c7b")
+        );
+    }
+
+    @Test
+    void getManifestByDigest() {
+        final RepoName name = new RepoName.Valid("dotnet/core/runtime");
+        final ProxyManifests manifests = new ProxyManifests(this.slice, name);
+        final ManifestRef ref = new ManifestRef.FromDigest(
+            new Digest.Sha256("c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07")
+        );
+        final Optional<Manifest> manifest = manifests.get(ref).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            manifest.isPresent(),
+            new IsEqual<>(true)
+        );
+    }
+
+    @Test
+    void getManifestByTag() {
+        final RepoName name = new RepoName.Valid("dotnet/core/runtime");
+        final ProxyManifests manifests = new ProxyManifests(this.slice, name);
+        final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("latest"));
+        final Optional<Manifest> manifest = manifests.get(ref).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            manifest.isPresent(),
+            new IsEqual<>(true)
         );
     }
 }
