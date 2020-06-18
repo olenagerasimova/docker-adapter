@@ -33,12 +33,11 @@ import io.vertx.reactivex.core.Vertx;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ConditionEvaluationResult;
-import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
@@ -59,7 +58,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
     "PMD.AvoidCatchingThrowable"
 })
 public final class DockerClientExtension implements BeforeEachCallback, AfterEachCallback,
-    BeforeAllCallback, AfterAllCallback, ExecutionCondition {
+    BeforeAllCallback, AfterAllCallback {
     /**
      * Namespace for class-wide variables.
      */
@@ -74,14 +73,9 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
         Logger.debug(this, "Created temp dir: %s", temp.toAbsolutePath().toString());
         final DockerClient client = new DockerClient(temp);
         Logger.debug(this, "Created docker client");
+        context.getStore(DockerClientExtension.NAMESPACE).put("temp-dir", temp);
         context.getStore(DockerClientExtension.NAMESPACE).put("client", client);
         context.getStore(DockerClientExtension.NAMESPACE).put("vertx", Vertx.vertx());
-    }
-
-    @Override
-    public ConditionEvaluationResult evaluateExecutionCondition(final ExtensionContext context) {
-        Logger.debug(this, "evaluateExecutionCondition called");
-        return this.ensureDockerInstalled();
     }
 
     @Override
@@ -95,7 +89,7 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
         );
         Logger.debug(this, "Vertx server is created");
         final int port = server.start();
-        Logger.debug(this, "Vertx is listening on port %d now", port);
+        Logger.debug(this, "Vertx server is listening on port %d now", port);
         final DockerClient client = context.getStore(DockerClientExtension.NAMESPACE)
             .get("client", DockerClient.class);
         final DockerRepository repository = () -> String.format("localhost:%s", port);
@@ -112,6 +106,7 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
             ExtensionContext.Namespace.create(getClass(), context.getRequiredTestMethod())
         ).remove("server", VertxSliceServer.class);
         server.close();
+        Logger.debug(this, "Vertx server is stopped");
     }
 
     @Override
@@ -120,38 +115,12 @@ public final class DockerClientExtension implements BeforeEachCallback, AfterEac
         final Vertx vertx = context.getStore(DockerClientExtension.NAMESPACE)
             .remove("vertx", Vertx.class);
         vertx.close();
-    }
-
-    /**
-     * Ensure that docker cli is installed.
-     *
-     * @return Test enabled property if docker cli is installed, disabled otherwise.
-     * @checkstyle IllegalCatchCheck (50 lines)
-     * @checkstyle ReturnCountCheck (50 lines)
-     */
-    private ConditionEvaluationResult ensureDockerInstalled() {
-        DockerClient client = null;
-        try {
-            final Path tmp = Files.createTempDirectory("junit-docker-cond-");
-            client = new DockerClient(tmp);
-            final String output = client.run("--version");
-            if (!output.startsWith("Docker version")) {
-                Logger.debug(this, "`docker --version` call return unexpected result: %s", output);
-                return ConditionEvaluationResult.disabled("docker not found");
-            }
-            return ConditionEvaluationResult.enabled("enabled");
-        } catch (final Exception ex) {
-            Logger.error(this, "Error when call docker: %s", ex.getMessage());
-            return ConditionEvaluationResult.disabled("failure when call docker");
-        } finally {
-            try {
-                if (client != null) {
-                    client.close();
-                }
-            } catch (final Throwable throwable) {
-                Logger.error(this, "Error when close docker: %s", throwable.getMessage());
-            }
-        }
+        Logger.debug(this, "Vertx instance is destroyed");
+        final Path temp = context.getStore(DockerClientExtension.NAMESPACE)
+            .remove("temp-dir", Path.class);
+        FileUtils.deleteDirectory(temp.toFile());
+        Logger.debug(this, "Temp dir is deleted");
+        context.getStore(DockerClientExtension.NAMESPACE).remove("client");
     }
 
     /**

@@ -29,18 +29,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * Docker client. Allows to run docker commands and returns cli output.
- * It contains temporary dir that will be deleted on close() call.
- * JUnit automatically calls close on the {@link ExtensionContext.Store.CloseableResource} objects
- * that keep in the store.
  *
  * @since 0.3
  */
-public final class DockerClient implements ExtensionContext.Store.CloseableResource {
+public final class DockerClient {
     /**
      * Directory to store docker commands output logs.
      */
@@ -83,10 +78,5 @@ public final class DockerClient implements ExtensionContext.Store.CloseableResou
             throw new IllegalStateException(String.format("Not OK exit code: %d", code));
         }
         return log;
-    }
-
-    @Override
-    public void close() throws Throwable {
-        FileUtils.deleteDirectory(this.dir.toFile());
     }
 }
