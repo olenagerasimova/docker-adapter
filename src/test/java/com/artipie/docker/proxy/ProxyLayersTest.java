@@ -45,10 +45,10 @@ class ProxyLayersTest {
 
     @Test
     void shouldGetBlob() {
-        final Digest digest = new Digest.FromString("sha256:123");
+        final String digest = "sha256:123";
         final Optional<Blob> blob = new ProxyLayers(
             (line, headers, body) -> {
-                if (!line.startsWith(String.format("HEAD /v2/test/blobs/%s ", digest.string()))) {
+                if (!line.startsWith(String.format("HEAD /v2/test/blobs/%s ", digest))) {
                     throw new IllegalArgumentException();
                 }
                 return new RsFull(
@@ -58,10 +58,10 @@ class ProxyLayersTest {
                 );
             },
             new RepoName.Valid("test")
-        ).get(digest).toCompletableFuture().join();
+        ).get(new Digest.FromString(digest)).toCompletableFuture().join();
         MatcherAssert.assertThat(
             blob.map(Blob::digest).map(Digest::string),
-            new IsEqual<>(Optional.of(digest.string()))
+            new IsEqual<>(Optional.of(digest))
         );
     }
 }
