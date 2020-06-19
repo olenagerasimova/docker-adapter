@@ -71,7 +71,7 @@ class ClientSliceIT {
         final Digest digest = new Digest.Sha256(
             "b71717fef0141577dd1588f2838d9a797e026ca20d95d0a89559a6b6af734c7b"
         );
-        final ProxyBlob blob = new ProxyBlob(this.slice, name, digest);
+        final ProxyBlob blob = new ProxyBlob(this.slice, name, digest, 828L);
         MatcherAssert.assertThat(
             blob.content()
                 .thenApply(DigestFromContent::new)

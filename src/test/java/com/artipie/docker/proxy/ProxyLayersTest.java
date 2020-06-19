@@ -26,6 +26,7 @@ package com.artipie.docker.proxy;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.http.ContentLength;
 import com.artipie.http.Headers;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
@@ -45,6 +46,7 @@ class ProxyLayersTest {
 
     @Test
     void shouldGetBlob() {
+        final long size = 10L;
         final String digest = "sha256:123";
         final Optional<Blob> blob = new ProxyLayers(
             (line, headers, body) -> {
@@ -53,15 +55,20 @@ class ProxyLayersTest {
                 }
                 return new RsFull(
                     RsStatus.OK,
-                    Headers.EMPTY,
+                    new Headers.From(new ContentLength(String.valueOf(size))),
                     Flowable.empty()
                 );
             },
             new RepoName.Valid("test")
         ).get(new Digest.FromString(digest)).toCompletableFuture().join();
+        MatcherAssert.assertThat(blob.isPresent(), new IsEqual<>(true));
         MatcherAssert.assertThat(
-            blob.map(Blob::digest).map(Digest::string),
-            new IsEqual<>(Optional.of(digest))
+            blob.get().digest().string(),
+            new IsEqual<>(digest)
+        );
+        MatcherAssert.assertThat(
+            blob.get().size().toCompletableFuture().join(),
+            new IsEqual<>(size)
         );
     }
 }
