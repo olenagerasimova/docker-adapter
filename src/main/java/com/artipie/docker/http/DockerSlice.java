@@ -27,6 +27,7 @@ import com.artipie.docker.Docker;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.RtRule;
+import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
 import com.artipie.http.slice.TrimPathSlice;
 import java.util.regex.Pattern;
@@ -59,71 +60,71 @@ public final class DockerSlice extends Slice.Wrap {
         super(
             new TrimPathSlice(
                 new SliceRoute(
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(BaseEntity.PATH),
                             new RtRule.ByMethod(RqMethod.GET)
                         ),
                         new BaseEntity()
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(ManifestEntity.PATH),
                             new RtRule.ByMethod(RqMethod.HEAD)
                         ),
                         new ManifestEntity.Head(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(ManifestEntity.PATH),
                             new RtRule.ByMethod(RqMethod.GET)
                         ),
                         new ManifestEntity.Get(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(ManifestEntity.PATH),
                             new RtRule.ByMethod(RqMethod.PUT)
                         ),
                         new ManifestEntity.Put(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(BlobEntity.PATH),
                             new RtRule.ByMethod(RqMethod.HEAD)
                         ),
                         new BlobEntity.Head(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(BlobEntity.PATH),
                             new RtRule.ByMethod(RqMethod.GET)
                         ),
                         new BlobEntity.Get(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             new RtRule.ByMethod(RqMethod.POST)
                         ),
                         new UploadEntity.Post(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             new RtRule.ByMethod(RqMethod.PATCH)
                         ),
                         new UploadEntity.Patch(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             new RtRule.ByMethod(RqMethod.PUT)
                         ),
                         new UploadEntity.Put(docker)
                     ),
-                    new SliceRoute.Path(
-                        new RtRule.Multiple(
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             new RtRule.ByMethod(RqMethod.GET)
                         ),
