@@ -35,7 +35,6 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
@@ -96,7 +95,7 @@ public final class ClientSlice implements Slice {
                 ReactiveRequest.newBuilder(request).build().response(
                     (response, body) -> Flowable.just(
                         new RsFull(
-                            ClientSlice.status(response),
+                            new RsStatus.ByCode(response.getStatus()).find(),
                             ClientSlice.headers(response),
                             Flowable.fromPublisher(body).map(chunk -> chunk.buffer)
                         )
@@ -104,26 +103,6 @@ public final class ClientSlice implements Slice {
                 )
             ).singleOrError()
         );
-    }
-
-    /**
-     * Extract HTTP status from response.
-     *
-     * @param response Response to extract status from.
-     * @return HTTP status.
-     * @todo #170:30min Use status code translation logic from HTTP module.
-     *  The same code for getting RsStatus from integer code is being added
-     *  to common HTTP module, see https://github.com/artipie/http/pull/178
-     *  Use it when PR is accepted and released.
-     */
-    private static RsStatus status(final ReactiveResponse response) {
-        final String str = String.valueOf(response.getStatus());
-        return Stream.of(RsStatus.values())
-            .filter(status -> str.equals(status.code()))
-            .findAny()
-            .orElseThrow(
-                () -> new IllegalArgumentException(String.format("Unknown status code: `%s`", str))
-            );
     }
 
     /**
