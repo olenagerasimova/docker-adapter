@@ -28,11 +28,11 @@ import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.http.ContentLength;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.ContentLength;
 import io.reactivex.Flowable;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -88,7 +88,7 @@ public final class ProxyLayers implements Layers {
             Flowable.empty()
         ).send(
             (status, headers, body) -> {
-                final long size = new ContentLength(headers).value();
+                final long size = new ContentLength(headers).longValue();
                 promise.complete(Optional.of(new ProxyBlob(this.remote, this.name, digest, size)));
                 return CompletableFuture.allOf();
             }
