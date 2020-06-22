@@ -35,14 +35,16 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /**
  * Integration test for {@link ProxyDocker}.
  *
  * @since 0.3
  */
+@DisabledOnOs(OS.LINUX)
 @DockerClientSupport
 final class ProxyDockerITCase {
 
@@ -82,7 +84,6 @@ final class ProxyDockerITCase {
     }
 
     @Test
-    @Disabled
     void shouldPull() throws Exception {
         final String digest = String.format(
             "%s:%s",
