@@ -33,7 +33,9 @@ import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RqHeaders;
-import com.artipie.http.rs.Header;
+import com.artipie.http.rs.ContentLength;
+import com.artipie.http.rs.ContentType;
+import com.artipie.http.rs.Location;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -203,8 +205,7 @@ final class ManifestEntity {
                 this.docker.repo(name).manifests().put(ref, new Content.From(body)).thenApply(
                     manifest -> new RsWithHeaders(
                         new RsWithStatus(RsStatus.CREATED),
-                        new Header(
-                            "Location",
+                        new Location(
                             String.format("/v2/%s/manifests/%s", name.value(), ref.string())
                         ),
                         new ContentLength("0"),

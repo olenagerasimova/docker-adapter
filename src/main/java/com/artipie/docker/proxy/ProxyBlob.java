@@ -27,11 +27,11 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.http.ContentLength;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.ContentLength;
 import io.reactivex.Flowable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -111,7 +111,7 @@ public final class ProxyBlob implements Blob {
             Flowable.empty()
         ).send(
             (status, headers, body) -> {
-                final long size = new ContentLength(headers).value();
+                final long size = new ContentLength(headers).longValue();
                 promise.complete(new Content.From(size, body));
                 return CompletableFuture.allOf();
             }

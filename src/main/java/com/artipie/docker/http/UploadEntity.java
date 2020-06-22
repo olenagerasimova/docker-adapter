@@ -34,7 +34,9 @@ import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rs.ContentLength;
 import com.artipie.http.rs.Header;
+import com.artipie.http.rs.Location;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
@@ -232,15 +234,8 @@ public final class UploadEntity {
         ) {
             return new RsWithHeaders(
                 new RsWithStatus(RsStatus.CREATED),
-                new Header(
-                    "Location",
-                    String.format(
-                        "/v2/%s/blobs/%s",
-                        name.value(),
-                        digest.string()
-                    )
-                ),
-                new Header("Content-Length", "0"),
+                new Location(String.format("/v2/%s/blobs/%s", name.value(), digest.string())),
+                new ContentLength("0"),
                 new DigestHeader(digest)
             );
         }
@@ -282,7 +277,7 @@ public final class UploadEntity {
                         upload -> upload.offset().thenApply(
                             offset -> new RsWithHeaders(
                                 new RsWithStatus(RsStatus.NO_CONTENT),
-                                new Header("Content-Length", "0"),
+                                new ContentLength("0"),
                                 new Header("Range", String.format("0-%d", offset)),
                                 new Header("Docker-Upload-UUID", uuid)
                             )
@@ -398,12 +393,11 @@ public final class UploadEntity {
         public CompletionStage<Void> send(final Connection connection) {
             return new RsWithHeaders(
                 new RsWithStatus(RsStatus.ACCEPTED),
-                new Header(
-                    "Location",
+                new Location(
                     String.format("/v2/%s/blobs/uploads/%s", this.name.value(), this.uuid)
                 ),
                 new Header("Range", String.format("0-%d", this.offset)),
-                new Header("Content-Length", "0"),
+                new ContentLength("0"),
                 new Header("Docker-Upload-UUID", this.uuid)
             ).send(connection);
         }
