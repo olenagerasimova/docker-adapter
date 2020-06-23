@@ -23,51 +23,50 @@
  */
 package com.artipie.docker.cache;
 
-import com.artipie.docker.Layers;
+import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
-import com.artipie.docker.Uploads;
+import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.ref.ManifestRef;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Cache implementation of {@link Repo}.
  *
  * @since 0.3
  */
-public final class CacheRepo implements Repo {
+@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+public final class CacheManifests implements Manifests {
 
     /**
-     * Origin repository.
+     * Origin manifests.
      */
-    private final Repo origin;
+    private final Manifests origin;
 
     /**
-     * Cache repository.
+     * Cache manifests.
      */
-    private final Repo cache;
+    private final Manifests cache;
 
     /**
      * Ctor.
      *
-     * @param origin Origin repository.
-     * @param cache Cache repository.
+     * @param origin Origin manifests.
+     * @param cache Cache manifests.
      */
-    public CacheRepo(final Repo origin, final Repo cache) {
+    public CacheManifests(final Manifests origin, final Manifests cache) {
         this.origin = origin;
         this.cache = cache;
     }
 
     @Override
-    public Layers layers() {
-        return new CacheLayers(this.origin.layers(), this.cache.layers());
+    public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Manifests manifests() {
-        return new CacheManifests(this.origin.manifests(), this.cache.manifests());
-    }
-
-    @Override
-    public Uploads uploads() {
+    public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
         throw new UnsupportedOperationException();
     }
 }
