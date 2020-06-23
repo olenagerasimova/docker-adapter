@@ -79,10 +79,9 @@ public final class AstoManifests implements Manifests {
     public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
         return new ByteBufPublisher(content).bytes().thenCompose(
             bytes -> {
-                final Content copy = new Content.From(bytes);
                 final Digest digest = new Digest.Sha256(bytes);
-                return this.blobs.put(copy, digest)
-                    .thenApply(blob -> new JsonManifest(digest, copy))
+                return this.blobs.put(new Content.From(bytes), digest)
+                    .thenApply(blob -> new JsonManifest(digest, new Content.From(bytes)))
                     .thenCompose(
                         manifest -> this.validate(manifest)
                             .thenCompose(nothing -> this.addManifestLinks(ref, digest))

@@ -25,34 +25,16 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.artipie.asto.fs.RxFile;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
-import hu.akarnokd.rxjava2.interop.SingleInterop;
-import io.reactivex.Completable;
-import io.reactivex.Flowable;
-import io.reactivex.Single;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
  * Asto {@link BlobStore} implementation.
  * @since 0.1
- * @todo #41:30min Refactor this class, make it more readable.
- *  Put method is overcomplicated right now, try to decompose it,
- *  move some logic into new classes or methods.
- * @checkstyle ReturnCountCheck (500 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class AstoBlobs implements BlobStore {
 
     /**
@@ -84,38 +66,10 @@ final class AstoBlobs implements BlobStore {
     }
 
     @Override
-    @SuppressWarnings("PMD.OnlyOneReturn")
     public CompletionStage<Blob> put(final Content blob, final Digest digest) {
-        final Path tmp;
-        final FileChannel out;
-        try {
-            tmp = Files.createTempFile(this.getClass().getSimpleName(), ".blob.tmp");
-            out = FileChannel.open(tmp, StandardOpenOption.WRITE);
-        } catch (final IOException err) {
-            return CompletableFuture.failedFuture(err);
-        }
-        return Flowable.fromPublisher(blob)
-            .flatMapCompletable(
-                buf -> Completable.fromAction(
-                    () -> out.write(ByteBuffer.wrap(new Remaining(buf, true).bytes()))
-                )
-            )
-            .doOnTerminate(out::close)
-            .andThen(Single.just(out))
-            .flatMap(
-                ignored -> {
-                    final RxFile file = new RxFile(tmp);
-                    return file.size().flatMap(
-                        size -> SingleInterop.fromFuture(
-                            this.asto.save(
-                                new BlobKey(digest),
-                                new Content.From(size, file.flow())
-                            ).<Blob>thenApply(empty -> new AstoBlob(this.asto, digest))
-                        )
-                    );
-                }
-            )
-            .doAfterTerminate(() -> Files.delete(tmp))
-            .to(SingleInterop.get()).toCompletableFuture();
+        return this.asto.save(
+            new BlobKey(digest),
+            blob
+        ).thenApply(ignored -> new AstoBlob(this.asto, digest));
     }
 }
