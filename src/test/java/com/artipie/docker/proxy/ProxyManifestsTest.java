@@ -33,6 +33,7 @@ import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Headers;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -75,5 +76,19 @@ class ProxyManifestsTest {
             content.size(),
             new IsEqual<>(Optional.of((long) data.length))
         );
+    }
+
+    @Test
+    void shouldGetEmptyWhenNotFound() {
+        final Optional<Manifest> found = new ProxyManifests(
+            (line, headers, body) -> {
+                if (!line.startsWith("GET /v2/my-test/manifests/latest ")) {
+                    throw new IllegalArgumentException();
+                }
+                return new RsWithStatus(RsStatus.NOT_FOUND);
+            },
+            new RepoName.Valid("my-test")
+        ).get(new ManifestRef.FromString("latest")).toCompletableFuture().join();
+        MatcherAssert.assertThat(found.isEmpty(), new IsEqual<>(true));
     }
 }

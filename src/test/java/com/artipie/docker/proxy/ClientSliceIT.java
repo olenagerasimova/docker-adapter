@@ -113,4 +113,20 @@ class ClientSliceIT {
             new IsEqual<>(true)
         );
     }
+
+    @Test
+    void getManifestNotFound() {
+        final RepoName name = new RepoName.Valid("dotnet/core/runtime");
+        final ProxyManifests manifests = new ProxyManifests(this.slice, name);
+        final ManifestRef ref = new ManifestRef.FromDigest(
+            new Digest.FromString(
+                "sha256:0123456789012345678901234567890123456789012345678901234567890123"
+            )
+        );
+        final Optional<Manifest> manifest = manifests.get(ref).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            manifest.isPresent(),
+            new IsEqual<>(false)
+        );
+    }
 }
