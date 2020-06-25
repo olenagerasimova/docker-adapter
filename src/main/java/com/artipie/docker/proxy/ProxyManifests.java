@@ -24,6 +24,7 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -36,6 +37,7 @@ import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -45,10 +47,6 @@ import java.util.concurrent.CompletionStage;
  * Proxy implementation of {@link Repo}.
  *
  * @since 0.3
- * @todo #170:30min Handle response status in `ProxyManifests.get()` method.
- *  When response is received from remote repository the status might be not OK
- *  in case the manifest is missing or some internal error occurred. Manifest should be returned
- *  only if OK status came in response.
  */
 public final class ProxyManifests implements Manifests {
 
@@ -90,19 +88,22 @@ public final class ProxyManifests implements Manifests {
             Headers.EMPTY,
             Flowable.empty()
         ).send(
-            (status, headers, body) -> CompletableFuture.allOf(
-                new ByteBufPublisher(body).bytes()
-                    .thenApply(
-                        bytes -> Optional.<Manifest>of(
-                            new JsonManifest(
-                                new DigestHeader(headers).value(),
-                                new Content.From(bytes)
-                            )
-                        )
-                    )
-                    .thenAccept(promise::complete)
-                    .toCompletableFuture()
-            )
+            (status, headers, body) -> {
+                final CompletionStage<Optional<Manifest>> result;
+                if (status == RsStatus.OK) {
+                    final Digest digest = new DigestHeader(headers).value();
+                    result = new ByteBufPublisher(body).bytes().thenApply(
+                        bytes -> Optional.of(new JsonManifest(digest, new Content.From(bytes)))
+                    );
+                } else if (status == RsStatus.NOT_FOUND) {
+                    result = CompletableFuture.completedFuture(Optional.empty());
+                } else {
+                    result = CompletableFuture.failedFuture(
+                        new IllegalArgumentException(String.format("Unexpected status: %s", status))
+                    );
+                }
+                return result.thenAccept(promise::complete).toCompletableFuture();
+            }
         ).thenCompose(nothing -> promise);
     }
 }
