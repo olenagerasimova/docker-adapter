@@ -98,8 +98,8 @@ public final class ProxyManifests implements Manifests {
                 } else if (status == RsStatus.NOT_FOUND) {
                     result = CompletableFuture.completedFuture(Optional.empty());
                 } else {
-                    throw new IllegalArgumentException(
-                        String.format("Unexpected status: %s", status)
+                    result = CompletableFuture.failedFuture(
+                        new IllegalArgumentException(String.format("Unexpected status: %s", status))
                     );
                 }
                 return result.thenAccept(promise::complete).toCompletableFuture();
