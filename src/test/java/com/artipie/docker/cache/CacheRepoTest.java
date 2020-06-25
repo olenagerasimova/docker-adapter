@@ -23,51 +23,52 @@
  */
 package com.artipie.docker.cache;
 
-import com.artipie.docker.Layers;
-import com.artipie.docker.Manifests;
-import com.artipie.docker.Repo;
-import com.artipie.docker.Uploads;
+import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.proxy.ProxyRepo;
+import com.artipie.http.rs.StandardRs;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
- * Cache implementation of {@link Repo}.
+ * Tests for {@link CacheRepo}.
  *
  * @since 0.3
  */
-public final class CacheRepo implements Repo {
+final class CacheRepoTest {
 
     /**
-     * Origin repository.
+     * Tested {@link CacheRepo}.
      */
-    private final Repo origin;
+    private CacheRepo repo;
 
-    /**
-     * Cache repository.
-     */
-    private final Repo cache;
-
-    /**
-     * Ctor.
-     *
-     * @param origin Origin repository.
-     * @param cache Cache repository.
-     */
-    public CacheRepo(final Repo origin, final Repo cache) {
-        this.origin = origin;
-        this.cache = cache;
+    @BeforeEach
+    void setUp() {
+        this.repo = new CacheRepo(
+            new ProxyRepo(
+                (line, headers, body) -> StandardRs.EMPTY,
+                new RepoName.Simple("test-origin")
+            ),
+            new AstoDocker(new InMemoryStorage()).repo(new RepoName.Simple("test-cache"))
+        );
     }
 
-    @Override
-    public Layers layers() {
-        return new CacheLayers(this.origin.layers(), this.cache.layers());
+    @Test
+    void createsCacheLayers() {
+        MatcherAssert.assertThat(
+            this.repo.layers(),
+            new IsInstanceOf(CacheLayers.class)
+        );
     }
 
-    @Override
-    public Manifests manifests() {
-        return new CacheManifests(this.origin.manifests(), this.cache.manifests());
-    }
-
-    @Override
-    public Uploads uploads() {
-        throw new UnsupportedOperationException();
+    @Test
+    void createsCacheManifests() {
+        MatcherAssert.assertThat(
+            this.repo.manifests(),
+            new IsInstanceOf(CacheManifests.class)
+        );
     }
 }
