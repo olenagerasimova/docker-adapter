@@ -97,14 +97,12 @@ public final class CacheManifests implements Manifests {
     private CompletionStage<Void> copy(final ManifestRef ref) {
         return this.origin.manifests().get(ref).thenApply(Optional::get).thenCompose(
             manifest -> CompletableFuture.allOf(
-                manifest.config().thenCompose(this::copy).toCompletableFuture(),
-                manifest.layers().thenCompose(
-                    layers -> CompletableFuture.allOf(
-                        layers.stream()
-                            .filter(layer -> layer.urls().isEmpty())
-                            .map(layer -> this.copy(layer.digest()).toCompletableFuture())
-                            .toArray(CompletableFuture[]::new)
-                    )
+                this.copy(manifest.config()).toCompletableFuture(),
+                CompletableFuture.allOf(
+                    manifest.layers().stream()
+                        .filter(layer -> layer.urls().isEmpty())
+                        .map(layer -> this.copy(layer.digest()).toCompletableFuture())
+                        .toArray(CompletableFuture[]::new)
                 ).toCompletableFuture()
             ).thenCompose(
                 nothing -> this.cache.manifests().put(ref, manifest.content())

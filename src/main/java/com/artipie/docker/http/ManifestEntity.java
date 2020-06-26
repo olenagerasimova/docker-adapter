@@ -43,8 +43,6 @@ import com.artipie.http.rs.RsWithStatus;
 import com.artipie.http.rs.StandardRs;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -98,16 +96,11 @@ final class ManifestEntity {
             final Publisher<ByteBuffer> body) {
             final Request request = new Request(line);
             return new AsyncResponse(
-                this.docker.repo(request.name()).manifests().get(request.reference()).thenCompose(
-                    manifest -> manifest.<CompletionStage<Response>>map(
-                        found -> found.convert(Head.acceptHeader(headers))
-                            .thenCompose(
-                                original -> CompletableFuture.completedStage(
-                                    new BaseResponse(original)
-                                )
-                            )
+                this.docker.repo(request.name()).manifests().get(request.reference()).thenApply(
+                    manifest -> manifest.<Response>map(
+                        found -> new BaseResponse(found.convert(Head.acceptHeader(headers)))
                     ).orElseGet(
-                        () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
+                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
                     )
                 )
             );
@@ -154,16 +147,14 @@ final class ManifestEntity {
             final RepoName name = request.name();
             final ManifestRef ref = request.reference();
             return new AsyncResponse(
-                this.docker.repo(name).manifests().get(ref).thenCompose(
-                    manifest -> manifest.<CompletionStage<Response>>map(
-                        found -> found.convert(Head.acceptHeader(headers))
-                            .thenCompose(
-                                original -> CompletableFuture.completedStage(
-                                    new RsWithBody(new BaseResponse(original), original.content())
-                                )
-                            )
+                this.docker.repo(name).manifests().get(ref).thenApply(
+                    manifest -> manifest.<Response>map(
+                        found -> {
+                            final Manifest mnf = found.convert(Head.acceptHeader(headers));
+                            return new RsWithBody(new BaseResponse(mnf), mnf.content());
+                        }
                     ).orElseGet(
-                        () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
+                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
                     )
                 )
             );
@@ -270,14 +261,10 @@ final class ManifestEntity {
          */
         BaseResponse(final Manifest mnf) {
             super(
-                new AsyncResponse(
-                    mnf.mediaType().thenApply(
-                        type -> new RsWithHeaders(
-                            StandardRs.EMPTY,
-                            new ContentType(type),
-                            new DigestHeader(mnf.digest())
-                        )
-                    )
+                new RsWithHeaders(
+                    StandardRs.EMPTY,
+                    new ContentType(mnf.mediaType()),
+                    new DigestHeader(mnf.digest())
                 )
             );
         }

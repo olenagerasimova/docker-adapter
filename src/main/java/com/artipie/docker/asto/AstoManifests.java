@@ -120,31 +120,24 @@ public final class AstoManifests implements Manifests {
      * @return Validation completion.
      */
     private CompletionStage<Void> validate(final Manifest manifest) {
-        return manifest.config()
-            .thenCompose(
-                config -> manifest.layers().thenApply(
-                    layers -> Stream.concat(
-                        Stream.of(config),
-                        layers.stream().filter(layer -> layer.urls().isEmpty()).map(Layer::digest)
-                    )
-                )
-            )
-            .thenCompose(
-                digests -> CompletableFuture.allOf(
-                    digests.map(
-                        digest -> this.blobs.blob(digest).thenCompose(
-                            opt -> {
-                                if (opt.isEmpty()) {
-                                    throw new IllegalArgumentException(
-                                        String.format("Blob does not exist: %s", digest)
-                                    );
-                                }
-                                return CompletableFuture.allOf();
-                            }
-                        ).toCompletableFuture()
-                    ).toArray(CompletableFuture[]::new)
-                )
-            );
+        final Stream<Digest> digests = Stream.concat(
+            Stream.of(manifest.config()),
+            manifest.layers().stream().filter(layer -> layer.urls().isEmpty()).map(Layer::digest)
+        );
+        return CompletableFuture.allOf(
+            digests.map(
+                digest -> this.blobs.blob(digest).thenCompose(
+                    opt -> {
+                        if (opt.isEmpty()) {
+                            throw new IllegalArgumentException(
+                                String.format("Blob does not exist: %s", digest)
+                            );
+                        }
+                        return CompletableFuture.allOf();
+                    }
+                ).toCompletableFuture()
+            ).toArray(CompletableFuture[]::new)
+        );
     }
 
     /**
