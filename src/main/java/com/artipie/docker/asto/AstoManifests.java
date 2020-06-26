@@ -81,7 +81,7 @@ public final class AstoManifests implements Manifests {
             bytes -> {
                 final Digest digest = new Digest.Sha256(bytes);
                 return this.blobs.put(new Content.From(bytes), digest)
-                    .thenApply(blob -> new JsonManifest(digest, new Content.From(bytes)))
+                    .thenApply(blob -> new JsonManifest(digest, bytes))
                     .thenCompose(
                         manifest -> this.validate(manifest)
                             .thenCompose(nothing -> this.addManifestLinks(ref, digest))
@@ -102,9 +102,8 @@ public final class AstoManifests implements Manifests {
                                 blob -> blob.content()
                                     .thenApply(ByteBufPublisher::new)
                                     .thenCompose(ByteBufPublisher::bytes)
-                                    .thenApply(Content.From::new)
                                     .<Manifest>thenApply(
-                                        source -> new JsonManifest(blob.digest(), source)
+                                        bytes -> new JsonManifest(blob.digest(), bytes)
                                     )
                                     .thenApply(Optional::of)
                             )

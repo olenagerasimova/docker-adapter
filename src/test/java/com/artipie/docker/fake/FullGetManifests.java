@@ -81,7 +81,7 @@ public final class FullGetManifests implements Manifests {
             Optional.of(
                 new JsonManifest(
                     new Digest.Sha256(this.hex),
-                    new Content.From(this.content.getBytes())
+                    this.content.getBytes()
                 )
             )
         );
