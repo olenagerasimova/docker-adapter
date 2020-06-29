@@ -67,6 +67,6 @@ public final class CacheManifests implements Manifests {
 
     @Override
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-        throw new UnsupportedOperationException();
+        return this.origin.get(ref);
     }
 }

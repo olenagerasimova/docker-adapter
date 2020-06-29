@@ -66,6 +66,6 @@ public final class CacheLayers implements Layers {
 
     @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
-        throw new UnsupportedOperationException();
+        return this.origin.get(digest);
     }
 }
