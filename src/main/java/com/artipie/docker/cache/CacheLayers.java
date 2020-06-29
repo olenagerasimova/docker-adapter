@@ -28,14 +28,15 @@ import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 /**
  * Cache implementation of {@link Layers}.
  *
  * @since 0.3
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class CacheLayers implements Layers {
 
     /**
@@ -66,6 +67,20 @@ public final class CacheLayers implements Layers {
 
     @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
-        return this.origin.get(digest);
+        return this.cache.get(digest).handle(
+            (cached, throwable) -> {
+                final CompletionStage<Optional<Blob>> result;
+                if (throwable == null) {
+                    if (cached.isPresent()) {
+                        result = CompletableFuture.completedFuture(cached);
+                    } else {
+                        result = this.origin.get(digest).exceptionally(ignored -> cached);
+                    }
+                } else {
+                    result = this.origin.get(digest);
+                }
+                return result;
+            }
+        ).thenCompose(Function.identity());
     }
 }
