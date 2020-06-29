@@ -37,10 +37,10 @@ import com.artipie.docker.proxy.ClientSlice;
 import com.artipie.docker.proxy.ProxyDocker;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.slice.LoggingSlice;
-import com.google.common.base.Stopwatch;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
@@ -116,13 +116,7 @@ final class CachingProxyITCase {
         );
         final String image = String.format("%s/dotnet/core/runtime@%s", this.repo.url(), digest);
         final String output = this.cli.run("pull", image);
-        MatcherAssert.assertThat(
-            output,
-            new StringContains(
-                false,
-                String.format("Status: Downloaded newer image for %s", image)
-            )
-        );
+        MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
     @Test
@@ -139,30 +133,20 @@ final class CachingProxyITCase {
         this.cli.run("image", "rm", image);
         this.client.stop();
         final String output = this.cli.run("pull", image);
-        MatcherAssert.assertThat(
-            output,
-            new StringContains(
-                false,
-                String.format("Status: Downloaded newer image for %s", image)
-            )
-        );
+        MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
-    private void awaitManifestCached(final String digest) throws InterruptedException {
+    private void awaitManifestCached(final String digest) throws Exception {
         final Manifests manifests = this.cache.repo(new RepoName.Simple("dotnet/core/runtime"))
             .manifests();
         final ManifestRef ref = new ManifestRef.FromDigest(new Digest.FromString(digest));
-        final Stopwatch stopwatch = Stopwatch.createStarted();
-        while (manifests.get(ref).toCompletableFuture().join().isEmpty()) {
-            if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(1)) {
-                throw new IllegalStateException(
-                    String.format(
-                        "Manifest is absent after %d seconds",
-                        stopwatch.elapsed(TimeUnit.SECONDS)
-                    )
-                );
-            }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-        }
+        manifests.get(ref).toCompletableFuture().get(1, TimeUnit.MINUTES);
+    }
+
+    private static Matcher<String> imagePulled(final String image) {
+        return new StringContains(
+            false,
+            String.format("Status: Downloaded newer image for %s", image)
+        );
     }
 }
