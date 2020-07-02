@@ -63,7 +63,7 @@ public final class CacheRepo implements Repo {
 
     @Override
     public Manifests manifests() {
-        return new CacheManifests(this.origin.manifests(), this.cache.manifests());
+        return new CacheManifests(this.origin, this.cache);
     }
 
     @Override

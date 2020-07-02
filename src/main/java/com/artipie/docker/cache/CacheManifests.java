@@ -24,10 +24,12 @@
 package com.artipie.docker.cache;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
+import com.jcabi.log.Logger;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -41,22 +43,22 @@ import java.util.function.Function;
 public final class CacheManifests implements Manifests {
 
     /**
-     * Origin manifests.
+     * Origin repository.
      */
-    private final Manifests origin;
+    private final Repo origin;
 
     /**
-     * Cache manifests.
+     * Cache repository.
      */
-    private final Manifests cache;
+    private final Repo cache;
 
     /**
      * Ctor.
      *
-     * @param origin Origin manifests.
-     * @param cache Cache manifests.
+     * @param origin Origin repository.
+     * @param cache Cache repository.
      */
-    public CacheManifests(final Manifests origin, final Manifests cache) {
+    public CacheManifests(final Repo origin, final Repo cache) {
         this.origin = origin;
         this.cache = cache;
     }
@@ -68,20 +70,77 @@ public final class CacheManifests implements Manifests {
 
     @Override
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-        return this.origin.get(ref).handle(
-            (cached, throwable) -> {
+        return this.origin.manifests().get(ref).handle(
+            (original, throwable) -> {
                 final CompletionStage<Optional<Manifest>> result;
                 if (throwable == null) {
-                    if (cached.isPresent()) {
-                        result = CompletableFuture.completedFuture(cached);
+                    if (original.isPresent()) {
+                        this.copy(ref);
+                        result = CompletableFuture.completedFuture(original);
                     } else {
-                        result = this.cache.get(ref).exceptionally(ignored -> cached);
+                        result = this.cache.manifests().get(ref).exceptionally(ignored -> original);
                     }
                 } else {
-                    result = this.cache.get(ref);
+                    result = this.cache.manifests().get(ref);
                 }
                 return result;
             }
         ).thenCompose(Function.identity());
+    }
+
+    /**
+     * Copy manifest by reference from original to cache.
+     *
+     * @param ref Manifest reference.
+     * @return Copy completion.
+     */
+    private CompletionStage<Void> copy(final ManifestRef ref) {
+        return this.origin.manifests().get(ref).thenApply(Optional::get).thenCompose(
+            manifest -> CompletableFuture.allOf(
+                manifest.config().thenCompose(this::copy).toCompletableFuture(),
+                manifest.layers().thenCompose(
+                    layers -> CompletableFuture.allOf(
+                        layers.stream()
+                            .filter(layer -> layer.urls().isEmpty())
+                            .map(layer -> this.copy(layer.digest()).toCompletableFuture())
+                            .toArray(CompletableFuture[]::new)
+                    )
+                ).toCompletableFuture()
+            ).thenCompose(
+                nothing -> this.cache.manifests().put(ref, manifest.content())
+            )
+        ).handle(
+            (ignored, ex) -> {
+                if (ex != null) {
+                    Logger.error(
+                        this, "Failed to cache manifest %s: %[exception]s", ref.string(), ex
+                    );
+                }
+                return null;
+            }
+        );
+    }
+
+    /**
+     * Copy blob by digest from original to cache.
+     *
+     * @param digest Blob digest.
+     * @return Copy completion.
+     */
+    private CompletionStage<Void> copy(final Digest digest) {
+        return this.origin.layers().get(digest).thenCompose(
+            blob -> {
+                if (blob.isEmpty()) {
+                    throw new IllegalArgumentException(
+                        String.format("Failed loading blob %s", digest)
+                    );
+                }
+                return blob.get().content();
+            }
+        ).thenCompose(
+            content -> this.cache.layers().put(content, digest)
+        ).thenCompose(
+            blob -> CompletableFuture.allOf()
+        );
     }
 }
