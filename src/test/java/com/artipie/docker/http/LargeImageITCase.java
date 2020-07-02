@@ -79,7 +79,7 @@ public final class LargeImageITCase {
     @Test
     void largeImagePullWorks() throws Exception {
         try {
-            this.client.run("build", this.dockerFile().getParent().toString(), "-t", this.remote());
+            this.buildImage();
             this.client.run("push", this.remote());
             this.client.run("image", "rm", this.remote());
             final String output = this.client.run("pull", this.remote());
@@ -98,12 +98,16 @@ public final class LargeImageITCase {
     @Test
     void largeImageUploadWorks() throws Exception {
         try {
-            this.client.run("build", this.dockerFile().getParent().toString(), "-t", this.remote());
+            this.buildImage();
             final String output = this.client.run("push", this.remote());
             MatcherAssert.assertThat(output, new StringContains(false, "Pushed"));
         } finally {
             this.client.run("rmi", this.remote());
         }
+    }
+
+    private void buildImage() throws Exception {
+        this.client.run("build", this.dockerFile().getParent().toString(), "-t", this.remote());
     }
 
     private Path dockerFile() throws Exception {
