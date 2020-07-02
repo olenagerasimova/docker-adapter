@@ -106,8 +106,8 @@ final class CacheManifestsTest {
         }
         MatcherAssert.assertThat(
             String.format(
-                "Manifest is absent after %d ms",
-                stopwatch.elapsed(TimeUnit.MILLISECONDS)
+                "Manifest is expected to be present, but it was not found after %s seconds",
+                stopwatch.elapsed(TimeUnit.SECONDS)
             ),
             cache.manifests().get(ref).toCompletableFuture().join().isPresent(),
             new IsEqual<>(true)
@@ -144,6 +144,11 @@ final class CacheManifestsTest {
          */
         private final Manifests mnfs;
 
+        /**
+         * Ctor.
+         *
+         * @param mnfs Manifests.
+         */
         private SimpleRepo(final Manifests mnfs) {
             this.mnfs = mnfs;
         }
