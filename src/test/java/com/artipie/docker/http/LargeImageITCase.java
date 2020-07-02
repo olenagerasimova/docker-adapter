@@ -46,6 +46,7 @@ import org.junit.jupiter.api.io.TempDir;
 */
 @DockerClientSupport
 @DisabledOnOs(OS.WINDOWS)
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class LargeImageITCase {
     /**
      * Docker image name.
@@ -76,20 +77,49 @@ public final class LargeImageITCase {
     }
 
     @Test
+    void largeImagePullWorks() throws Exception {
+        try {
+            this.buildImage();
+            this.client.run("push", this.remote());
+            this.client.run("image", "rm", this.remote());
+            final String output = this.client.run("pull", this.remote());
+            MatcherAssert.assertThat(
+                output,
+                new StringContains(
+                    false,
+                    String.format("Status: Downloaded newer image for %s", this.remote())
+                )
+            );
+        } finally {
+            this.client.run("rmi", this.remote());
+        }
+    }
+
+    @Test
     void largeImageUploadWorks() throws Exception {
-        final Path dockerfile = Path.of(
+        try {
+            this.buildImage();
+            final String output = this.client.run("push", this.remote());
+            MatcherAssert.assertThat(output, new StringContains(false, "Pushed"));
+        } finally {
+            this.client.run("rmi", this.remote());
+        }
+    }
+
+    private void buildImage() throws Exception {
+        this.client.run("build", this.dockerFile().getParent().toString(), "-t", this.remote());
+    }
+
+    private Path dockerFile() throws Exception {
+        return Path.of(
             Objects.requireNonNull(
                 Thread.currentThread().getContextClassLoader()
                     .getResource("large-image/Dockerfile")
             ).toURI()
         );
-        final String image = String.format("%s/%s", this.repository.url(), LargeImageITCase.IMAGE);
-        try {
-            this.client.run("build", dockerfile.getParent().toString(), "-t", image);
-            final String output = this.client.run("push", image);
-            MatcherAssert.assertThat(output, new StringContains(false, "Pushed"));
-        } finally {
-            this.client.run("rmi", image);
-        }
+    }
+
+    private String remote() {
+        return String.format("%s/%s", this.repository.url(), LargeImageITCase.IMAGE);
     }
 }
