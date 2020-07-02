@@ -23,18 +23,29 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Docker;
+import com.artipie.docker.Manifests;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.cache.CacheDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
 import com.artipie.docker.proxy.ClientSlice;
 import com.artipie.docker.proxy.ProxyDocker;
+import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.slice.LoggingSlice;
+import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -43,15 +54,22 @@ import org.junit.jupiter.api.condition.OS;
  * Integration test for {@link ProxyDocker}.
  *
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @DisabledOnOs(OS.LINUX)
 @DockerClientSupport
-final class ProxyDockerITCase {
+final class CachingProxyITCase {
 
     /**
      * Docker client.
      */
     private DockerClient cli;
+
+    /**
+     * Docker cache.
+     */
+    private Docker cache;
 
     /**
      * HTTP client used for proxy.
@@ -65,10 +83,16 @@ final class ProxyDockerITCase {
 
     @BeforeEach
     void setUp() throws Exception {
+        this.cache = new AstoDocker(new InMemoryStorage());
         this.client = new HttpClient(new SslContextFactory.Client());
         this.client.start();
         this.repo = new DockerRepository(
-            new ProxyDocker(new LoggingSlice(new ClientSlice(this.client, "mcr.microsoft.com")))
+            new CacheDocker(
+                new ProxyDocker(
+                    new LoggingSlice(new ClientSlice(this.client, "mcr.microsoft.com"))
+                ),
+                this.cache
+            )
         );
         this.repo.start();
     }
@@ -92,12 +116,37 @@ final class ProxyDockerITCase {
         );
         final String image = String.format("%s/dotnet/core/runtime@%s", this.repo.url(), digest);
         final String output = this.cli.run("pull", image);
-        MatcherAssert.assertThat(
-            output,
-            new StringContains(
-                false,
-                String.format("Status: Downloaded newer image for %s", image)
-            )
+        MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
+    }
+
+    @Test
+    @Disabled
+    void shouldPullWhenRemoteIsDown() throws Exception {
+        final String digest = String.format(
+            "%s:%s",
+            "sha256",
+            "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
+        );
+        final String image = String.format("%s/dotnet/core/runtime@%s", this.repo.url(), digest);
+        this.cli.run("pull", image);
+        this.awaitManifestCached(digest);
+        this.cli.run("image", "rm", image);
+        this.client.stop();
+        final String output = this.cli.run("pull", image);
+        MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
+    }
+
+    private void awaitManifestCached(final String digest) throws Exception {
+        final Manifests manifests = this.cache.repo(new RepoName.Simple("dotnet/core/runtime"))
+            .manifests();
+        final ManifestRef ref = new ManifestRef.FromDigest(new Digest.FromString(digest));
+        manifests.get(ref).toCompletableFuture().get(1, TimeUnit.MINUTES);
+    }
+
+    private static Matcher<String> imagePulled(final String image) {
+        return new StringContains(
+            false,
+            String.format("Status: Downloaded newer image for %s", image)
         );
     }
 }

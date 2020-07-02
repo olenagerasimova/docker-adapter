@@ -29,14 +29,15 @@ import com.artipie.docker.Repo;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 
 /**
  * Cache implementation of {@link Repo}.
  *
  * @since 0.3
  */
-@SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
 public final class CacheManifests implements Manifests {
 
     /**
@@ -67,6 +68,20 @@ public final class CacheManifests implements Manifests {
 
     @Override
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-        throw new UnsupportedOperationException();
+        return this.origin.get(ref).handle(
+            (cached, throwable) -> {
+                final CompletionStage<Optional<Manifest>> result;
+                if (throwable == null) {
+                    if (cached.isPresent()) {
+                        result = CompletableFuture.completedFuture(cached);
+                    } else {
+                        result = this.cache.get(ref).exceptionally(ignored -> cached);
+                    }
+                } else {
+                    result = this.cache.get(ref);
+                }
+                return result;
+            }
+        ).thenCompose(Function.identity());
     }
 }
