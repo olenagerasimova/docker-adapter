@@ -37,6 +37,7 @@ import com.artipie.docker.proxy.ClientSlice;
 import com.artipie.docker.proxy.ProxyDocker;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.slice.LoggingSlice;
+import com.google.common.base.Stopwatch;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -45,7 +46,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -120,27 +120,37 @@ final class CachingProxyITCase {
     }
 
     @Test
-    @Disabled
     void shouldPullWhenRemoteIsDown() throws Exception {
+        final String name = "dotnet/core/runtime";
         final String digest = String.format(
             "%s:%s",
             "sha256",
             "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
         );
-        final String image = String.format("%s/dotnet/core/runtime@%s", this.repo.url(), digest);
+        final String image = String.format("%s/%s@%s", this.repo.url(), name, digest);
         this.cli.run("pull", image);
-        this.awaitManifestCached(digest);
+        this.awaitManifestCached(name, digest);
         this.cli.run("image", "rm", image);
         this.client.stop();
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
-    private void awaitManifestCached(final String digest) throws Exception {
-        final Manifests manifests = this.cache.repo(new RepoName.Simple("dotnet/core/runtime"))
-            .manifests();
+    private void awaitManifestCached(final String name, final String digest) throws Exception {
+        final Manifests manifests = this.cache.repo(new RepoName.Simple(name)).manifests();
         final ManifestRef ref = new ManifestRef.FromDigest(new Digest.FromString(digest));
-        manifests.get(ref).toCompletableFuture().get(1, TimeUnit.MINUTES);
+        final Stopwatch stopwatch = Stopwatch.createStarted();
+        while (manifests.get(ref).toCompletableFuture().join().isEmpty()) {
+            if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(1)) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Manifest is expected to be present, but it was not found after %s seconds",
+                        stopwatch.elapsed(TimeUnit.SECONDS)
+                    )
+                );
+            }
+            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+        }
     }
 
     private static Matcher<String> imagePulled(final String image) {
