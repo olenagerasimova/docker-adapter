@@ -30,6 +30,7 @@ import com.artipie.http.hm.IsHeader;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Arrays;
@@ -65,7 +66,7 @@ class UploadEntityPostTest {
     @Test
     void shouldReturnInitialUploadStatus() {
         final Response response = this.slice.response(
-            new RequestLine("POST", "/base/v2/test/blobs/uploads/", "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.POST, "/base/v2/test/blobs/uploads/").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

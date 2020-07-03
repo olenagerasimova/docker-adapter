@@ -79,11 +79,7 @@ public final class ProxyLayers implements Layers {
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
         final CompletableFuture<Optional<Blob>> promise = new CompletableFuture<>();
         return this.remote.response(
-            new RequestLine(
-                RqMethod.HEAD.value(),
-                new BlobPath(this.name, digest).string(),
-                "HTTP/1.1"
-            ).toString(),
+            new RequestLine(RqMethod.HEAD, new BlobPath(this.name, digest).string()).toString(),
             Headers.EMPTY,
             Flowable.empty()
         ).send(

@@ -32,6 +32,7 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -79,7 +80,7 @@ class UploadEntityPatchTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, uuid);
         final byte[] data = "data".getBytes();
         final Response response = this.slice.response(
-            new RequestLine("PATCH", String.format("/base%s", path), "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.PATCH, String.format("/base%s", path)).toString(),
             Collections.emptyList(),
             Flowable.just(ByteBuffer.wrap(data))
         );
@@ -102,7 +103,7 @@ class UploadEntityPatchTest {
     @Test
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
-            new RequestLine("PATCH", "/base/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.PATCH, "/base/v2/test/blobs/uploads/12345").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

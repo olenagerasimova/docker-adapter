@@ -29,6 +29,7 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -67,9 +68,8 @@ class BlobEntityHeadTest {
         );
         final Response response = this.slice.response(
             new RequestLine(
-                "HEAD",
-                String.format("/base/v2/test/blobs/%s", digest),
-                "HTTP/1.1"
+                RqMethod.HEAD,
+                String.format("/base/v2/test/blobs/%s", digest)
             ).toString(),
             Collections.emptyList(),
             Flowable.empty()
@@ -92,12 +92,11 @@ class BlobEntityHeadTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
-                    "HEAD",
+                    RqMethod.HEAD,
                     String.format(
                         "/base/v2/test/blobs/%s",
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
-                    ),
-                    "HTTP/1.1"
+                    )
                 ).toString(),
                 Collections.emptyList(),
                 Flowable.empty()

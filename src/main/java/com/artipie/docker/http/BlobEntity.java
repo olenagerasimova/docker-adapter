@@ -102,7 +102,7 @@ final class BlobEntity {
                                     .orElseGet(blob::size)
                                     .thenApply(
                                         size -> new RsWithBody(
-                                            new BaseResponse(digest, size),
+                                            new BaseResponse(digest),
                                             content
                                         )
                                     )
@@ -148,7 +148,12 @@ final class BlobEntity {
                 this.docker.repo(request.name()).layers().get(request.digest()).thenApply(
                     found -> found.<Response>map(
                         blob -> new AsyncResponse(
-                            blob.size().thenApply(size -> new BaseResponse(blob.digest(), size))
+                            blob.size().thenApply(
+                                size -> new RsWithHeaders(
+                                    new BaseResponse(blob.digest()),
+                                    new ContentLength(String.valueOf(size))
+                                )
+                            )
                         )
                     ).orElseGet(
                         () -> new RsWithStatus(RsStatus.NOT_FOUND)
@@ -169,13 +174,11 @@ final class BlobEntity {
          * Ctor.
          *
          * @param digest Blob digest.
-         * @param size Blob size.
          */
-        BaseResponse(final Digest digest, final long size) {
+        BaseResponse(final Digest digest) {
             super(
                 new RsWithHeaders(
                     new RsWithStatus(RsStatus.OK),
-                    new ContentLength(String.valueOf(size)),
                     new DigestHeader(digest),
                     new ContentType("application/octet-stream")
                 )
