@@ -24,6 +24,7 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.StringContains;
@@ -42,7 +43,7 @@ class UploadEntityRequestTest {
     @Test
     void shouldReadName() {
         final UploadEntity.Request request = new UploadEntity.Request(
-            new RequestLine("POST", "/v2/my-repo/blobs/uploads/", "HTTP/1.1").toString()
+            new RequestLine(RqMethod.POST, "/v2/my-repo/blobs/uploads/").toString()
         );
         MatcherAssert.assertThat(request.name().value(), new IsEqual<>("my-repo"));
     }
@@ -53,7 +54,7 @@ class UploadEntityRequestTest {
         MatcherAssert.assertThat(
             new UploadEntity.Request(
                 new RequestLine(
-                    "POST", String.format("/v2/%s/blobs/uploads/", name), "HTTP/1.1"
+                    RqMethod.POST, String.format("/v2/%s/blobs/uploads/", name)
                 ).toString()
             ).name().value(),
             new IsEqual<>(name)
@@ -64,9 +65,8 @@ class UploadEntityRequestTest {
     void shouldReadUuid() {
         final UploadEntity.Request request = new UploadEntity.Request(
             new RequestLine(
-                "PATCH",
-                "/v2/my-repo/blobs/uploads/a9e48d2a-c939-441d-bb53-b3ad9ab67709",
-                "HTTP/1.1"
+                RqMethod.PATCH,
+                "/v2/my-repo/blobs/uploads/a9e48d2a-c939-441d-bb53-b3ad9ab67709"
             ).toString()
         );
         MatcherAssert.assertThat(
@@ -79,9 +79,8 @@ class UploadEntityRequestTest {
     void shouldReadDigest() {
         final UploadEntity.Request request = new UploadEntity.Request(
             new RequestLine(
-                "PUT",
-                "/v2/my-repo/blobs/uploads/123-abc?digest=sha256:12345",
-                "HTTP/1.1"
+                RqMethod.PUT,
+                "/v2/my-repo/blobs/uploads/123-abc?digest=sha256:12345"
             ).toString()
         );
         MatcherAssert.assertThat(request.digest().string(), new IsEqual<>("sha256:12345"));
@@ -93,11 +92,7 @@ class UploadEntityRequestTest {
             Assertions.assertThrows(
                 IllegalArgumentException.class,
                 () -> new UploadEntity.Request(
-                    new RequestLine(
-                        "PUT",
-                        "/one/two",
-                        "HTTP/1.1"
-                    ).toString()
+                    new RequestLine(RqMethod.PUT, "/one/two").toString()
                 ).name()
             ).getMessage(),
             new StringContains(false, "Unexpected path")
@@ -111,9 +106,8 @@ class UploadEntityRequestTest {
                 IllegalStateException.class,
                 () -> new UploadEntity.Request(
                     new RequestLine(
-                        "PUT",
-                        "/v2/my-repo/blobs/uploads/123-abc?what=nothing",
-                        "HTTP/1.1"
+                        RqMethod.PUT,
+                        "/v2/my-repo/blobs/uploads/123-abc?what=nothing"
                     ).toString()
                 ).digest()
             ).getMessage(),

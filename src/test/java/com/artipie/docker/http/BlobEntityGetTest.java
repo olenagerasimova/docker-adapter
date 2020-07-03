@@ -32,6 +32,7 @@ import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -71,9 +72,8 @@ class BlobEntityGetTest {
         );
         final Response response = this.slice.response(
             new RequestLine(
-                "GET",
-                String.format("/base/v2/test/blobs/%s", digest),
-                "HTTP/1.1"
+                RqMethod.GET,
+                String.format("/base/v2/test/blobs/%s", digest)
             ).toString(),
             Collections.emptyList(),
             Flowable.empty()
@@ -105,12 +105,11 @@ class BlobEntityGetTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
-                    "GET",
+                    RqMethod.GET,
                     String.format(
                         "/base/v2/test/blobs/%s",
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
-                    ),
-                    "HTTP/1.1"
+                    )
                 ).toString(),
                 Collections.emptyList(),
                 Flowable.empty()

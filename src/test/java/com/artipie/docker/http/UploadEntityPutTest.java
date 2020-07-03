@@ -35,6 +35,7 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -147,7 +148,7 @@ class UploadEntityPutTest {
     @Test
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
-            new RequestLine("PUT", "/base/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.PUT, "/base/v2/test/blobs/uploads/12345").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -166,9 +167,8 @@ class UploadEntityPutTest {
      */
     private static String requestLine(final String name, final String uuid, final String digest) {
         return new RequestLine(
-            "PUT",
-            String.format("/base/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest),
-            "HTTP/1.1"
+            RqMethod.PUT,
+            String.format("/base/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest)
         ).toString();
     }
 

@@ -80,11 +80,7 @@ public final class ProxyManifests implements Manifests {
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
         final CompletableFuture<Optional<Manifest>> promise = new CompletableFuture<>();
         return this.remote.response(
-            new RequestLine(
-                RqMethod.GET.value(),
-                new ManifestPath(this.name, ref).string(),
-                "HTTP/1.1"
-            ).toString(),
+            new RequestLine(RqMethod.GET, new ManifestPath(this.name, ref).string()).toString(),
             Headers.EMPTY,
             Flowable.empty()
         ).send(

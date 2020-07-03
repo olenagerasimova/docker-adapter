@@ -27,6 +27,7 @@ import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -59,7 +60,7 @@ class ManifestEntityHeadTest {
     void shouldRespondOkWhenManifestFoundByTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("HEAD", "/base/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
+                new RequestLine(RqMethod.HEAD, "/base/v2/my-alpine/manifests/1").toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),
@@ -81,9 +82,8 @@ class ManifestEntityHeadTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
-                    "HEAD",
-                    String.format("/base/v2/my-alpine/manifests/%s", digest),
-                    "HTTP/1.1"
+                    RqMethod.HEAD,
+                    String.format("/base/v2/my-alpine/manifests/%s", digest)
                 ).toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
@@ -98,7 +98,7 @@ class ManifestEntityHeadTest {
     void shouldReturnNotFoundForUnknownTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("HEAD", "/base/v2/my-alpine/manifests/2", "HTTP/1.1").toString(),
+                new RequestLine(RqMethod.HEAD, "/base/v2/my-alpine/manifests/2").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),

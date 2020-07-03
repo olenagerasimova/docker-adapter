@@ -37,6 +37,7 @@ import com.artipie.docker.asto.BlobKey;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -125,14 +126,13 @@ class S3CompatibilityITCase {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
-                    "PUT",
+                    RqMethod.PUT,
                     String.format(
                         "/v2/%s/blobs/uploads/%s?digest=%s",
                         name,
                         upload.uuid(),
                         digest
-                    ),
-                    "HTTP/1.1"
+                    )
                 ).toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -149,7 +149,7 @@ class S3CompatibilityITCase {
     void shouldPutManifest() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("PUT", "/v2/test/manifests/1", "HTTP/1.1").toString(),
+                new RequestLine(RqMethod.PUT, "/v2/test/manifests/1").toString(),
                 Collections.emptyList(),
                 this.manifest(new RepoName.Valid("test"))
             ),
@@ -165,7 +165,7 @@ class S3CompatibilityITCase {
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("GET", "/v2/test/manifests/2", "HTTP/1.1").toString(),
+                new RequestLine(RqMethod.GET, "/v2/test/manifests/2").toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),

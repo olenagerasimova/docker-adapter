@@ -29,6 +29,7 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -51,7 +52,7 @@ class BaseEntityGetTest {
     void shouldRespondOkToVersionCheck() {
         final DockerSlice slice = new DockerSlice("/base", new AstoDocker(new InMemoryStorage()));
         final Response response = slice.response(
-            new RequestLine("GET", "/base/v2/", "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.GET, "/base/v2/").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

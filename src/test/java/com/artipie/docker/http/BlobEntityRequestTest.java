@@ -24,6 +24,7 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class BlobEntityRequestTest {
         MatcherAssert.assertThat(
             new BlobEntity.Request(
                 new RequestLine(
-                    "HEAD", String.format("/v2/%s/blobs/sha256:098", name), "HTTP/1.1"
+                    RqMethod.HEAD, String.format("/v2/%s/blobs/sha256:098", name)
                 ).toString()
             ).name().value(),
             new IsEqual<>(name)
@@ -54,7 +55,7 @@ class BlobEntityRequestTest {
         MatcherAssert.assertThat(
             new BlobEntity.Request(
                 new RequestLine(
-                    "GET", String.format("/v2/some-repo/blobs/%s", digest), "HTTP/1.1"
+                    RqMethod.GET, String.format("/v2/some-repo/blobs/%s", digest)
                 ).toString()
             ).digest().string(),
             new IsEqual<>(digest)
@@ -67,7 +68,7 @@ class BlobEntityRequestTest {
         MatcherAssert.assertThat(
             new BlobEntity.Request(
                 new RequestLine(
-                    "HEAD", String.format("/v2/%s/blobs/sha256:234434df", name), "HTTP/1.1"
+                    RqMethod.HEAD, String.format("/v2/%s/blobs/sha256:234434df", name)
                 ).toString()
             ).name().value(),
             new IsEqual<>(name)

@@ -32,6 +32,7 @@ import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -67,7 +68,7 @@ class ManifestEntityGetTest {
     void shouldReturnManifestByTag() throws Exception {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("GET", "/base/v2/my-alpine/manifests/1", "HTTP/1.1").toString(),
+                new RequestLine(RqMethod.GET, "/base/v2/my-alpine/manifests/1").toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),
@@ -90,9 +91,8 @@ class ManifestEntityGetTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
-                    "GET",
-                    String.format("/base/v2/my-alpine/manifests/%s", digest),
-                    "HTTP/1.1"
+                    RqMethod.GET,
+                    String.format("/base/v2/my-alpine/manifests/%s", digest)
                 ).toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
@@ -110,7 +110,7 @@ class ManifestEntityGetTest {
     void shouldReturnNotFoundForUnknownTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine("GET", "/base/v2/my-alpine/manifests/2", "HTTP/1.1").toString(),
+                new RequestLine(RqMethod.GET, "/base/v2/my-alpine/manifests/2").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
@@ -123,12 +123,11 @@ class ManifestEntityGetTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(
-                    "GET",
+                    RqMethod.GET,
                     String.format(
                         "/base/v2/my-alpine/manifests/%s",
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
-                    ),
-                    "HTTP/1.1"
+                    )
                 ).toString(),
                 Collections.emptyList(),
                 Flowable.empty()
@@ -141,19 +140,19 @@ class ManifestEntityGetTest {
         final String digest,
         final Key content
     ) throws Exception {
+        final byte[] value = new BlockingStorage(new ExampleStorage()).value(content);
         return new AllOf<>(
             Arrays.asList(
                 new RsHasStatus(RsStatus.OK),
                 new RsHasHeaders(
+                    new Header("Content-Length", String.valueOf(value.length)),
                     new Header(
                         "Content-Type",
                         "application/vnd.docker.distribution.manifest.v2+json"
                     ),
                     new Header("Docker-Content-Digest", digest)
                 ),
-                new RsHasBody(
-                    new BlockingStorage(new ExampleStorage()).value(content)
-                )
+                new RsHasBody(value)
             )
         );
     }

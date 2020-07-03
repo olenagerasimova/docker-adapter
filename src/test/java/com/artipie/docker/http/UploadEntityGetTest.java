@@ -33,6 +33,7 @@ import com.artipie.http.Response;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
@@ -77,7 +78,7 @@ public final class UploadEntityGetTest {
             .toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
-            new RequestLine("GET", String.format("/base%s", path), "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.GET, String.format("/base%s", path)).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -106,7 +107,7 @@ public final class UploadEntityGetTest {
         upload.append(new Content.From(new byte[1])).toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
-            new RequestLine("GET", String.format("/base%s", path), "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.GET, String.format("/base%s", path)).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -136,7 +137,7 @@ public final class UploadEntityGetTest {
         upload.append(new Content.From(new byte[128])).toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response get = this.slice.response(
-            new RequestLine("GET", String.format("/base%s", path), "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.GET, String.format("/base%s", path)).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -158,7 +159,7 @@ public final class UploadEntityGetTest {
     @Test
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
-            new RequestLine("GET", "/base/v2/test/blobs/uploads/12345", "HTTP/1.1").toString(),
+            new RequestLine(RqMethod.GET, "/base/v2/test/blobs/uploads/12345").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

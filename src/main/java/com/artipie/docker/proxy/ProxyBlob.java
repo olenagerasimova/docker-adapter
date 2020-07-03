@@ -102,11 +102,7 @@ public final class ProxyBlob implements Blob {
     public CompletionStage<Content> content() {
         final CompletableFuture<Content> promise = new CompletableFuture<>();
         return this.remote.response(
-            new RequestLine(
-                RqMethod.GET.value(),
-                new BlobPath(this.name, this.dig).string(),
-                "HTTP/1.1"
-            ).toString(),
+            new RequestLine(RqMethod.GET, new BlobPath(this.name, this.dig).string()).toString(),
             Headers.EMPTY,
             Flowable.empty()
         ).send(
