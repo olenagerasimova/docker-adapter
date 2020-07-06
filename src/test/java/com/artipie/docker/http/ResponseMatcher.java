@@ -24,10 +24,10 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.Response;
+import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
-import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import org.cactoos.list.ListOf;
 import org.hamcrest.Matcher;

@@ -25,8 +25,8 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.Digest;
 import com.artipie.http.Headers;
+import com.artipie.http.headers.Header;
 import com.artipie.http.rq.RqHeaders;
-import com.artipie.http.rs.Header;
 
 /**
  * Docker-Content-Digest header.
