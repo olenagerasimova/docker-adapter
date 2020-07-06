@@ -29,7 +29,7 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
-import com.artipie.http.hm.RsHasHeaders;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
@@ -37,10 +37,8 @@ import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -86,16 +84,12 @@ class UploadEntityPatchTest {
         );
         MatcherAssert.assertThat(
             response,
-            new AllOf<>(
-                Arrays.asList(
-                    new RsHasStatus(RsStatus.ACCEPTED),
-                    new RsHasHeaders(
-                        new Header("Location", path),
-                        new Header("Range", String.format("0-%d", data.length - 1)),
-                        new Header("Content-Length", "0"),
-                        new Header("Docker-Upload-UUID", uuid)
-                    )
-                )
+            new ResponseMatcher(
+                RsStatus.ACCEPTED,
+                new Header("Location", path),
+                new Header("Range", String.format("0-%d", data.length - 1)),
+                new Header("Content-Length", "0"),
+                new Header("Docker-Upload-UUID", uuid)
             )
         );
     }
