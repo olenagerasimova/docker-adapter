@@ -28,7 +28,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.http.Headers;
-import com.artipie.http.rs.ContentLength;
+import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import java.util.Optional;

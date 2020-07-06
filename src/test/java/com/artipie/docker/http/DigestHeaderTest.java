@@ -25,7 +25,7 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.Digest;
 import com.artipie.http.Headers;
-import com.artipie.http.rs.Header;
+import com.artipie.http.headers.Header;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
