@@ -27,13 +27,25 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.docker.ref.ManifestRef;
+import com.artipie.http.Headers;
+import com.artipie.http.auth.BasicAuthorizationHeader;
+import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
+import io.reactivex.Flowable;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.text.IsEmptyString;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,16 +64,10 @@ class ClientSliceIT {
      */
     private HttpClient client;
 
-    /**
-     * Repository URL.
-     */
-    private ClientSlice slice;
-
     @BeforeEach
     void setUp() throws Exception {
         this.client = new HttpClient(new SslContextFactory.Client());
         this.client.start();
-        this.slice = new ClientSlice(this.client, "mcr.microsoft.com");
     }
 
     @AfterEach
@@ -73,11 +79,12 @@ class ClientSliceIT {
 
     @Test
     void shouldGetBlob() {
+        final ClientSlice slice = new ClientSlice(this.client, "mcr.microsoft.com");
         final RepoName name = new RepoName.Valid("dotnet/core/runtime");
         final Digest digest = new Digest.Sha256(
             "b71717fef0141577dd1588f2838d9a797e026ca20d95d0a89559a6b6af734c7b"
         );
-        final ProxyBlob blob = new ProxyBlob(this.slice, name, digest, 828L);
+        final ProxyBlob blob = new ProxyBlob(slice, name, digest, 828L);
         MatcherAssert.assertThat(
             blob.content()
                 .thenApply(DigestFromContent::new)
@@ -90,8 +97,9 @@ class ClientSliceIT {
 
     @Test
     void getManifestByDigest() {
+        final ClientSlice slice = new ClientSlice(this.client, "mcr.microsoft.com");
         final RepoName name = new RepoName.Valid("dotnet/core/runtime");
-        final ProxyManifests manifests = new ProxyManifests(this.slice, name);
+        final ProxyManifests manifests = new ProxyManifests(slice, name);
         final ManifestRef ref = new ManifestRef.FromDigest(
             new Digest.Sha256("c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07")
         );
@@ -104,8 +112,9 @@ class ClientSliceIT {
 
     @Test
     void getManifestByTag() {
+        final ClientSlice slice = new ClientSlice(this.client, "mcr.microsoft.com");
         final RepoName name = new RepoName.Valid("dotnet/core/runtime");
-        final ProxyManifests manifests = new ProxyManifests(this.slice, name);
+        final ProxyManifests manifests = new ProxyManifests(slice, name);
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("latest"));
         final Optional<Manifest> manifest = manifests.get(ref).toCompletableFuture().join();
         MatcherAssert.assertThat(
@@ -116,8 +125,9 @@ class ClientSliceIT {
 
     @Test
     void getManifestNotFound() {
+        final ClientSlice slice = new ClientSlice(this.client, "mcr.microsoft.com");
         final RepoName name = new RepoName.Valid("dotnet/core/runtime");
-        final ProxyManifests manifests = new ProxyManifests(this.slice, name);
+        final ProxyManifests manifests = new ProxyManifests(slice, name);
         final ManifestRef ref = new ManifestRef.FromDigest(
             new Digest.FromString(
                 "sha256:0123456789012345678901234567890123456789012345678901234567890123"
@@ -127,6 +137,37 @@ class ClientSliceIT {
         MatcherAssert.assertThat(
             manifest.isPresent(),
             new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void shouldSendQueryAndHeaders() throws Exception {
+        final ClientSlice slice = new ClientSlice(this.client, "auth.docker.io");
+        final CompletableFuture<byte[]> promise = new CompletableFuture<>();
+        final byte[] response = slice.response(
+            new RequestLine(
+                RqMethod.GET,
+                "/token?service=registry.docker.io&scope=repository:library/ubuntu:pull"
+            ).toString(),
+            new Headers.From(
+                new BasicAuthorizationHeader("testartipie", "db72e2e2-a690-43bc-a18b-335bd229aa3a")
+            ),
+            Flowable.empty()
+        ).send(
+            (status, headers, body) -> CompletableFuture.supplyAsync(
+                () -> {
+                    if (status != RsStatus.OK) {
+                        throw new IllegalStateException(
+                            String.format("Unexpected status: %s", status)
+                        );
+                    }
+                    return new ByteBufPublisher(body).bytes().thenAccept(promise::complete);
+                }
+            ).thenCompose(Function.identity())
+        ).thenCompose(nothing -> promise).toCompletableFuture().get(1, TimeUnit.MINUTES);
+        MatcherAssert.assertThat(
+            new TokenResponse(response).token(),
+            new IsNot<>(IsEmptyString.emptyString())
         );
     }
 }
