@@ -24,23 +24,17 @@
 package com.artipie.docker.http;
 
 import com.artipie.asto.Key;
-import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
-import com.artipie.http.Response;
-import com.artipie.http.hm.RsHasBody;
-import com.artipie.http.hm.RsHasHeaders;
+import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import java.util.Arrays;
 import java.util.Collections;
-import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,7 +59,7 @@ class ManifestEntityGetTest {
     }
 
     @Test
-    void shouldReturnManifestByTag() throws Exception {
+    void shouldReturnManifestByTag() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.GET, "/base/v2/my-alpine/manifests/1").toString(),
@@ -74,18 +68,20 @@ class ManifestEntityGetTest {
                 ),
                 Flowable.empty()
             ),
-            success(
+            new ResponseMatcher(
                 "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221",
-                new Key.From(
-                    "docker", "registry", "v2", "blobs", "sha256", "cb",
-                    "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
+                bytes(
+                    new Key.From(
+                        "docker", "registry", "v2", "blobs", "sha256", "cb",
+                        "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221", "data"
+                    )
                 )
             )
         );
     }
 
     @Test
-    void shouldReturnManifestByDigest() throws Exception {
+    void shouldReturnManifestByDigest() {
         final String hex = "cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221";
         final String digest = String.format("%s:%s", "sha256", hex);
         MatcherAssert.assertThat(
@@ -99,9 +95,11 @@ class ManifestEntityGetTest {
                 ),
                 Flowable.empty()
             ),
-            success(
+            new ResponseMatcher(
                 digest,
-                new Key.From("docker", "registry", "v2", "blobs", "sha256", "cb", hex, "data")
+                bytes(
+                    new Key.From("docker", "registry", "v2", "blobs", "sha256", "cb", hex, "data")
+                )
             )
         );
     }
@@ -136,24 +134,11 @@ class ManifestEntityGetTest {
         );
     }
 
-    private static Matcher<Response> success(
-        final String digest,
-        final Key content
-    ) throws Exception {
-        final byte[] value = new BlockingStorage(new ExampleStorage()).value(content);
-        return new AllOf<>(
-            Arrays.asList(
-                new RsHasStatus(RsStatus.OK),
-                new RsHasHeaders(
-                    new Header("Content-Length", String.valueOf(value.length)),
-                    new Header(
-                        "Content-Type",
-                        "application/vnd.docker.distribution.manifest.v2+json"
-                    ),
-                    new Header("Docker-Content-Digest", digest)
-                ),
-                new RsHasBody(value)
-            )
-        );
+    private static byte[] bytes(final Key key) {
+        return new ByteBufPublisher(
+            new ExampleStorage().value(
+                key
+            ).join()
+        ).bytes().toCompletableFuture().join();
     }
 }

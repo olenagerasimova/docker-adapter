@@ -26,17 +26,13 @@ package com.artipie.docker.http;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
-import com.artipie.http.hm.RsHasHeaders;
-import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.Header;
-import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -58,13 +54,8 @@ class BaseEntityGetTest {
         );
         MatcherAssert.assertThat(
             response,
-            new AllOf<>(
-                Arrays.asList(
-                    new RsHasStatus(RsStatus.OK),
-                    new RsHasHeaders(
-                        new Header("Docker-Distribution-API-Version", "registry/2.0")
-                    )
-                )
+            new ResponseMatcher(
+                new Header("Docker-Distribution-API-Version", "registry/2.0")
             )
         );
     }

@@ -24,6 +24,7 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.Response;
+import com.artipie.http.hm.RsHasBody;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rs.Header;
@@ -41,6 +42,7 @@ import org.hamcrest.core.AllOf;
  *  com.artipie.docker.http.ManifestEntityGetTest#success(com.artipie.asto.Key)
  *  method.
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class ResponseMatcher extends AllOf<Response> {
 
     /**
@@ -61,4 +63,27 @@ final class ResponseMatcher extends AllOf<Response> {
             )
         );
     }
+
+    /**
+     * Ctor.
+     * @param digest Digest
+     * @param content Content
+     */
+    ResponseMatcher(final String digest, final byte[] content) {
+        super(
+            new ListOf<Matcher<? super Response>>(
+                new RsHasStatus(RsStatus.OK),
+                new RsHasHeaders(
+                    new Header("Content-Length", String.valueOf(content.length)),
+                    new Header(
+                        "Content-Type",
+                        "application/vnd.docker.distribution.manifest.v2+json"
+                    ),
+                    new Header("Docker-Content-Digest", digest)
+                ),
+                new RsHasBody(content)
+            )
+        );
+    }
+
 }
