@@ -25,10 +25,10 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
-import com.artipie.http.rs.Header;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
