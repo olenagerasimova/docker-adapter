@@ -27,17 +27,14 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
 import com.artipie.http.hm.IsHeader;
-import com.artipie.http.hm.RsHasHeaders;
-import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsNot;
 import org.hamcrest.core.StringStartsWith;
 import org.junit.jupiter.api.BeforeEach;
@@ -72,19 +69,15 @@ class UploadEntityPostTest {
         );
         MatcherAssert.assertThat(
             response,
-            new AllOf<>(
-                Arrays.asList(
-                    new RsHasStatus(RsStatus.ACCEPTED),
-                    new RsHasHeaders(
-                        new IsHeader(
-                            "Location",
-                            new StringStartsWith(false, "/v2/test/blobs/uploads/")
-                        ),
-                        new IsHeader("Range", "0-0"),
-                        new IsHeader("Content-Length", "0"),
-                        new IsHeader("Docker-Upload-UUID", new IsNot<>(Matchers.emptyString()))
-                    )
-                )
+            new ResponseMatcher(
+                RsStatus.ACCEPTED,
+                new IsHeader(
+                    "Location",
+                    new StringStartsWith(false, "/v2/test/blobs/uploads/")
+                ),
+                new IsHeader("Range", "0-0"),
+                new IsHeader("Content-Length", "0"),
+                new IsHeader("Docker-Upload-UUID", new IsNot<>(Matchers.emptyString()))
             )
         );
     }

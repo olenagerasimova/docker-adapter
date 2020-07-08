@@ -31,8 +31,7 @@ import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.headers.Header;
-import com.artipie.http.hm.RsHasHeaders;
-import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -40,7 +39,6 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -79,15 +77,13 @@ class ManifestEntityPutTest {
                 Collections.emptyList(),
                 this.manifest()
             ),
-            Matchers.allOf(
-                new RsHasStatus(RsStatus.CREATED),
-                new RsHasHeaders(
-                    new Header("Location", path),
-                    new Header("Content-Length", "0"),
-                    new Header(
-                        "Docker-Content-Digest",
-                        "sha256:02b9f91901050f814adfb19b1a8f5d599b07504998c2d665baa82e364322b566"
-                    )
+            new ResponseMatcher(
+                RsStatus.CREATED,
+                new Header("Location", path),
+                new Header("Content-Length", "0"),
+                new Header(
+                    "Docker-Content-Digest",
+                    "sha256:02b9f91901050f814adfb19b1a8f5d599b07504998c2d665baa82e364322b566"
                 )
             )
         );
@@ -107,13 +103,11 @@ class ManifestEntityPutTest {
                 Collections.emptyList(),
                 this.manifest()
             ),
-            Matchers.allOf(
-                new RsHasStatus(RsStatus.CREATED),
-                new RsHasHeaders(
-                    new Header("Location", path),
-                    new Header("Content-Length", "0"),
-                    new Header("Docker-Content-Digest", digest)
-                )
+            new ResponseMatcher(
+                RsStatus.CREATED,
+                new Header("Location", path),
+                new Header("Content-Length", "0"),
+                new Header("Docker-Content-Digest", digest)
             )
         );
     }

@@ -33,17 +33,15 @@ import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.asto.BlobKey;
 import com.artipie.http.Response;
 import com.artipie.http.headers.Header;
-import com.artipie.http.hm.RsHasHeaders;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,15 +99,11 @@ class UploadEntityPutTest {
         MatcherAssert.assertThat(
             "Returns 201 status and corresponding headers",
             response,
-            new AllOf<>(
-                Arrays.asList(
-                    new RsHasStatus(RsStatus.CREATED),
-                    new RsHasHeaders(
-                        new Header("Location", String.format("/v2/%s/blobs/%s", name, digest)),
-                        new Header("Content-Length", "0"),
-                        new Header("Docker-Content-Digest", digest)
-                    )
-                )
+            new ResponseMatcher(
+                RsStatus.CREATED,
+                new Header("Location", String.format("/v2/%s/blobs/%s", name, digest)),
+                new Header("Content-Length", "0"),
+                new Header("Docker-Content-Digest", digest)
             )
         );
         MatcherAssert.assertThat(

@@ -27,7 +27,7 @@ import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
 import com.artipie.http.headers.Header;
-import com.artipie.http.hm.RsHasHeaders;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
@@ -35,7 +35,6 @@ import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -76,13 +75,11 @@ class BlobEntityHeadTest {
         );
         MatcherAssert.assertThat(
             response,
-            Matchers.allOf(
-                new RsHasStatus(RsStatus.OK),
-                new RsHasHeaders(
-                    new Header("Content-Length", "2803255"),
-                    new Header("Docker-Content-Digest", digest),
-                    new Header("Content-Type", "application/octet-stream")
-                )
+            new ResponseMatcher(
+                RsStatus.OK,
+                new Header("Content-Length", "2803255"),
+                new Header("Docker-Content-Digest", digest),
+                new Header("Content-Type", "application/octet-stream")
             )
         );
     }
