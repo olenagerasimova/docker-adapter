@@ -148,7 +148,7 @@ class ManifestEntityGetTest {
 
     /**
      * Response matcher.
-     * @since 0.2
+     * @since 0.3
      */
     private static final class ResponseMatcher extends AllOf<Response> {
 
