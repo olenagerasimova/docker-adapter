@@ -23,25 +23,39 @@
  */
 package com.artipie.docker.proxy;
 
+import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.headers.Authorization;
 import com.artipie.http.headers.WwwAuthenticate;
+import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
+import io.reactivex.Flowable;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 import org.reactivestreams.Publisher;
 
 /**
  * Slice augmenting requests with Authorization header when needed.
  *
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class AuthClientSlice implements Slice {
+
+    /**
+     * Client slices.
+     */
+    private final ClientSlices client;
 
     /**
      * Origin slice.
@@ -51,9 +65,11 @@ public final class AuthClientSlice implements Slice {
     /**
      * Ctor.
      *
+     * @param client Client slices.
      * @param origin Origin slice.
      */
-    public AuthClientSlice(final Slice origin) {
+    public AuthClientSlice(final ClientSlices client, final Slice origin) {
+        this.client = client;
         this.origin = origin;
     }
 
@@ -94,8 +110,42 @@ public final class AuthClientSlice implements Slice {
      * @param header WWW-Authenticate header.
      * @return Authorization header.
      */
-    @SuppressWarnings("PMD.UnusedFormalParameter")
     private CompletionStage<Map.Entry<String, String>> authenticate(final WwwAuthenticate header) {
-        throw new UnsupportedOperationException();
+        final String scheme = header.scheme();
+        if (!scheme.equals("Bearer")) {
+            throw new IllegalArgumentException(
+                String.format("Unsupported authentication scheme: %s", scheme)
+            );
+        }
+        final URI realm;
+        try {
+            realm = new URI(header.realm());
+        } catch (final URISyntaxException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+        final String path = realm.getPath();
+        final String query = header.params().stream()
+            .filter(param -> !param.name().equals("realm"))
+            .map(param -> String.format("%s=%s", param.name(), param.value()))
+            .collect(Collectors.joining("&"));
+        final CompletableFuture<String> promise = new CompletableFuture<>();
+        return this.client.slice(realm.getHost()).response(
+            new RequestLine(
+                RqMethod.GET,
+                String.format("%s?%s", path, query)
+            ).toString(),
+            Headers.EMPTY,
+            Flowable.empty()
+        ).send(
+            (status, headers, body) -> new ByteBufPublisher(body).bytes()
+                .thenApply(TokenResponse::new)
+                .thenApply(TokenResponse::token)
+                .thenCompose(
+                    token -> {
+                        promise.complete(token);
+                        return CompletableFuture.allOf();
+                    }
+                )
+        ).thenCompose(ignored -> promise).thenApply(Authorization.Bearer::new);
     }
 }
