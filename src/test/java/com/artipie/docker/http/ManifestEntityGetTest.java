@@ -27,14 +27,20 @@ import com.artipie.asto.Key;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.misc.ByteBufPublisher;
+import com.artipie.http.Response;
 import com.artipie.http.headers.Header;
+import com.artipie.http.hm.RsHasBody;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
+import org.cactoos.list.ListOf;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.AllOf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -136,9 +142,36 @@ class ManifestEntityGetTest {
 
     private static byte[] bytes(final Key key) {
         return new ByteBufPublisher(
-            new ExampleStorage().value(
-                key
-            ).join()
+            new ExampleStorage().value(key).join()
         ).bytes().toCompletableFuture().join();
+    }
+
+    /**
+     * Response matcher.
+     * @since 0.2
+     */
+    private static final class ResponseMatcher extends AllOf<Response> {
+
+        /**
+         * Ctor.
+         * @param digest Digest
+         * @param content Content
+         */
+        ResponseMatcher(final String digest, final byte[] content) {
+            super(
+                new ListOf<Matcher<? super Response>>(
+                    new RsHasStatus(RsStatus.OK),
+                    new RsHasHeaders(
+                        new Header("Content-Length", String.valueOf(content.length)),
+                        new Header(
+                            "Content-Type",
+                            "application/vnd.docker.distribution.manifest.v2+json"
+                        ),
+                        new Header("Docker-Content-Digest", digest)
+                    ),
+                    new RsHasBody(content)
+                )
+            );
+        }
     }
 }
