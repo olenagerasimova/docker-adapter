@@ -33,6 +33,7 @@ import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import org.eclipse.jetty.client.HttpClient;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link AuthClientSlice}.
  *
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 class AuthClientSliceTest {
 
@@ -50,6 +52,7 @@ class AuthClientSliceTest {
         final byte[] body = "text".getBytes();
         final RsStatus status = RsStatus.OK;
         final Response response = new AuthClientSlice(
+            new ClientSlices(new HttpClient()),
             (rsline, rsheaders, rsbody) -> {
                 if (!rsline.equals(line)) {
                     throw new IllegalArgumentException(String.format("Line modified: %s", rsline));
