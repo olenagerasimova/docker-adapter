@@ -78,7 +78,7 @@ public final class ClientSlice implements Slice {
     @Override
     public Response response(
         final String line,
-        final Iterable<Map.Entry<String, String>> unsupported,
+        final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> ignored
     ) {
         final RequestLineFrom req = new RequestLineFrom(line);
@@ -88,8 +88,12 @@ public final class ClientSlice implements Slice {
                 .setHost(this.host)
                 .setPort(ClientSlice.HTTPS_PORT)
                 .setPath(req.uri().getPath())
+                .setCustomQuery(req.uri().getRawQuery())
                 .toString()
         ).method(req.method().value()).followRedirects(true);
+        for (final Map.Entry<String, String> header : headers) {
+            request.header(header.getKey(), header.getValue());
+        }
         return new AsyncResponse(
             Flowable.fromPublisher(
                 ReactiveRequest.newBuilder(request).build().response(
