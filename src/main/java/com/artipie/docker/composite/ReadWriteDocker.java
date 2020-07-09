@@ -29,6 +29,10 @@ import com.artipie.docker.RepoName;
 
 /**
  * Read-write {@link Docker} implementation.
+ * It delegates read operation to one {@link Docker} and writes {@link Docker} to another.
+ * This class can be used to create virtual repository
+ * by composing {@link com.artipie.docker.proxy.ProxyDocker}
+ * and {@link com.artipie.docker.asto.AstoDocker}.
  *
  * @since 0.3
  */
