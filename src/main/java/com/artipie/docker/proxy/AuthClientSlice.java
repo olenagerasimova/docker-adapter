@@ -63,14 +63,35 @@ public final class AuthClientSlice implements Slice {
     private final Slice origin;
 
     /**
+     * Credentials.
+     */
+    private final Credentials credentials;
+
+    /**
      * Ctor.
      *
      * @param client Client slices.
      * @param origin Origin slice.
      */
     public AuthClientSlice(final ClientSlices client, final Slice origin) {
+        this(client, origin, Credentials.Anonymous.INSTANCE);
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param client Client slices.
+     * @param origin Origin slice.
+     * @param credentials Credentials.
+     */
+    public AuthClientSlice(
+        final ClientSlices client,
+        final Slice origin,
+        final Credentials credentials
+    ) {
         this.client = client;
         this.origin = origin;
+        this.credentials = credentials;
     }
 
     @Override
@@ -134,7 +155,7 @@ public final class AuthClientSlice implements Slice {
                 RqMethod.GET,
                 String.format("%s?%s", path, query)
             ).toString(),
-            Headers.EMPTY,
+            this.credentials.headers(),
             Flowable.empty()
         ).send(
             (status, headers, body) -> new ByteBufPublisher(body).bytes()
