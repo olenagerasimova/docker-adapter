@@ -23,15 +23,11 @@
  */
 package com.artipie.docker.cache;
 
-import com.artipie.asto.Content;
-import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
-import com.artipie.docker.asto.AstoBlob;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import com.artipie.docker.fake.EmptyGetLayers;
+import com.artipie.docker.fake.FaultyGetLayers;
+import com.artipie.docker.fake.FullGetLayers;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -71,73 +67,17 @@ final class CacheLayersTest {
         final Layers layers;
         switch (type) {
             case "empty":
-                layers = new EmptyLayers();
+                layers = new EmptyGetLayers();
                 break;
             case "full":
-                layers = new FullLayers();
+                layers = new FullGetLayers();
                 break;
             case "faulty":
-                layers = new FaultyLayers();
+                layers = new FaultyGetLayers();
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unsupported type: %s", type));
         }
         return layers;
-    }
-
-    /**
-     * Layers implementation that contains no blob.
-     *
-     * @since 0.3
-     */
-    private static class EmptyLayers implements Layers {
-
-        @Override
-        public CompletionStage<Blob> put(final Content content, final Digest digest) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Optional<Blob>> get(final Digest digest) {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
-    }
-
-    /**
-     * Layers implementation that contains blob.
-     *
-     * @since 0.3
-     */
-    private static class FullLayers implements Layers {
-
-        @Override
-        public CompletionStage<Blob> put(final Content content, final Digest digest) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Optional<Blob>> get(final Digest digest) {
-            return CompletableFuture.completedFuture(
-                Optional.of(new AstoBlob(new InMemoryStorage(), digest))
-            );
-        }
-    }
-
-    /**
-     * Layers implementation that fails to get blob.
-     *
-     * @since 0.3
-     */
-    private static class FaultyLayers implements Layers {
-
-        @Override
-        public CompletionStage<Blob> put(final Content content, final Digest digest) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Optional<Blob>> get(final Digest digest) {
-            return CompletableFuture.failedFuture(new IllegalStateException());
-        }
     }
 }

@@ -21,68 +21,69 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-package com.artipie.docker;
+package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Manifests;
+import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker repository manifests.
+ * Manifests implementation that contains manifest.
  *
  * @since 0.3
  */
-public interface Manifests {
+public final class FullGetManifests implements Manifests {
 
     /**
-     * Put manifest.
+     * Digest hex of manifest.
+     */
+    private final String hex;
+
+    /**
+     * Manifest content.
+     */
+    private final String content;
+
+    /**
+     * Ctor.
      *
-     * @param ref Manifest reference.
+     * @param hex Digest hex of manifest.
+     */
+    public FullGetManifests(final String hex) {
+        this(hex, "");
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param hex Digest hex of manifest.
      * @param content Manifest content.
-     * @return Added manifest.
      */
-    CompletionStage<Manifest> put(ManifestRef ref, Content content);
+    public FullGetManifests(final String hex, final String content) {
+        this.hex = hex;
+        this.content = content;
+    }
 
-    /**
-     * Get manifest by reference.
-     *
-     * @param ref Manifest reference
-     * @return Manifest instance if it is found, empty if manifest is absent.
-     */
-    CompletionStage<Optional<Manifest>> get(ManifestRef ref);
+    @Override
+    public CompletionStage<Manifest> put(final ManifestRef ref, final Content ignored) {
+        throw new UnsupportedOperationException();
+    }
 
-    /**
-     * Abstract decorator for Manifests.
-     *
-     * @since 0.3
-     */
-    abstract class Wrap implements Manifests {
-
-        /**
-         * Origin manifests.
-         */
-        private final Manifests manifests;
-
-        /**
-         * Ctor.
-         *
-         * @param manifests Manifests.
-         */
-        protected Wrap(final Manifests manifests) {
-            this.manifests = manifests;
-        }
-
-        @Override
-        public final CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-            return this.manifests.put(ref, content);
-        }
-
-        @Override
-        public final CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-            return this.manifests.get(ref);
-        }
+    @Override
+    public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
+        return CompletableFuture.completedFuture(
+            Optional.of(
+                new JsonManifest(
+                    new Digest.Sha256(this.hex),
+                    new Content.From(this.content.getBytes())
+                )
+            )
+        );
     }
 }

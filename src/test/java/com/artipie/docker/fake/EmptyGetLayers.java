@@ -21,66 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-package com.artipie.docker;
+package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Layers;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker repository files and metadata.
+ * Layers implementation that contains no blob.
  *
  * @since 0.3
  */
-public interface Layers {
+public final class EmptyGetLayers implements Layers {
 
-    /**
-     * Add layer to repository.
-     *
-     * @param content Layer content.
-     * @param digest Layer digest.
-     * @return Added layer blob.
-     */
-    CompletionStage<Blob> put(Content content, Digest digest);
+    @Override
+    public CompletionStage<Blob> put(final Content content, final Digest digest) {
+        throw new UnsupportedOperationException();
+    }
 
-    /**
-     * Find layer by digest.
-     *
-     * @param digest Layer digest.
-     * @return Flow with manifest data, or empty if absent
-     */
-    CompletionStage<Optional<Blob>> get(Digest digest);
-
-    /**
-     * Abstract decorator for Layers.
-     *
-     * @since 0.3
-     */
-    abstract class Wrap implements Layers {
-
-        /**
-         * Origin layers.
-         */
-        private final Layers layers;
-
-        /**
-         * Ctor.
-         *
-         * @param layers Layers.
-         */
-        protected Wrap(final Layers layers) {
-            this.layers = layers;
-        }
-
-        @Override
-        public final CompletionStage<Blob> put(final Content content, final Digest digest) {
-            return this.layers.put(content, digest);
-        }
-
-        @Override
-        public final CompletionStage<Optional<Blob>> get(final Digest digest) {
-            return this.layers.get(digest);
-        }
+    @Override
+    public CompletionStage<Optional<Blob>> get(final Digest digest) {
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 }
