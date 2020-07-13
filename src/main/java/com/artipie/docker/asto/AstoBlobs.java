@@ -35,7 +35,7 @@ import java.util.concurrent.CompletionStage;
  * Asto {@link BlobStore} implementation.
  * @since 0.1
  */
-final class AstoBlobs implements BlobStore {
+public final class AstoBlobs implements BlobStore {
 
     /**
      * Storage.
@@ -46,7 +46,7 @@ final class AstoBlobs implements BlobStore {
      * Ctor.
      * @param asto Storage
      */
-    AstoBlobs(final Storage asto) {
+    public AstoBlobs(final Storage asto) {
         this.asto = asto;
     }
 

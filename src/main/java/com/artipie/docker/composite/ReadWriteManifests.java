@@ -23,51 +23,51 @@
  */
 package com.artipie.docker.composite;
 
-import com.artipie.docker.Layers;
+import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
-import com.artipie.docker.Repo;
-import com.artipie.docker.Uploads;
+import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.ref.ManifestRef;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
- * Read-write {@link Repo} implementation.
+ * Read-write {@link Manifests} implementation.
  *
  * @since 0.3
+ * @todo #255:30min Add unit tests for `ReadWriteManifests` class.
+ *  `ReadWriteManifests` class lacks test coverage. It should be verified that it delegates calls
+ *  to expected `Manifests` passing data correctly and returning results as-is.
  */
-public final class ReadWriteRepo implements Repo {
+public final class ReadWriteManifests implements Manifests {
 
     /**
-     * Repository for reading.
+     * Manifests for reading.
      */
-    private final Repo read;
+    private final Manifests read;
 
     /**
-     * Repository for writing.
+     * Manifests for writing.
      */
-    private final Repo write;
+    private final Manifests write;
 
     /**
      * Ctor.
      *
-     * @param read Repository for reading.
-     * @param write Repository for writing.
+     * @param read Manifests for reading.
+     * @param write Manifests for writing.
      */
-    public ReadWriteRepo(final Repo read, final Repo write) {
+    public ReadWriteManifests(final Manifests read, final Manifests write) {
         this.read = read;
         this.write = write;
     }
 
     @Override
-    public Layers layers() {
-        return new ReadWriteLayers(this.read.layers(), this.write.layers());
+    public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
+        return this.write.put(ref, content);
     }
 
     @Override
-    public Manifests manifests() {
-        return new ReadWriteManifests(this.read.manifests(), this.write.manifests());
-    }
-
-    @Override
-    public Uploads uploads() {
-        return this.write.uploads();
+    public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
+        return this.read.get(ref);
     }
 }
