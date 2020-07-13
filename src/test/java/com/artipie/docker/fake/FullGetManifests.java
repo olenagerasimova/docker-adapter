@@ -46,16 +46,32 @@ public final class FullGetManifests implements Manifests {
     private final String hex;
 
     /**
+     * Manifest content.
+     */
+    private final String content;
+
+    /**
      * Ctor.
      *
      * @param hex Digest hex of manifest.
      */
     public FullGetManifests(final String hex) {
+        this(hex, "");
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param hex Digest hex of manifest.
+     * @param content Manifest content.
+     */
+    public FullGetManifests(final String hex, final String content) {
         this.hex = hex;
+        this.content = content;
     }
 
     @Override
-    public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
+    public CompletionStage<Manifest> put(final ManifestRef ref, final Content ignored) {
         throw new UnsupportedOperationException();
     }
 
@@ -63,7 +79,10 @@ public final class FullGetManifests implements Manifests {
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
         return CompletableFuture.completedFuture(
             Optional.of(
-                new JsonManifest(new Digest.Sha256(this.hex), new Content.From("".getBytes()))
+                new JsonManifest(
+                    new Digest.Sha256(this.hex),
+                    new Content.From(this.content.getBytes())
+                )
             )
         );
     }
