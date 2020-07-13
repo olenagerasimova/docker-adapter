@@ -33,10 +33,10 @@ import com.artipie.docker.cache.CacheDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
-import com.artipie.docker.proxy.ClientSlice;
+import com.artipie.docker.proxy.AuthClientSlice;
+import com.artipie.docker.proxy.ClientSlices;
 import com.artipie.docker.proxy.ProxyDocker;
 import com.artipie.docker.ref.ManifestRef;
-import com.artipie.http.slice.LoggingSlice;
 import com.google.common.base.Stopwatch;
 import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.client.HttpClient;
@@ -47,8 +47,6 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 /**
  * Integration test for {@link ProxyDocker}.
@@ -57,9 +55,13 @@ import org.junit.jupiter.api.condition.OS;
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
-@DisabledOnOs(OS.LINUX)
 @DockerClientSupport
 final class CachingProxyITCase {
+
+    /**
+     * Example image to use in tests.
+     */
+    private Image img;
 
     /**
      * Docker client.
@@ -83,14 +85,35 @@ final class CachingProxyITCase {
 
     @BeforeEach
     void setUp() throws Exception {
+        final String host;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            host = "mcr.microsoft.com";
+            this.img = new Image(
+                "dotnet/core/runtime",
+                String.format(
+                    "%s:%s",
+                    "sha256",
+                    "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
+                )
+            );
+        } else {
+            host = "registry-1.docker.io";
+            this.img = new Image(
+                "library/busybox",
+                String.format(
+                    "%s:%s",
+                    "sha256",
+                    "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
+                )
+            );
+        }
         this.cache = new AstoDocker(new InMemoryStorage());
         this.client = new HttpClient(new SslContextFactory.Client());
         this.client.start();
+        final ClientSlices slices = new ClientSlices(this.client);
         this.repo = new DockerRepository(
             new CacheDocker(
-                new ProxyDocker(
-                    new LoggingSlice(new ClientSlice(this.client, "mcr.microsoft.com"))
-                ),
+                new ProxyDocker(new AuthClientSlice(slices, slices.slice(host))),
                 this.cache
             )
         );
@@ -109,36 +132,25 @@ final class CachingProxyITCase {
 
     @Test
     void shouldPull() throws Exception {
-        final String digest = String.format(
-            "%s:%s",
-            "sha256",
-            "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
-        );
-        final String image = String.format("%s/dotnet/core/runtime@%s", this.repo.url(), digest);
+        final String image = this.img.remote(this.repo.url());
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
     @Test
     void shouldPullWhenRemoteIsDown() throws Exception {
-        final String name = "dotnet/core/runtime";
-        final String digest = String.format(
-            "%s:%s",
-            "sha256",
-            "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
-        );
-        final String image = String.format("%s/%s@%s", this.repo.url(), name, digest);
+        final String image = this.img.remote(this.repo.url());
         this.cli.run("pull", image);
-        this.awaitManifestCached(name, digest);
+        this.awaitManifestCached();
         this.cli.run("image", "rm", image);
         this.client.stop();
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
-    private void awaitManifestCached(final String name, final String digest) throws Exception {
-        final Manifests manifests = this.cache.repo(new RepoName.Simple(name)).manifests();
-        final ManifestRef ref = new ManifestRef.FromDigest(new Digest.FromString(digest));
+    private void awaitManifestCached() throws Exception {
+        final Manifests manifests = this.cache.repo(new RepoName.Simple(this.img.name)).manifests();
+        final ManifestRef ref = new ManifestRef.FromDigest(new Digest.FromString(this.img.digest));
         final Stopwatch stopwatch = Stopwatch.createStarted();
         while (manifests.get(ref).toCompletableFuture().join().isEmpty()) {
             if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(1)) {
@@ -158,5 +170,32 @@ final class CachingProxyITCase {
             false,
             String.format("Status: Downloaded newer image for %s", image)
         );
+    }
+
+    /**
+     * Docker image info.
+     *
+     * @since 0.3
+     */
+    private static class Image {
+
+        /**
+         * Image name.
+         */
+        private final String name;
+
+        /**
+         * Manifest digest.
+         */
+        private final String digest;
+
+        Image(final String name, final String digest) {
+            this.name = name;
+            this.digest = digest;
+        }
+
+        public String remote(final String repo) {
+            return String.format("%s/%s@%s", repo, this.name, this.digest);
+        }
     }
 }
