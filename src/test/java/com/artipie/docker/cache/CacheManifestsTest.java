@@ -23,7 +23,6 @@
  */
 package com.artipie.docker.cache;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.LoggingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
@@ -35,13 +34,13 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Uploads;
 import com.artipie.docker.asto.AstoDocker;
-import com.artipie.docker.manifest.JsonManifest;
+import com.artipie.docker.fake.EmptyGetManifests;
+import com.artipie.docker.fake.FaultyGetManifests;
+import com.artipie.docker.fake.FullGetManifests;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import com.google.common.base.Stopwatch;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -118,13 +117,13 @@ final class CacheManifestsTest {
         final Manifests manifests;
         switch (type) {
             case "empty":
-                manifests = new EmptyManifests();
+                manifests = new EmptyGetManifests();
                 break;
             case "full":
-                manifests = new FullManifests(code);
+                manifests = new FullGetManifests(code);
                 break;
             case "faulty":
-                manifests = new FaultyManifests();
+                manifests = new FaultyGetManifests();
                 break;
             default:
                 throw new IllegalArgumentException(String.format("Unsupported type: %s", type));
@@ -166,73 +165,6 @@ final class CacheManifestsTest {
         @Override
         public Uploads uploads() {
             throw new UnsupportedOperationException();
-        }
-    }
-
-    /**
-     * Manifests implementation that contains no manifests.
-     *
-     * @since 0.3
-     */
-    private static class EmptyManifests implements Manifests {
-
-        @Override
-        public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
-    }
-
-    /**
-     * Manifests implementation that contains manifest.
-     *
-     * @since 0.3
-     */
-    private static class FullManifests implements Manifests {
-
-        /**
-         * Digest hex of manifest.
-         */
-        private final String hex;
-
-        FullManifests(final String hex) {
-            this.hex = hex;
-        }
-
-        @Override
-        public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-            return CompletableFuture.completedFuture(
-                Optional.of(
-                    new JsonManifest(new Digest.Sha256(this.hex), new Content.From("".getBytes()))
-                )
-            );
-        }
-    }
-
-    /**
-     * Manifests implementation that fails to get manifest.
-     *
-     * @since 0.3
-     */
-    private static class FaultyManifests implements Manifests {
-
-        @Override
-        public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-            return CompletableFuture.failedFuture(new IllegalStateException());
         }
     }
 }

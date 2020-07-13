@@ -21,66 +21,50 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-package com.artipie.docker;
+package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Manifests;
+import com.artipie.docker.manifest.JsonManifest;
+import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker repository files and metadata.
+ * Manifests implementation that contains manifest.
  *
  * @since 0.3
  */
-public interface Layers {
+public final class FullGetManifests implements Manifests {
 
     /**
-     * Add layer to repository.
-     *
-     * @param content Layer content.
-     * @param digest Layer digest.
-     * @return Added layer blob.
+     * Digest hex of manifest.
      */
-    CompletionStage<Blob> put(Content content, Digest digest);
+    private final String hex;
 
     /**
-     * Find layer by digest.
+     * Ctor.
      *
-     * @param digest Layer digest.
-     * @return Flow with manifest data, or empty if absent
+     * @param hex Digest hex of manifest.
      */
-    CompletionStage<Optional<Blob>> get(Digest digest);
+    public FullGetManifests(final String hex) {
+        this.hex = hex;
+    }
 
-    /**
-     * Abstract decorator for Layers.
-     *
-     * @since 0.3
-     */
-    abstract class Wrap implements Layers {
+    @Override
+    public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
+        throw new UnsupportedOperationException();
+    }
 
-        /**
-         * Origin layers.
-         */
-        private final Layers layers;
-
-        /**
-         * Ctor.
-         *
-         * @param layers Layers.
-         */
-        protected Wrap(final Layers layers) {
-            this.layers = layers;
-        }
-
-        @Override
-        public final CompletionStage<Blob> put(final Content content, final Digest digest) {
-            return this.layers.put(content, digest);
-        }
-
-        @Override
-        public final CompletionStage<Optional<Blob>> get(final Digest digest) {
-            return this.layers.get(digest);
-        }
+    @Override
+    public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
+        return CompletableFuture.completedFuture(
+            Optional.of(
+                new JsonManifest(new Digest.Sha256(this.hex), new Content.From("".getBytes()))
+            )
+        );
     }
 }

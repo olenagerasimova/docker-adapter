@@ -53,4 +53,36 @@ public interface Manifests {
      * @return Manifest instance if it is found, empty if manifest is absent.
      */
     CompletionStage<Optional<Manifest>> get(ManifestRef ref);
+
+    /**
+     * Abstract decorator for Manifests.
+     *
+     * @since 0.3
+     */
+    abstract class Wrap implements Manifests {
+
+        /**
+         * Origin manifests.
+         */
+        private final Manifests manifests;
+
+        /**
+         * Ctor.
+         *
+         * @param manifests Manifests.
+         */
+        protected Wrap(final Manifests manifests) {
+            this.manifests = manifests;
+        }
+
+        @Override
+        public final CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
+            return this.manifests.put(ref, content);
+        }
+
+        @Override
+        public final CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
+            return this.manifests.get(ref);
+        }
+    }
 }
