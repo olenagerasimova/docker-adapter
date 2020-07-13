@@ -74,7 +74,7 @@ public final class AuthClientSlice implements Slice {
      * @param origin Origin slice.
      */
     public AuthClientSlice(final ClientSlices client, final Slice origin) {
-        this(client, origin, Credentials.Anonymous.INSTANCE);
+        this(client, origin, Credentials.ANONYMOUS);
     }
 
     /**

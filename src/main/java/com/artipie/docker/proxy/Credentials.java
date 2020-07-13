@@ -34,6 +34,11 @@ import com.artipie.http.headers.Authorization;
 public interface Credentials {
 
     /**
+     * Anonymous credentials, produces no headers.
+     */
+    Credentials ANONYMOUS = () -> Headers.EMPTY;
+
+    /**
      * Get authorization headers.
      *
      * @return Authorization headers.
@@ -41,35 +46,11 @@ public interface Credentials {
     Headers headers();
 
     /**
-     * Anonymous credentials, produces no headers.
-     *
-     * @since 0.3
-     */
-    final class Anonymous implements Credentials {
-
-        /**
-         * Instance of {@link Credentials.Anonymous}.
-         */
-        public static final Credentials.Anonymous INSTANCE = new Credentials.Anonymous();
-
-        /**
-         * Ctor.
-         */
-        private Anonymous() {
-        }
-
-        @Override
-        public Headers headers() {
-            return Headers.EMPTY;
-        }
-    }
-
-    /**
      * Username and password credentials, produces basic authorization header.
      *
      * @since 0.3
      */
-    final class UsernamePassword implements Credentials {
+    final class Basic implements Credentials {
 
         /**
          * Username.
@@ -87,7 +68,7 @@ public interface Credentials {
          * @param username Username.
          * @param password Password.
          */
-        public UsernamePassword(final String username, final String password) {
+        public Basic(final String username, final String password) {
             this.username = username;
             this.password = password;
         }

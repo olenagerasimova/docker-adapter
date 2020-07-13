@@ -41,16 +41,16 @@ class CredentialsTest {
     @Test
     void anonymousShouldProduceEmptyHeaders() {
         MatcherAssert.assertThat(
-            Credentials.Anonymous.INSTANCE.headers().iterator().hasNext(),
+            Credentials.ANONYMOUS.headers().iterator().hasNext(),
             new IsEqual<>(false)
         );
     }
 
     @Test
-    void usernamePasswordShouldProduceBasicHeader() {
+    void basicShouldProduceBasicHeader() {
         MatcherAssert.assertThat(
             StreamSupport.stream(
-                new Credentials.UsernamePassword("Aladdin", "open sesame")
+                new Credentials.Basic("Aladdin", "open sesame")
                     .headers()
                     .spliterator(),
                 false
