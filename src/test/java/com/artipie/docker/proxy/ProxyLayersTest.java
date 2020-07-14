@@ -30,6 +30,7 @@ import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
+import com.artipie.http.rs.RsWithStatus;
 import io.reactivex.Flowable;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
@@ -70,5 +71,21 @@ class ProxyLayersTest {
             blob.get().size().toCompletableFuture().join(),
             new IsEqual<>(size)
         );
+    }
+
+    @Test
+    void shouldGetEmptyWhenNotFound() {
+        final String digest = "sha256:abc";
+        final String repo = "my-test";
+        final Optional<Blob> found = new ProxyLayers(
+            (line, headers, body) -> {
+                if (!line.startsWith(String.format("HEAD /v2/%s/blobs/%s ", repo, digest))) {
+                    throw new IllegalArgumentException();
+                }
+                return new RsWithStatus(RsStatus.NOT_FOUND);
+            },
+            new RepoName.Valid(repo)
+        ).get(new Digest.FromString(digest)).toCompletableFuture().join();
+        MatcherAssert.assertThat(found.isEmpty(), new IsEqual<>(true));
     }
 }
