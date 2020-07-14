@@ -33,6 +33,7 @@ import com.artipie.http.Slice;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -42,10 +43,6 @@ import java.util.concurrent.CompletionStage;
  * Proxy implementation of {@link Layers}.
  *
  * @since 0.3
- * @todo #170:30min Handle response status in `ProxyLayers.get()` method.
- *  When response is received from remote repository the status might be not OK
- *  in case the blob is missing or some internal error occurred. Blob should be returned
- *  only if OK status came in response.
  */
 public final class ProxyLayers implements Layers {
 
@@ -84,8 +81,18 @@ public final class ProxyLayers implements Layers {
             Flowable.empty()
         ).send(
             (status, headers, body) -> {
-                final long size = new ContentLength(headers).longValue();
-                promise.complete(Optional.of(new ProxyBlob(this.remote, this.name, digest, size)));
+                final Optional<Blob> opt;
+                if (status == RsStatus.OK) {
+                    final long size = new ContentLength(headers).longValue();
+                    opt = Optional.of(new ProxyBlob(this.remote, this.name, digest, size));
+                } else if (status == RsStatus.NOT_FOUND) {
+                    opt = Optional.empty();
+                } else {
+                    throw new IllegalArgumentException(
+                        String.format("Unexpected status: %s", status)
+                    );
+                }
+                promise.complete(opt);
                 return CompletableFuture.allOf();
             }
         ).thenCompose(nothing -> promise);
