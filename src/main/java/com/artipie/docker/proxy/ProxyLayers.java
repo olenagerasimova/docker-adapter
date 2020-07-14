@@ -81,19 +81,26 @@ public final class ProxyLayers implements Layers {
             Flowable.empty()
         ).send(
             (status, headers, body) -> {
-                final Optional<Blob> opt;
+                final CompletionStage<Optional<Blob>> result;
                 if (status == RsStatus.OK) {
-                    final long size = new ContentLength(headers).longValue();
-                    opt = Optional.of(new ProxyBlob(this.remote, this.name, digest, size));
+                    result = CompletableFuture.completedFuture(
+                        Optional.of(
+                            new ProxyBlob(
+                                this.remote,
+                                this.name,
+                                digest,
+                                new ContentLength(headers).longValue()
+                            )
+                        )
+                    );
                 } else if (status == RsStatus.NOT_FOUND) {
-                    opt = Optional.empty();
+                    result = CompletableFuture.completedFuture(Optional.empty());
                 } else {
-                    throw new IllegalArgumentException(
-                        String.format("Unexpected status: %s", status)
+                    result = CompletableFuture.failedFuture(
+                        new IllegalArgumentException(String.format("Unexpected status: %s", status))
                     );
                 }
-                promise.complete(opt);
-                return CompletableFuture.allOf();
+                return result.thenAccept(promise::complete).toCompletableFuture();
             }
         ).thenCompose(nothing -> promise);
     }
