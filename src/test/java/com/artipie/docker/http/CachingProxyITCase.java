@@ -31,6 +31,7 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.cache.CacheDocker;
 import com.artipie.docker.composite.MultiReadDocker;
+import com.artipie.docker.composite.ReadWriteDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
@@ -88,6 +89,7 @@ final class CachingProxyITCase {
     void setUp() throws Exception {
         if (System.getProperty("os.name").startsWith("Windows")) {
             this.img = new Image(
+                "mcr.microsoft.com",
                 "dotnet/core/runtime",
                 String.format(
                     "%s:%s",
@@ -97,6 +99,7 @@ final class CachingProxyITCase {
             );
         } else {
             this.img = new Image(
+                "registry-1.docker.io",
                 "library/busybox",
                 String.format(
                     "%s:%s",
@@ -109,18 +112,25 @@ final class CachingProxyITCase {
         this.client.start();
         final ClientSlices slices = new ClientSlices(this.client);
         this.cache = new AstoDocker(new InMemoryStorage());
+        final Docker local = new AstoDocker(new InMemoryStorage());
         this.repo = new DockerRepository(
-            new CacheDocker(
+            new ReadWriteDocker(
                 new MultiReadDocker(
-                    new ProxyDocker(slices.slice("mcr.microsoft.com")),
-                    new ProxyDocker(
-                        new AuthClientSlice(
-                            slices,
-                            slices.slice("registry-1.docker.io")
-                        )
+                    local,
+                    new CacheDocker(
+                        new MultiReadDocker(
+                            new ProxyDocker(slices.slice("mcr.microsoft.com")),
+                            new ProxyDocker(
+                                new AuthClientSlice(
+                                    slices,
+                                    slices.slice("registry-1.docker.io")
+                                )
+                            )
+                        ),
+                        this.cache
                     )
                 ),
-                this.cache
+                local
             )
         );
         this.repo.start();
@@ -137,15 +147,28 @@ final class CachingProxyITCase {
     }
 
     @Test
-    void shouldPull() throws Exception {
-        final String image = this.img.remote(this.repo.url());
+    void shouldPushAndPullLocal() throws Exception {
+        final String original = this.img.remote();
+        this.cli.run("pull", original);
+        final String image = String.format("%s/my-test/latest", this.repo.url());
+        this.cli.run("tag", original, image);
+        this.cli.run("push", image);
+        this.cli.run("image", "rm", original);
+        this.cli.run("image", "rm", image);
+        final String output = this.cli.run("pull", image);
+        MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
+    }
+
+    @Test
+    void shouldPullRemote() throws Exception {
+        final String image = new Image(this.repo.url(), this.img.name, this.img.digest).remote();
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
     @Test
     void shouldPullWhenRemoteIsDown() throws Exception {
-        final String image = this.img.remote(this.repo.url());
+        final String image = new Image(this.repo.url(), this.img.name, this.img.digest).remote();
         this.cli.run("pull", image);
         this.awaitManifestCached();
         this.cli.run("image", "rm", image);
@@ -186,6 +209,11 @@ final class CachingProxyITCase {
     private static class Image {
 
         /**
+         * Repository.
+         */
+        private final String repo;
+
+        /**
          * Image name.
          */
         private final String name;
@@ -195,13 +223,14 @@ final class CachingProxyITCase {
          */
         private final String digest;
 
-        Image(final String name, final String digest) {
+        Image(final String repo, final String name, final String digest) {
+            this.repo = repo;
             this.name = name;
             this.digest = digest;
         }
 
-        public String remote(final String repo) {
-            return String.format("%s/%s@%s", repo, this.name, this.digest);
+        public String remote() {
+            return String.format("%s/%s@%s", this.repo, this.name, this.digest);
         }
     }
 }
