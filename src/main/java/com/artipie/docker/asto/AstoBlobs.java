@@ -28,7 +28,9 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
+import com.artipie.docker.misc.ByteBufPublisher;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -67,9 +69,21 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     public CompletionStage<Blob> put(final Content blob, final Digest digest) {
-        return this.asto.save(
-            new BlobKey(digest),
-            blob
-        ).thenApply(ignored -> new AstoBlob(this.asto, digest));
+        return new ByteBufPublisher(blob).bytes().thenCompose(
+            bytes -> {
+                final CompletionStage<Blob> res;
+                if (new Digest.Sha256(bytes).hex().equals(digest.hex())) {
+                    res = this.asto.save(
+                        new BlobKey(digest),
+                        new Content.From(bytes)
+                    ).thenApply(ignored -> new AstoBlob(this.asto, digest));
+                } else {
+                    res = CompletableFuture.failedStage(
+                        new IllegalArgumentException("Digests differ")
+                    );
+                }
+                return res;
+            }
+        );
     }
 }
