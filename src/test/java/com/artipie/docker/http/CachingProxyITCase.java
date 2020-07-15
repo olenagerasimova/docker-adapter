@@ -30,6 +30,7 @@ import com.artipie.docker.Manifests;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.cache.CacheDocker;
+import com.artipie.docker.composite.MultiReadDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
@@ -85,9 +86,7 @@ final class CachingProxyITCase {
 
     @BeforeEach
     void setUp() throws Exception {
-        final String host;
         if (System.getProperty("os.name").startsWith("Windows")) {
-            host = "mcr.microsoft.com";
             this.img = new Image(
                 "dotnet/core/runtime",
                 String.format(
@@ -97,7 +96,6 @@ final class CachingProxyITCase {
                 )
             );
         } else {
-            host = "registry-1.docker.io";
             this.img = new Image(
                 "library/busybox",
                 String.format(
@@ -107,13 +105,21 @@ final class CachingProxyITCase {
                 )
             );
         }
-        this.cache = new AstoDocker(new InMemoryStorage());
         this.client = new HttpClient(new SslContextFactory.Client());
         this.client.start();
         final ClientSlices slices = new ClientSlices(this.client);
+        this.cache = new AstoDocker(new InMemoryStorage());
         this.repo = new DockerRepository(
             new CacheDocker(
-                new ProxyDocker(new AuthClientSlice(slices, slices.slice(host))),
+                new MultiReadDocker(
+                    new ProxyDocker(slices.slice("mcr.microsoft.com")),
+                    new ProxyDocker(
+                        new AuthClientSlice(
+                            slices,
+                            slices.slice("registry-1.docker.io")
+                        )
+                    )
+                ),
                 this.cache
             )
         );
