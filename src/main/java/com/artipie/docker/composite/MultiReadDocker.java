@@ -26,6 +26,7 @@ package com.artipie.docker.composite;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +47,15 @@ public final class MultiReadDocker implements Docker {
      * Dockers for reading.
      */
     private final List<Docker> dockers;
+
+    /**
+     * Ctor.
+     *
+     * @param dockers Dockers for reading.
+     */
+    public MultiReadDocker(final Docker... dockers) {
+        this(Arrays.asList(dockers));
+    }
 
     /**
      * Ctor.
