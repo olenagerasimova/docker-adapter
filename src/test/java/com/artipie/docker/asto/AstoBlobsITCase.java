@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
+import com.google.common.base.Throwables;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -89,12 +90,12 @@ final class AstoBlobsITCase {
                 );
                 MatcherAssert.assertThat(
                     "Not an IllegalArgumentException exception",
-                    throwable.getCause().getCause().getCause(),
+                    Throwables.getRootCause(throwable),
                     new IsInstanceOf(IllegalArgumentException.class)
                 );
                 MatcherAssert.assertThat(
                     "Exception message is not correct",
-                    throwable.getCause().getCause().getCause().getMessage(),
+                    Throwables.getRootCause(throwable).getMessage(),
                     new StringContains(true, "Digests differ")
                 );
                 return CompletableFuture.allOf();

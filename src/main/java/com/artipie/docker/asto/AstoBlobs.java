@@ -89,7 +89,9 @@ public final class AstoBlobs implements BlobStore {
                 }
             }
         );
-        return this.asto.save(new BlobKey(digest), new Content.From(checked))
-            .thenApply(ignored -> new AstoBlob(this.asto, digest));
+        return this.asto.save(
+            new BlobKey(digest),
+            new Content.From(blob.size(), checked)
+        ).thenApply(ignored -> new AstoBlob(this.asto, digest));
     }
 }
