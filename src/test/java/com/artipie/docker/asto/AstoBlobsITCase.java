@@ -29,7 +29,6 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
 import io.reactivex.Flowable;
-import io.reactivex.exceptions.CompositeException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
@@ -40,7 +39,6 @@ import org.hamcrest.core.IsNot;
 import org.hamcrest.core.IsNull;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
-import org.yaml.snakeyaml.composer.ComposerException;
 
 /**
  * Integration test for {@link AstoBlobs}.
