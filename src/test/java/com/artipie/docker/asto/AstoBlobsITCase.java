@@ -28,16 +28,23 @@ import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
+import com.google.common.base.Throwables;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
+import org.hamcrest.core.IsNot;
+import org.hamcrest.core.IsNull;
+import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.Test;
 
 /**
  * Integration test for {@link AstoBlobs}.
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class AstoBlobsITCase {
     @Test
@@ -65,6 +72,35 @@ final class AstoBlobsITCase {
             ),
             Matchers.equalTo(buf.array())
         );
+    }
+
+    @Test
+    void failsOnDigestMismatch() {
+        final InMemoryStorage storage = new InMemoryStorage();
+        final AstoBlobs blobs = new AstoBlobs(storage);
+        final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
+        blobs.put(
+            new Content.From(Flowable.fromArray(buf)), new Digest.Sha256("sha256:123")
+        ).toCompletableFuture().handle(
+            (blob, throwable) -> {
+                MatcherAssert.assertThat(
+                    "Exception not thrown",
+                    throwable,
+                    new IsNot<>(new IsNull<>())
+                );
+                MatcherAssert.assertThat(
+                    "Not an IllegalArgumentException exception",
+                    Throwables.getRootCause(throwable),
+                    new IsInstanceOf(IllegalArgumentException.class)
+                );
+                MatcherAssert.assertThat(
+                    "Exception message is not correct",
+                    Throwables.getRootCause(throwable).getMessage(),
+                    new StringContains(true, "Digests differ")
+                );
+                return CompletableFuture.allOf();
+            }
+        ).join();
     }
 
     @Test

@@ -25,11 +25,19 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.ContentDigest;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
+import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import org.cactoos.io.BytesOf;
+import org.cactoos.text.HexOf;
+import org.reactivestreams.Publisher;
 
 /**
  * Asto {@link BlobStore} implementation.
@@ -67,9 +75,23 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     public CompletionStage<Blob> put(final Content blob, final Digest digest) {
+        final MessageDigest sha = ContentDigest.Digests.SHA256.get();
+        final Publisher<ByteBuffer> checked = Flowable.fromPublisher(blob).map(
+            buf -> {
+                sha.update(new Remaining(buf, true).bytes());
+                return buf;
+            }
+        ).doOnTerminate(
+            () -> {
+                final String calculated = new HexOf(new BytesOf(sha.digest())).asString();
+                if (!digest.hex().equals(calculated)) {
+                    throw new IllegalArgumentException("Digests differ");
+                }
+            }
+        );
         return this.asto.save(
             new BlobKey(digest),
-            blob
+            new Content.From(blob.size(), checked)
         ).thenApply(ignored -> new AstoBlob(this.asto, digest));
     }
 }
