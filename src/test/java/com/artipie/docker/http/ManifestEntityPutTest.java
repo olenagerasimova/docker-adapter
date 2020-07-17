@@ -65,7 +65,7 @@ class ManifestEntityPutTest {
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.slice = new DockerSlice("/base", this.docker);
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
@@ -73,7 +73,7 @@ class ManifestEntityPutTest {
         final String path = "/v2/my-alpine/manifests/1";
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine(RqMethod.PUT, String.format("/base%s", path)).toString(),
+                new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
                 Collections.emptyList(),
                 this.manifest()
             ),
@@ -99,7 +99,7 @@ class ManifestEntityPutTest {
         final String path = String.format("/v2/my-alpine/manifests/%s", digest);
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine(RqMethod.PUT, String.format("/base%s", path)).toString(),
+                new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
                 Collections.emptyList(),
                 this.manifest()
             ),

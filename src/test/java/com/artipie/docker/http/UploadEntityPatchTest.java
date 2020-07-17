@@ -65,7 +65,7 @@ class UploadEntityPatchTest {
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.slice = new DockerSlice("/base", this.docker);
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
@@ -78,7 +78,7 @@ class UploadEntityPatchTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, uuid);
         final byte[] data = "data".getBytes();
         final Response response = this.slice.response(
-            new RequestLine(RqMethod.PATCH, String.format("/base%s", path)).toString(),
+            new RequestLine(RqMethod.PATCH, String.format("%s", path)).toString(),
             Collections.emptyList(),
             Flowable.just(ByteBuffer.wrap(data))
         );
@@ -97,7 +97,7 @@ class UploadEntityPatchTest {
     @Test
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
-            new RequestLine(RqMethod.PATCH, "/base/v2/test/blobs/uploads/12345").toString(),
+            new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/12345").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

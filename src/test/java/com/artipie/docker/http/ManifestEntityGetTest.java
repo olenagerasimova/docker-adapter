@@ -61,14 +61,14 @@ class ManifestEntityGetTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice("/base", new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
     }
 
     @Test
     void shouldReturnManifestByTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine(RqMethod.GET, "/base/v2/my-alpine/manifests/1").toString(),
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/1").toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 ),
@@ -94,7 +94,7 @@ class ManifestEntityGetTest {
             this.slice.response(
                 new RequestLine(
                     RqMethod.GET,
-                    String.format("/base/v2/my-alpine/manifests/%s", digest)
+                    String.format("/v2/my-alpine/manifests/%s", digest)
                 ).toString(),
                 Collections.singleton(
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
@@ -114,7 +114,7 @@ class ManifestEntityGetTest {
     void shouldReturnNotFoundForUnknownTag() {
         MatcherAssert.assertThat(
             this.slice.response(
-                new RequestLine(RqMethod.GET, "/base/v2/my-alpine/manifests/2").toString(),
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/2").toString(),
                 Collections.emptyList(),
                 Flowable.empty()
             ),
@@ -129,7 +129,7 @@ class ManifestEntityGetTest {
                 new RequestLine(
                     RqMethod.GET,
                     String.format(
-                        "/base/v2/my-alpine/manifests/%s",
+                        "/v2/my-alpine/manifests/%s",
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
                     )
                 ).toString(),
