@@ -38,9 +38,9 @@ import io.vertx.reactivex.core.Vertx;
 public final class DockerRepository {
 
     /**
-     * Docker back-end.
+     * Docker slice.
      */
-    private final Docker docker;
+    private final DockerSlice slice;
 
     /**
      * Vert.x instance used for running HTTP server.
@@ -63,7 +63,16 @@ public final class DockerRepository {
      * @param docker Docker back-end.
      */
     public DockerRepository(final Docker docker) {
-        this.docker = docker;
+        this(new DockerSlice(docker));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param slice Docker slice.
+     */
+    public DockerRepository(final DockerSlice slice) {
+        this.slice = slice;
     }
 
     /**
@@ -73,7 +82,7 @@ public final class DockerRepository {
         this.vertx = Vertx.vertx();
         this.server = new VertxSliceServer(
             this.vertx,
-            new LoggingSlice(new DockerSlice(this.docker))
+            new LoggingSlice(this.slice)
         );
         Logger.debug(this, "Vertx server is created");
         this.port = this.server.start();

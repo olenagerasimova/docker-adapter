@@ -25,6 +25,10 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.Docker;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Authentication;
+import com.artipie.http.auth.BasicIdentities;
+import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
@@ -45,6 +49,29 @@ public final class DockerSlice extends Slice.Wrap {
      * @param docker Docker repository.
      */
     public DockerSlice(final Docker docker) {
+        this(docker, Permissions.FREE, Identities.ANONYMOUS);
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param docker Docker repository.
+     * @param perms Access permissions.
+     * @param auth Authentication mechanism.
+     */
+    public DockerSlice(final Docker docker, final Permissions perms, final Authentication auth) {
+        this(docker, perms, new BasicIdentities(auth));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param docker Docker repository.
+     * @param perms Access permissions.
+     * @param ids User identities.
+     */
+    @SuppressWarnings("PMD.UnusedFormalParameter")
+    public DockerSlice(final Docker docker, final Permissions perms, final Identities ids) {
         super(
             new SliceRoute(
                 new RtRulePath(
