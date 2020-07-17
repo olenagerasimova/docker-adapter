@@ -57,7 +57,7 @@ class BlobEntityGetTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice("/base", new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
     }
 
     @Test
@@ -70,7 +70,7 @@ class BlobEntityGetTest {
         final Response response = this.slice.response(
             new RequestLine(
                 RqMethod.GET,
-                String.format("/base/v2/test/blobs/%s", digest)
+                String.format("/v2/test/blobs/%s", digest)
             ).toString(),
             Collections.emptyList(),
             Flowable.empty()
@@ -98,7 +98,7 @@ class BlobEntityGetTest {
                 new RequestLine(
                     RqMethod.GET,
                     String.format(
-                        "/base/v2/test/blobs/%s",
+                        "/v2/test/blobs/%s",
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
                     )
                 ).toString(),

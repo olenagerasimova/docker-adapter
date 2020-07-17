@@ -64,7 +64,7 @@ public final class UploadEntityGetTest {
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.slice = new DockerSlice("/base", this.docker);
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
@@ -76,7 +76,7 @@ public final class UploadEntityGetTest {
             .toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
-            new RequestLine(RqMethod.GET, String.format("/base%s", path)).toString(),
+            new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -101,7 +101,7 @@ public final class UploadEntityGetTest {
         upload.append(new Content.From(new byte[1])).toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
-            new RequestLine(RqMethod.GET, String.format("/base%s", path)).toString(),
+            new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -127,7 +127,7 @@ public final class UploadEntityGetTest {
         upload.append(new Content.From(new byte[128])).toCompletableFuture().join();
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response get = this.slice.response(
-            new RequestLine(RqMethod.GET, String.format("/base%s", path)).toString(),
+            new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
@@ -145,7 +145,7 @@ public final class UploadEntityGetTest {
     @Test
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
-            new RequestLine(RqMethod.GET, "/base/v2/test/blobs/uploads/12345").toString(),
+            new RequestLine(RqMethod.GET, "/v2/test/blobs/uploads/12345").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );

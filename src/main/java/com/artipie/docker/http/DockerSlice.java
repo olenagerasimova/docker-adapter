@@ -29,8 +29,6 @@ import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
-import com.artipie.http.slice.TrimPathSlice;
-import java.util.regex.Pattern;
 
 /**
  * Slice implementing Docker Registry HTTP API.
@@ -47,91 +45,78 @@ public final class DockerSlice extends Slice.Wrap {
      * @param docker Docker repository.
      */
     public DockerSlice(final Docker docker) {
-        this("", docker);
-    }
-
-    /**
-     * Ctor.
-     *
-     * @param base Base path. Base path should start with "/", empty string means no base path.
-     * @param docker Docker repository.
-     */
-    public DockerSlice(final String base, final Docker docker) {
         super(
-            new TrimPathSlice(
-                new SliceRoute(
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(BaseEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.GET)
-                        ),
-                        new BaseEntity()
+            new SliceRoute(
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(BaseEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(ManifestEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.HEAD)
-                        ),
-                        new ManifestEntity.Head(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(ManifestEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.GET)
-                        ),
-                        new ManifestEntity.Get(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(ManifestEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.PUT)
-                        ),
-                        new ManifestEntity.Put(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(BlobEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.HEAD)
-                        ),
-                        new BlobEntity.Head(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(BlobEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.GET)
-                        ),
-                        new BlobEntity.Get(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(UploadEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.POST)
-                        ),
-                        new UploadEntity.Post(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(UploadEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.PATCH)
-                        ),
-                        new UploadEntity.Patch(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(UploadEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.PUT)
-                        ),
-                        new UploadEntity.Put(docker)
-                    ),
-                    new RtRulePath(
-                        new RtRule.All(
-                            new RtRule.ByPath(UploadEntity.PATH),
-                            new RtRule.ByMethod(RqMethod.GET)
-                        ),
-                        new UploadEntity.Get(docker)
-                    )
+                    new BaseEntity()
                 ),
-                Pattern.compile(String.format("^(?:%s)(\\/.*)?", base))
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(ManifestEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.HEAD)
+                    ),
+                    new ManifestEntity.Head(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(ManifestEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.GET)
+                    ),
+                    new ManifestEntity.Get(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(ManifestEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.PUT)
+                    ),
+                    new ManifestEntity.Put(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(BlobEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.HEAD)
+                    ),
+                    new BlobEntity.Head(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(BlobEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.GET)
+                    ),
+                    new BlobEntity.Get(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(UploadEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.POST)
+                    ),
+                    new UploadEntity.Post(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(UploadEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.PATCH)
+                    ),
+                    new UploadEntity.Patch(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(UploadEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.PUT)
+                    ),
+                    new UploadEntity.Put(docker)
+                ),
+                new RtRulePath(
+                    new RtRule.All(
+                        new RtRule.ByPath(UploadEntity.PATH),
+                        new RtRule.ByMethod(RqMethod.GET)
+                    ),
+                    new UploadEntity.Get(docker)
+                )
             )
         );
     }

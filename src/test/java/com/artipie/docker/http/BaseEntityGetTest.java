@@ -46,9 +46,9 @@ class BaseEntityGetTest {
 
     @Test
     void shouldRespondOkToVersionCheck() {
-        final DockerSlice slice = new DockerSlice("/base", new AstoDocker(new InMemoryStorage()));
+        final DockerSlice slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
         final Response response = slice.response(
-            new RequestLine(RqMethod.GET, "/base/v2/").toString(),
+            new RequestLine(RqMethod.GET, "/v2/").toString(),
             Collections.emptyList(),
             Flowable.empty()
         );
