@@ -27,7 +27,6 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
@@ -45,6 +44,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
@@ -160,10 +160,6 @@ public final class UploadEntity {
      * @todo #137:30min Figure out whether or not should uploaded data be removed if digests do not
      *  match. There is no direct answer in docs, so this should be check experimentally with real
      *  docker registry.
-     * @todo #142:30min Content is read twice while blob is added: now we first read it to compare
-     *  digests and then to write upload as a blob. Such approach is inefficient and should be
-     *  fixed. One of the possible solution is moving the comparison logic inside
-     *  BlobStore.put() method.
      */
     public static final class Put implements Slice {
 
@@ -195,26 +191,24 @@ public final class UploadEntity {
                 repo.uploads().get(uuid).<Response>thenCompose(
                     found -> found.map(
                         upload -> upload.content()
-                            .thenCompose(content -> new DigestFromContent(content).digest())
-                            .thenCompose(
-                                digest -> {
-                                    final CompletionStage<Response> res;
-                                    if (digest.string().equals(request.digest().string())) {
-                                        res = upload.content().thenCompose(
-                                            content -> repo.layers().put(content, digest)
-                                                .thenCompose(
-                                                    blob -> upload.delete().thenApply(
-                                                        ignored -> Put.getResponse(name, digest)
-                                                    )
-                                                )
-                                        );
-                                    } else {
-                                        res = CompletableFuture.completedStage(
-                                            new RsWithStatus(RsStatus.BAD_REQUEST)
-                                        );
-                                    }
-                                    return res;
-                                }
+                            .<Response>thenCompose(
+                                content -> repo.layers()
+                                    .put(content, request.digest())
+                                    .handle(
+                                        (blob, throwable) -> {
+                                            final CompletionStage<Response> res;
+                                            if (throwable == null) {
+                                                res = upload.delete().thenApply(
+                                                    any -> Put.getResponse(name, request.digest())
+                                                );
+                                            } else {
+                                                res = CompletableFuture.completedStage(
+                                                    new RsWithStatus(RsStatus.BAD_REQUEST)
+                                                );
+                                            }
+                                            return res;
+                                        }
+                                    ).thenCompose(Function.identity())
                             )
                     ).orElseGet(
                         () -> CompletableFuture.completedStage(new RsWithStatus(RsStatus.NOT_FOUND))
