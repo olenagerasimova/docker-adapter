@@ -87,27 +87,7 @@ final class CachingProxyITCase {
 
     @BeforeEach
     void setUp() throws Exception {
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            this.img = new Image(
-                "mcr.microsoft.com",
-                "dotnet/core/runtime",
-                String.format(
-                    "%s:%s",
-                    "sha256",
-                    "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
-                )
-            );
-        } else {
-            this.img = new Image(
-                "registry-1.docker.io",
-                "library/busybox",
-                String.format(
-                    "%s:%s",
-                    "sha256",
-                    "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
-                )
-            );
-        }
+        this.img = new Image.ForOs();
         this.client = new HttpClient(new SslContextFactory.Client());
         this.client.start();
         final ClientSlices slices = new ClientSlices(this.client);
@@ -161,14 +141,18 @@ final class CachingProxyITCase {
 
     @Test
     void shouldPullRemote() throws Exception {
-        final String image = new Image(this.repo.url(), this.img.name, this.img.digest).remote();
+        final String image = new Image.From(
+            this.repo.url(), this.img.name(), this.img.digest()
+        ).remote();
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
 
     @Test
     void shouldPullWhenRemoteIsDown() throws Exception {
-        final String image = new Image(this.repo.url(), this.img.name, this.img.digest).remote();
+        final String image = new Image.From(
+            this.repo.url(), this.img.name(), this.img.digest()
+        ).remote();
         this.cli.run("pull", image);
         this.awaitManifestCached();
         this.cli.run("image", "rm", image);
@@ -178,8 +162,12 @@ final class CachingProxyITCase {
     }
 
     private void awaitManifestCached() throws Exception {
-        final Manifests manifests = this.cache.repo(new RepoName.Simple(this.img.name)).manifests();
-        final ManifestRef ref = new ManifestRef.FromDigest(new Digest.FromString(this.img.digest));
+        final Manifests manifests = this.cache.repo(
+            new RepoName.Simple(this.img.name())
+        ).manifests();
+        final ManifestRef ref = new ManifestRef.FromDigest(
+            new Digest.FromString(this.img.digest())
+        );
         final Stopwatch stopwatch = Stopwatch.createStarted();
         while (manifests.get(ref).toCompletableFuture().join().isEmpty()) {
             if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(1)) {
@@ -199,38 +187,5 @@ final class CachingProxyITCase {
             false,
             String.format("Status: Downloaded newer image for %s", image)
         );
-    }
-
-    /**
-     * Docker image info.
-     *
-     * @since 0.3
-     */
-    private static class Image {
-
-        /**
-         * Repository.
-         */
-        private final String repo;
-
-        /**
-         * Image name.
-         */
-        private final String name;
-
-        /**
-         * Manifest digest.
-         */
-        private final String digest;
-
-        Image(final String repo, final String name, final String digest) {
-            this.repo = repo;
-            this.name = name;
-            this.digest = digest;
-        }
-
-        public String remote() {
-            return String.format("%s/%s@%s", this.repo, this.name, this.digest);
-        }
     }
 }
