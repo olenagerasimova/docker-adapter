@@ -53,7 +53,7 @@ public final class TrimmedDocker implements Docker {
     public TrimmedDocker(final Docker origin, final String prefix) {
         this(
             origin,
-            Pattern.compile(String.format("^/?(?:%s\\/?)(.*)", prefix))
+            Pattern.compile(String.format("(?:%s)\\/(.+)", prefix))
         );
     }
 

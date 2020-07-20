@@ -33,6 +33,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Test for {@link TrimmedDocker}.
@@ -55,43 +57,15 @@ class TrimmedDockerTest {
         );
     }
 
-    @Test
-    void cutsIfPrefixStartsWithSlash() {
-        final String name = "my/repo";
-        final String prefix = "/abc/123";
-        MatcherAssert.assertThat(
-            ((FakeRepo) new TrimmedDocker(TrimmedDockerTest.FAKE, prefix)
-                .repo(new RepoName.Simple(String.format("%s/%s", prefix, name)))).name(),
-            new IsEqual<>(name)
-        );
-    }
-
-    @Test
-    void cutsIfPrefixEndsWithSlash() {
-        final String name = "your/second/repo";
-        final String prefix = "abc/123/";
-        MatcherAssert.assertThat(
-            ((FakeRepo) new TrimmedDocker(TrimmedDockerTest.FAKE, prefix)
-                .repo(new RepoName.Simple(String.format("%s/%s", prefix, name)))).name(),
-            new IsEqual<>(name)
-        );
-    }
-
-    @Test
-    void cutsIfPrefixStartsAndEndsWithSlash() {
-        final String name = "my/another/repo";
-        final String prefix = "/def/";
-        MatcherAssert.assertThat(
-            ((FakeRepo) new TrimmedDocker(TrimmedDockerTest.FAKE, prefix)
-                .repo(new RepoName.Simple(String.format("%s/%s", prefix, name)))).name(),
-            new IsEqual<>(name)
-        );
-    }
-
-    @Test
-    void cutsIfRepoNameContainsOnlyOnePart() {
-        final String name = "repo";
-        final String prefix = "abc/def/123";
+    @ParameterizedTest
+    @CsvSource({
+        "one,two/three",
+        "one/two,three",
+        "v2/library/ubuntu,username/project_one",
+        "v2/small/repo/,username/11/some.package",
+        ",username/11/some_package"
+    })
+    void cutsIfPrefixStartsWithSlash(final String prefix, final String name) {
         MatcherAssert.assertThat(
             ((FakeRepo) new TrimmedDocker(TrimmedDockerTest.FAKE, prefix)
                 .repo(new RepoName.Simple(String.format("%s/%s", prefix, name)))).name(),
