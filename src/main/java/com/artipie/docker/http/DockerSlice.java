@@ -28,7 +28,9 @@ import com.artipie.http.Slice;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.Permission;
 import com.artipie.http.auth.Permissions;
+import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
@@ -42,6 +44,11 @@ import com.artipie.http.rt.SliceRoute;
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 public final class DockerSlice extends Slice.Wrap {
+
+    /**
+     * Read permission name.
+     */
+    public static final String READ = "read";
 
     /**
      * Ctor.
@@ -93,7 +100,7 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new ManifestEntity.Get(docker)
+                    authRead(new ManifestEntity.Get(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
@@ -145,6 +152,26 @@ public final class DockerSlice extends Slice.Wrap {
                     new UploadEntity.Get(docker)
                 )
             )
+        );
+    }
+
+    /**
+     * Requires authentication and read permission for slice.
+     *
+     * @param origin Origin slice.
+     * @param perms Access permissions.
+     * @param ids Authentication mechanism.
+     * @return Authorized slice.
+     */
+    private static Slice authRead(
+        final Slice origin,
+        final Permissions perms,
+        final Identities ids
+    ) {
+        return new SliceAuth(
+            origin,
+            new Permission.ByName(DockerSlice.READ, perms),
+            ids
         );
     }
 }
