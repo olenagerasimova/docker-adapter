@@ -26,8 +26,10 @@ package com.artipie.docker.http;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.hm.IsHeader;
 import com.artipie.http.hm.ResponseMatcher;
+import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -57,14 +59,18 @@ class UploadEntityPostTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
+        this.slice = new DockerSlice(
+            new AstoDocker(new InMemoryStorage()),
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new TestAuthentication()
+        );
     }
 
     @Test
     void shouldReturnInitialUploadStatus() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -82,4 +88,15 @@ class UploadEntityPostTest {
         );
     }
 
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
+        );
+    }
 }

@@ -32,6 +32,7 @@ import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.asto.BlobKey;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
@@ -75,7 +76,11 @@ class UploadEntityPutTest {
     void setUp() {
         this.storage = new InMemoryStorage();
         this.docker = new AstoDocker(this.storage);
-        this.slice = new DockerSlice(this.docker);
+        this.slice = new DockerSlice(
+            this.docker,
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new TestAuthentication()
+        );
     }
 
     @Test
@@ -93,7 +98,7 @@ class UploadEntityPutTest {
         );
         final Response response = this.slice.response(
             UploadEntityPutTest.requestLine(name, upload.uuid(), digest),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -125,7 +130,7 @@ class UploadEntityPutTest {
             "Returns 400 status",
             this.slice.response(
                 UploadEntityPutTest.requestLine(name, upload.uuid(), "sha256:0000"),
-                Collections.emptyList(),
+                new TestAuthentication.Headers(),
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.BAD_REQUEST)
@@ -143,12 +148,24 @@ class UploadEntityPutTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PUT, "/v2/test/blobs/uploads/12345").toString(),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             response,
             new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.PUT, "/v2/test/blobs/uploads/123").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
         );
     }
 

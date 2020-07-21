@@ -29,6 +29,7 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
@@ -65,7 +66,11 @@ class UploadEntityPatchTest {
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.slice = new DockerSlice(this.docker);
+        this.slice = new DockerSlice(
+            this.docker,
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new TestAuthentication()
+        );
     }
 
     @Test
@@ -79,7 +84,7 @@ class UploadEntityPatchTest {
         final byte[] data = "data".getBytes();
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PATCH, String.format("%s", path)).toString(),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.just(ByteBuffer.wrap(data))
         );
         MatcherAssert.assertThat(
@@ -98,12 +103,24 @@ class UploadEntityPatchTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/12345").toString(),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             response,
             new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/123").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
         );
     }
 }
