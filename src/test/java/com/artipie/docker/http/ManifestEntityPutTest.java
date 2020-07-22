@@ -30,8 +30,10 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
+import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -65,7 +67,11 @@ class ManifestEntityPutTest {
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.slice = new DockerSlice(this.docker);
+        this.slice = new DockerSlice(
+            this.docker,
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new TestAuthentication()
+        );
     }
 
     @Test
@@ -74,7 +80,7 @@ class ManifestEntityPutTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
-                Collections.emptyList(),
+                new TestAuthentication.Headers(),
                 this.manifest()
             ),
             new ResponseMatcher(
@@ -100,7 +106,7 @@ class ManifestEntityPutTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
-                Collections.emptyList(),
+                new TestAuthentication.Headers(),
                 this.manifest()
             ),
             new ResponseMatcher(
@@ -109,6 +115,18 @@ class ManifestEntityPutTest {
                 new Header("Content-Length", "0"),
                 new Header("Docker-Content-Digest", digest)
             )
+        );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
         );
     }
 

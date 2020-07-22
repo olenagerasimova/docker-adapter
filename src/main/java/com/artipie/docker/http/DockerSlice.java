@@ -51,6 +51,11 @@ public final class DockerSlice extends Slice.Wrap {
     public static final String READ = "read";
 
     /**
+     * Write permission name.
+     */
+    public static final String WRITE = "write";
+
+    /**
      * Ctor.
      *
      * @param docker Docker repository.
@@ -107,7 +112,7 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.PUT)
                     ),
-                    new ManifestEntity.Put(docker)
+                    authWrite(new ManifestEntity.Put(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
@@ -128,21 +133,21 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(UploadEntity.PATH),
                         new RtRule.ByMethod(RqMethod.POST)
                     ),
-                    new UploadEntity.Post(docker)
+                    authWrite(new UploadEntity.Post(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByPath(UploadEntity.PATH),
                         new RtRule.ByMethod(RqMethod.PATCH)
                     ),
-                    new UploadEntity.Patch(docker)
+                    authWrite(new UploadEntity.Patch(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByPath(UploadEntity.PATH),
                         new RtRule.ByMethod(RqMethod.PUT)
                     ),
-                    new UploadEntity.Put(docker)
+                    authWrite(new UploadEntity.Put(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
@@ -171,6 +176,26 @@ public final class DockerSlice extends Slice.Wrap {
         return new SliceAuth(
             origin,
             new Permission.ByName(DockerSlice.READ, perms),
+            ids
+        );
+    }
+
+    /**
+     * Requires authentication and write permission for slice.
+     *
+     * @param origin Origin slice.
+     * @param perms Access permissions.
+     * @param ids Authentication mechanism.
+     * @return Authorized slice.
+     */
+    private static Slice authWrite(
+        final Slice origin,
+        final Permissions perms,
+        final Identities ids
+    ) {
+        return new SliceAuth(
+            origin,
+            new Permission.ByName(DockerSlice.WRITE, perms),
             ids
         );
     }
