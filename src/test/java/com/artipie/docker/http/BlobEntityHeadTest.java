@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
@@ -55,7 +56,11 @@ class BlobEntityHeadTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice(
+            new AstoDocker(new ExampleStorage()),
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new TestAuthentication()
+        );
     }
 
     @Test
@@ -70,7 +75,7 @@ class BlobEntityHeadTest {
                 RqMethod.HEAD,
                 String.format("/v2/test/blobs/%s", digest)
             ).toString(),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -95,10 +100,22 @@ class BlobEntityHeadTest {
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
                     )
                 ).toString(),
-                Collections.emptyList(),
+                new TestAuthentication.Headers(),
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.NOT_FOUND)
+        );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
         );
     }
 }

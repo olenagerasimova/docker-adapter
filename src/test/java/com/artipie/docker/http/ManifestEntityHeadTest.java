@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
@@ -58,7 +59,11 @@ class ManifestEntityHeadTest {
 
     @BeforeEach
     void setUp() {
-        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
+        this.slice = new DockerSlice(
+            new AstoDocker(new ExampleStorage()),
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new TestAuthentication()
+        );
     }
 
     @Test
@@ -66,9 +71,7 @@ class ManifestEntityHeadTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/1").toString(),
-                Collections.singleton(
-                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-                ),
+                new Headers(),
                 Flowable.empty()
             ),
             new ResponseMatcher(
@@ -90,9 +93,7 @@ class ManifestEntityHeadTest {
                     RqMethod.HEAD,
                     String.format("/v2/my-alpine/manifests/%s", digest)
                 ).toString(),
-                Collections.singleton(
-                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-                ),
+                new Headers(),
                 Flowable.empty()
             ),
             new ResponseMatcher(digest)
@@ -104,11 +105,40 @@ class ManifestEntityHeadTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/2").toString(),
-                Collections.emptyList(),
+                new Headers(),
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.NOT_FOUND)
         );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/latest").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
+        );
+    }
+
+    /**
+     * Headers set for getting manifest.
+     *
+     * @since 0.4
+     */
+    private static class Headers extends com.artipie.http.Headers.Wrap {
+
+        Headers() {
+            super(
+                new Headers.From(
+                    new TestAuthentication.Headers(),
+                    new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+                )
+            );
+        }
     }
 
     /**

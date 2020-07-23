@@ -91,14 +91,14 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(BaseEntity.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new BaseEntity()
+                    authRead(new BaseEntity(), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByPath(ManifestEntity.PATH),
                         new RtRule.ByMethod(RqMethod.HEAD)
                     ),
-                    new ManifestEntity.Head(docker)
+                    authRead(new ManifestEntity.Head(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
@@ -119,14 +119,14 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(BlobEntity.PATH),
                         new RtRule.ByMethod(RqMethod.HEAD)
                     ),
-                    new BlobEntity.Head(docker)
+                    authRead(new BlobEntity.Head(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
                         new RtRule.ByPath(BlobEntity.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new BlobEntity.Get(docker)
+                    authRead(new BlobEntity.Get(docker), perms, ids)
                 ),
                 new RtRulePath(
                     new RtRule.All(
@@ -154,7 +154,7 @@ public final class DockerSlice extends Slice.Wrap {
                         new RtRule.ByPath(UploadEntity.PATH),
                         new RtRule.ByMethod(RqMethod.GET)
                     ),
-                    new UploadEntity.Get(docker)
+                    authRead(new UploadEntity.Get(docker), perms, ids)
                 )
             )
         );
