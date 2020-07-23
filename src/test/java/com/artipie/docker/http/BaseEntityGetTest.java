@@ -26,13 +26,17 @@ package com.artipie.docker.http;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
+import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.util.Collections;
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -42,14 +46,28 @@ import org.junit.jupiter.api.Test;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class BaseEntityGetTest {
+
+    /**
+     * Slice being tested.
+     */
+    private DockerSlice slice;
+
+    @BeforeEach
+    void setUp() {
+        this.slice = new DockerSlice(
+            new AstoDocker(new InMemoryStorage()),
+            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new TestAuthentication()
+        );
+    }
 
     @Test
     void shouldRespondOkToVersionCheck() {
-        final DockerSlice slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
-        final Response response = slice.response(
+        final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, "/v2/").toString(),
-            Collections.emptyList(),
+            new TestAuthentication.Headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -57,6 +75,18 @@ class BaseEntityGetTest {
             new ResponseMatcher(
                 new Header("Docker-Distribution-API-Version", "registry/2.0")
             )
+        );
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenNoAuth() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.GET, "/v2/").toString(),
+                Collections.emptyList(),
+                Flowable.empty()
+            ),
+            new RsHasStatus(RsStatus.UNAUTHORIZED)
         );
     }
 }
