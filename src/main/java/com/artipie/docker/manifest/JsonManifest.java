@@ -25,15 +25,19 @@ package com.artipie.docker.manifest;
 
 import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
-import com.artipie.docker.misc.Json;
+import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
+import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
@@ -53,7 +57,7 @@ public final class JsonManifest implements Manifest {
     /**
      * JSON bytes.
      */
-    private final Content source;
+    private final byte[] source;
 
     /**
      * Ctor.
@@ -61,14 +65,16 @@ public final class JsonManifest implements Manifest {
      * @param dgst Manifest digest.
      * @param source JSON bytes.
      */
-    public JsonManifest(final Digest dgst, final Content source) {
+    public JsonManifest(final Digest dgst, final byte[] source) {
         this.dgst = dgst;
-        this.source = source;
+        this.source = Arrays.copyOf(source, source.length);
     }
 
     @Override
     public CompletionStage<String> mediaType() {
-        return this.json().thenApply(root -> root.getString("mediaType"));
+        return CompletableFuture.completedFuture(this.json()).thenApply(
+            root -> root.getString("mediaType")
+        );
     }
 
     @Override
@@ -87,14 +93,14 @@ public final class JsonManifest implements Manifest {
 
     @Override
     public CompletionStage<Digest> config() {
-        return this.json().thenApply(
+        return CompletableFuture.completedFuture(this.json()).thenApply(
             root -> new Digest.FromString(root.getJsonObject("config").getString("digest"))
         );
     }
 
     @Override
     public CompletionStage<Collection<Layer>> layers() {
-        return this.json().thenApply(
+        return CompletableFuture.completedFuture(this.json()).thenApply(
             root -> root.getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
                 .map(JsonLayer::new)
                 .collect(Collectors.toList())
@@ -108,7 +114,7 @@ public final class JsonManifest implements Manifest {
 
     @Override
     public Content content() {
-        return this.source;
+        return new Content.From(this.source);
     }
 
     /**
@@ -116,8 +122,10 @@ public final class JsonManifest implements Manifest {
      *
      * @return JSON object.
      */
-    private CompletionStage<JsonObject> json() {
-        return new Json(this.source).object();
+    private JsonObject json() {
+        try (JsonReader reader = Json.createReader(new ByteArrayInputStream(this.source))) {
+            return reader.readObject();
+        }
     }
 
     /**

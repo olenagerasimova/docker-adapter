@@ -89,7 +89,7 @@ public final class ProxyManifests implements Manifests {
                 if (status == RsStatus.OK) {
                     final Digest digest = new DigestHeader(headers).value();
                     result = new ByteBufPublisher(body).bytes().thenApply(
-                        bytes -> Optional.of(new JsonManifest(digest, new Content.From(bytes)))
+                        bytes -> Optional.of(new JsonManifest(digest, bytes))
                     );
                 } else if (status == RsStatus.NOT_FOUND) {
                     result = CompletableFuture.completedFuture(Optional.empty());

@@ -23,7 +23,6 @@
  */
 package com.artipie.docker.manifest;
 
-import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.misc.ByteBufPublisher;
 import java.net.URL;
@@ -54,7 +53,7 @@ class JsonManifestTest {
     void shouldReadMediaType() throws Exception {
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
-            new Content.From("{\"mediaType\":\"something\"}".getBytes())
+            "{\"mediaType\":\"something\"}".getBytes()
         );
         MatcherAssert.assertThat(
             manifest.mediaType().toCompletableFuture().get(),
@@ -66,7 +65,7 @@ class JsonManifestTest {
     void shouldConvertToSameType() throws Exception {
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
-            new Content.From("{\"mediaType\":\"type2\"}".getBytes())
+            "{\"mediaType\":\"type2\"}".getBytes()
         );
         MatcherAssert.assertThat(
             manifest.convert(Arrays.asList("type1", "type2")).toCompletableFuture().get(),
@@ -78,7 +77,7 @@ class JsonManifestTest {
     void shouldFailConvertToUnknownType() {
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
-            new Content.From("{\"mediaType\":\"typeA\"}".getBytes())
+            "{\"mediaType\":\"typeA\"}".getBytes()
         );
         final ExecutionException exception = Assertions.assertThrows(
             ExecutionException.class,
@@ -95,12 +94,10 @@ class JsonManifestTest {
         final String digest = "sha256:def";
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
-            new Content.From(
-                Json.createObjectBuilder().add(
-                    "config",
-                    Json.createObjectBuilder().add("digest", digest)
-                ).build().toString().getBytes()
-            )
+            Json.createObjectBuilder().add(
+                "config",
+                Json.createObjectBuilder().add("digest", digest)
+            ).build().toString().getBytes()
         );
         MatcherAssert.assertThat(
             manifest.config().toCompletableFuture().join().string(),
@@ -113,16 +110,14 @@ class JsonManifestTest {
         final String[] digests = {"sha256:123", "sha256:abc"};
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("12345"),
-            new Content.From(
-                Json.createObjectBuilder().add(
-                    "layers",
-                    Json.createArrayBuilder(
-                        Stream.of(digests)
-                            .map(dig -> Collections.singletonMap("digest", dig))
-                            .collect(Collectors.toList())
-                    )
-                ).build().toString().getBytes()
-            )
+            Json.createObjectBuilder().add(
+                "layers",
+                Json.createArrayBuilder(
+                    Stream.of(digests)
+                        .map(dig -> Collections.singletonMap("digest", dig))
+                        .collect(Collectors.toList())
+                )
+            ).build().toString().getBytes()
         );
         MatcherAssert.assertThat(
             manifest.layers().toCompletableFuture().join().stream()
@@ -138,19 +133,17 @@ class JsonManifestTest {
         final String url = "https://artipie.com/";
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
-            new Content.From(
-                Json.createObjectBuilder().add(
-                    "layers",
-                    Json.createArrayBuilder().add(
-                        Json.createObjectBuilder()
-                            .add("digest", "sha256:12345")
-                            .add(
-                                "urls",
-                                Json.createArrayBuilder().add(url)
-                            )
-                    )
-                ).build().toString().getBytes()
-            )
+            Json.createObjectBuilder().add(
+                "layers",
+                Json.createArrayBuilder().add(
+                    Json.createObjectBuilder()
+                        .add("digest", "sha256:12345")
+                        .add(
+                            "urls",
+                            Json.createArrayBuilder().add(url)
+                        )
+                )
+            ).build().toString().getBytes()
         );
         MatcherAssert.assertThat(
             manifest.layers().toCompletableFuture().join().stream()
@@ -165,7 +158,7 @@ class JsonManifestTest {
         final String digest = "sha256:123";
         final JsonManifest manifest = new JsonManifest(
             new Digest.FromString(digest),
-            new Content.From("something".getBytes())
+            "something".getBytes()
         );
         MatcherAssert.assertThat(
             manifest.digest().string(),
@@ -178,7 +171,7 @@ class JsonManifestTest {
         final byte[] data = "data".getBytes();
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
-            new Content.From(data)
+            data
         );
         MatcherAssert.assertThat(
             new ByteBufPublisher(manifest.content()).bytes().toCompletableFuture().join(),
