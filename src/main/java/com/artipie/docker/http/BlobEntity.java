@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
@@ -103,7 +104,7 @@ final class BlobEntity {
                                     .thenApply(
                                         size -> new RsWithBody(
                                             new BaseResponse(digest),
-                                            content
+                                            new Content.From(size, content)
                                         )
                                     )
                             )
