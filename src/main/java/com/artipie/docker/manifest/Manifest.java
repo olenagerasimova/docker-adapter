@@ -26,7 +26,6 @@ package com.artipie.docker.manifest;
 import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import java.util.Collection;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Image manifest.
@@ -41,7 +40,7 @@ public interface Manifest {
      *
      * @return Type string.
      */
-    CompletionStage<String> mediaType();
+    String mediaType();
 
     /**
      * Converts manifest to one of types.
@@ -49,21 +48,21 @@ public interface Manifest {
      * @param options Types the manifest may be converted to.
      * @return Converted manifest.
      */
-    CompletionStage<Manifest> convert(Collection<String> options);
+    Manifest convert(Collection<String> options);
 
     /**
      * Read config digest.
      *
      * @return Config digests.
      */
-    CompletionStage<Digest> config();
+    Digest config();
 
     /**
      * Read layer digests.
      *
      * @return Layer digests.
      */
-    CompletionStage<Collection<Layer>> layers();
+    Collection<Layer> layers();
 
     /**
      * Manifest digest.

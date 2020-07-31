@@ -28,14 +28,12 @@ import com.artipie.docker.misc.ByteBufPublisher;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.json.Json;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
-import org.hamcrest.core.IsInstanceOf;
 import org.hamcrest.core.IsIterableContaining;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -50,13 +48,13 @@ import org.junit.jupiter.api.Test;
 class JsonManifestTest {
 
     @Test
-    void shouldReadMediaType() throws Exception {
+    void shouldReadMediaType() {
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
             "{\"mediaType\":\"something\"}".getBytes()
         );
         MatcherAssert.assertThat(
-            manifest.mediaType().toCompletableFuture().get(),
+            manifest.mediaType(),
             new IsEqual<>("something")
         );
     }
@@ -68,7 +66,7 @@ class JsonManifestTest {
             "{\"mediaType\":\"type2\"}".getBytes()
         );
         MatcherAssert.assertThat(
-            manifest.convert(Arrays.asList("type1", "type2")).toCompletableFuture().get(),
+            manifest.convert(Arrays.asList("type1", "type2")),
             new IsEqual<>(manifest)
         );
     }
@@ -79,13 +77,9 @@ class JsonManifestTest {
             new Digest.Sha256("123"),
             "{\"mediaType\":\"typeA\"}".getBytes()
         );
-        final ExecutionException exception = Assertions.assertThrows(
-            ExecutionException.class,
-            () -> manifest.convert(Collections.singleton("typeB")).toCompletableFuture().get()
-        );
-        MatcherAssert.assertThat(
-            exception.getCause(),
-            new IsInstanceOf(IllegalArgumentException.class)
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> manifest.convert(Collections.singleton("typeB"))
         );
     }
 
@@ -100,7 +94,7 @@ class JsonManifestTest {
             ).build().toString().getBytes()
         );
         MatcherAssert.assertThat(
-            manifest.config().toCompletableFuture().join().string(),
+            manifest.config().string(),
             new IsEqual<>(digest)
         );
     }
@@ -120,7 +114,7 @@ class JsonManifestTest {
             ).build().toString().getBytes()
         );
         MatcherAssert.assertThat(
-            manifest.layers().toCompletableFuture().join().stream()
+            manifest.layers().stream()
                 .map(Layer::digest)
                 .map(Digest::string)
                 .collect(Collectors.toList()),
@@ -146,7 +140,7 @@ class JsonManifestTest {
             ).build().toString().getBytes()
         );
         MatcherAssert.assertThat(
-            manifest.layers().toCompletableFuture().join().stream()
+            manifest.layers().stream()
                 .flatMap(layer -> layer.urls().stream())
                 .collect(Collectors.toList()),
             new IsIterableContaining<>(new IsEqual<>(new URL(url)))

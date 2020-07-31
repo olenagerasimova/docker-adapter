@@ -32,8 +32,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -71,40 +69,31 @@ public final class JsonManifest implements Manifest {
     }
 
     @Override
-    public CompletionStage<String> mediaType() {
-        return CompletableFuture.completedFuture(this.json()).thenApply(
-            root -> root.getString("mediaType")
-        );
+    public String mediaType() {
+        return this.json().getString("mediaType");
     }
 
     @Override
-    public CompletionStage<Manifest> convert(final Collection<String> options) {
-        return this.mediaType().thenApply(
-            type -> {
-                if (!options.contains(type)) {
-                    throw new IllegalArgumentException(
-                        String.format("Cannot convert from '%s' to any of '%s'", type, options)
-                    );
-                }
-                return this;
-            }
-        );
+    public Manifest convert(final Collection<String> options) {
+        final String type = this.mediaType();
+        if (!options.contains(type)) {
+            throw new IllegalArgumentException(
+                String.format("Cannot convert from '%s' to any of '%s'", type, options)
+            );
+        }
+        return this;
     }
 
     @Override
-    public CompletionStage<Digest> config() {
-        return CompletableFuture.completedFuture(this.json()).thenApply(
-            root -> new Digest.FromString(root.getJsonObject("config").getString("digest"))
-        );
+    public Digest config() {
+        return new Digest.FromString(this.json().getJsonObject("config").getString("digest"));
     }
 
     @Override
-    public CompletionStage<Collection<Layer>> layers() {
-        return CompletableFuture.completedFuture(this.json()).thenApply(
-            root -> root.getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
-                .map(JsonLayer::new)
-                .collect(Collectors.toList())
-        );
+    public Collection<Layer> layers() {
+        return this.json().getJsonArray("layers").getValuesAs(JsonValue::asJsonObject).stream()
+            .map(JsonLayer::new)
+            .collect(Collectors.toList());
     }
 
     @Override
