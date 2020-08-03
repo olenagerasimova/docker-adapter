@@ -45,7 +45,7 @@ public interface DockerError {
     /**
      * Get message.
      *
-     * @return Message describing conditions;
+     * @return Message describing conditions.
      */
     String message();
 
