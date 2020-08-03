@@ -29,6 +29,7 @@ import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -40,6 +41,16 @@ import javax.json.JsonObjectBuilder;
  * @since 0.5
  */
 final class ErrorsResponse extends Response.Wrap {
+
+    /**
+     * Ctor.
+     *
+     * @param status Response status.
+     * @param errors Errors.
+     */
+    protected ErrorsResponse(final RsStatus status, final DockerError... errors) {
+        this(status, Arrays.asList(errors));
+    }
 
     /**
      * Ctor.
