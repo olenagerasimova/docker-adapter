@@ -108,7 +108,24 @@ class ManifestEntityHeadTest {
                 new Headers(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.NOT_FOUND)
+            new IsErrorsResponse(RsStatus.NOT_FOUND, "MANIFEST_UNKNOWN")
+        );
+    }
+
+    @Test
+    void shouldReturnNotFoundForUnknownDigest() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(
+                    RqMethod.HEAD,
+                    String.format(
+                        "/v2/my-alpine/manifests/%s",
+                        "sha256:0123456789012345678901234567890123456789012345678901234567890123"
+                    )).toString(),
+                new Headers(),
+                Flowable.empty()
+            ),
+            new IsErrorsResponse(RsStatus.NOT_FOUND, "MANIFEST_UNKNOWN")
         );
     }
 

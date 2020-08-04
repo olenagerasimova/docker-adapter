@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.asto.Content;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.error.ManifestError;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.docker.ref.ManifestRef;
@@ -95,12 +96,13 @@ final class ManifestEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body) {
             final Request request = new Request(line);
+            final ManifestRef ref = request.reference();
             return new AsyncResponse(
-                this.docker.repo(request.name()).manifests().get(request.reference()).thenApply(
+                this.docker.repo(request.name()).manifests().get(ref).thenApply(
                     manifest -> manifest.<Response>map(
                         found -> new BaseResponse(found.convert(Head.acceptHeader(headers)))
                     ).orElseGet(
-                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
+                        () -> new ErrorsResponse(RsStatus.NOT_FOUND, new ManifestError(ref))
                     )
                 )
             );
@@ -154,7 +156,7 @@ final class ManifestEntity {
                             return new RsWithBody(new BaseResponse(mnf), mnf.content());
                         }
                     ).orElseGet(
-                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
+                        () -> new ErrorsResponse(RsStatus.NOT_FOUND, new ManifestError(ref))
                     )
                 )
             );
