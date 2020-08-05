@@ -49,10 +49,19 @@ import wtf.g4s8.hamcrest.json.JsonValueIs;
  *
  * @since 0.5
  */
-public class IsErrorsResponse extends BaseMatcher<Response> {
+public final class IsErrorsResponse extends BaseMatcher<Response> {
 
+    /**
+     * Delegate matcher.
+     */
     private final Matcher<Response> delegate;
 
+    /**
+     * Ctor.
+     *
+     * @param status Expected response status code.
+     * @param code Expected error code.
+     */
     public IsErrorsResponse(final RsStatus status, final String code) {
         this.delegate = new AllOf<>(
             Arrays.asList(
@@ -91,6 +100,11 @@ public class IsErrorsResponse extends BaseMatcher<Response> {
          */
         private final Matcher<? extends JsonValue> json;
 
+        /**
+         * Ctor.
+         *
+         * @param json Matcher for parsed JSON.
+         */
         IsJson(final Matcher<? extends JsonValue> json) {
             this.json = json;
         }
@@ -122,6 +136,11 @@ public class IsErrorsResponse extends BaseMatcher<Response> {
          */
         private final Matcher<JsonObject> delegate;
 
+        /**
+         * Ctor.
+         *
+         * @param code Expected error code.
+         */
         IsError(final String code) {
             this.delegate = new AllOf<>(
                 Arrays.asList(
