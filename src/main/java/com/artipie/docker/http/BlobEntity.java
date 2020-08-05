@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.error.BlobUnknownError;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -110,7 +111,7 @@ final class BlobEntity {
                             )
                         )
                     ).orElseGet(
-                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
+                        () -> new ErrorsResponse(RsStatus.NOT_FOUND, new BlobUnknownError(digest))
                     )
                 )
             );
@@ -145,8 +146,9 @@ final class BlobEntity {
             final Publisher<ByteBuffer> body
         ) {
             final Request request = new Request(line);
+            final Digest digest = request.digest();
             return new AsyncResponse(
-                this.docker.repo(request.name()).layers().get(request.digest()).thenApply(
+                this.docker.repo(request.name()).layers().get(digest).thenApply(
                     found -> found.<Response>map(
                         blob -> new AsyncResponse(
                             blob.size().thenApply(
@@ -157,7 +159,7 @@ final class BlobEntity {
                             )
                         )
                     ).orElseGet(
-                        () -> new RsWithStatus(RsStatus.NOT_FOUND)
+                        () -> new ErrorsResponse(RsStatus.NOT_FOUND, new BlobUnknownError(digest))
                     )
                 )
             );

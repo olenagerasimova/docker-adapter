@@ -110,7 +110,7 @@ class BlobEntityGetTest {
                 new TestAuthentication.Headers(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.NOT_FOUND)
+            new IsErrorsResponse(RsStatus.NOT_FOUND, "BLOB_UNKNOWN")
         );
     }
 
