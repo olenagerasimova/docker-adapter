@@ -119,7 +119,7 @@ class ManifestEntityGetTest {
                 new Headers(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.NOT_FOUND)
+            new IsErrorsResponse(RsStatus.NOT_FOUND, "MANIFEST_UNKNOWN")
         );
     }
 
@@ -137,7 +137,7 @@ class ManifestEntityGetTest {
                 new Headers(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.NOT_FOUND)
+            new IsErrorsResponse(RsStatus.NOT_FOUND, "MANIFEST_UNKNOWN")
         );
     }
 
