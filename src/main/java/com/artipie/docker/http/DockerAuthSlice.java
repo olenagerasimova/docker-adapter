@@ -60,22 +60,20 @@ final class DockerAuthSlice implements Slice {
         final String rqline,
         final Iterable<Map.Entry<String, String>> rqheaders,
         final Publisher<ByteBuffer> rqbody) {
-        return connection -> {
-            final Response response = this.origin.response(rqline, rqheaders, rqbody);
-            return response.send(
-                (rsstatus, rsheaders, rsbody) -> {
-                    final CompletionStage<Void> sent;
-                    if (rsstatus == RsStatus.UNAUTHORIZED) {
-                        sent = new RsWithHeaders(
-                            new ErrorsResponse(RsStatus.UNAUTHORIZED, new UnauthorizedError()),
-                            rsheaders
-                        ).send(connection);
-                    } else {
-                        sent = connection.accept(rsstatus, rsheaders, rsbody);
-                    }
-                    return sent;
+        final Response response = this.origin.response(rqline, rqheaders, rqbody);
+        return connection -> response.send(
+            (rsstatus, rsheaders, rsbody) -> {
+                final CompletionStage<Void> sent;
+                if (rsstatus == RsStatus.UNAUTHORIZED) {
+                    sent = new RsWithHeaders(
+                        new ErrorsResponse(rsstatus, new UnauthorizedError()),
+                        rsheaders
+                    ).send(connection);
+                } else {
+                    sent = connection.accept(rsstatus, rsheaders, rsbody);
                 }
-            );
-        };
+                return sent;
+            }
+        );
     }
 }
