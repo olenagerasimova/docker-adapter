@@ -173,10 +173,12 @@ public final class DockerSlice extends Slice.Wrap {
         final Permissions perms,
         final Identities ids
     ) {
-        return new SliceAuth(
-            origin,
-            new Permission.ByName(DockerSlice.READ, perms),
-            ids
+        return new DockerAuthSlice(
+            new SliceAuth(
+                origin,
+                new Permission.ByName(DockerSlice.READ, perms),
+                ids
+            )
         );
     }
 
@@ -193,10 +195,12 @@ public final class DockerSlice extends Slice.Wrap {
         final Permissions perms,
         final Identities ids
     ) {
-        return new SliceAuth(
-            origin,
-            new Permission.ByName(DockerSlice.WRITE, perms),
-            ids
+        return new DockerAuthSlice(
+            new SliceAuth(
+                origin,
+                new Permission.ByName(DockerSlice.WRITE, perms),
+                ids
+            )
         );
     }
 }

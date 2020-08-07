@@ -165,7 +165,7 @@ class UploadEntityPutTest {
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.UNAUTHORIZED)
+            new IsUnauthorizedResponse()
         );
     }
 

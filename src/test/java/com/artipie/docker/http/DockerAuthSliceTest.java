@@ -72,7 +72,7 @@ public final class DockerAuthSliceTest {
             ),
             new AllOf<>(
                 Arrays.asList(
-                    new IsErrorsResponse(RsStatus.UNAUTHORIZED, "UNAUTHORIZED"),
+                    new IsUnauthorizedResponse(),
                     new RsHasHeaders(new Headers.From(headers, new ContentLength("72")))
                 )
             )

@@ -33,7 +33,6 @@ import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
-import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -126,7 +125,7 @@ class ManifestEntityPutTest {
                 Collections.emptyList(),
                 Flowable.empty()
             ),
-            new RsHasStatus(RsStatus.UNAUTHORIZED)
+            new IsUnauthorizedResponse()
         );
     }
 
