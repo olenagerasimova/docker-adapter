@@ -31,7 +31,11 @@ import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
+import io.reactivex.Flowable;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
@@ -87,5 +91,68 @@ class ProxyBlobTest {
             blob.size().toCompletableFuture().join(),
             new IsEqual<>(size)
         );
+    }
+
+    @Test
+    void shouldNotFinishSendWhenContentReceived() {
+        final AtomicReference<CompletionStage<Void>> capture = new AtomicReference<>();
+        this.captureConnectionAccept(capture, false);
+        MatcherAssert.assertThat(
+            capture.get().toCompletableFuture().isDone(),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
+    void shouldFinishSendWhenContentConsumed() {
+        final AtomicReference<CompletionStage<Void>> capture = new AtomicReference<>();
+        final Content content = this.captureConnectionAccept(capture, false);
+        new ByteBufPublisher(content).bytes().toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            capture.get().toCompletableFuture().isDone(),
+            new IsEqual<>(true)
+        );
+    }
+
+    @Test
+    @SuppressWarnings("PMD.EmptyCatchBlock")
+    void shouldFinishSendWhenContentIsBad() {
+        final AtomicReference<CompletionStage<Void>> capture = new AtomicReference<>();
+        final Content content = this.captureConnectionAccept(capture, true);
+        try {
+            new ByteBufPublisher(content).bytes().toCompletableFuture().join();
+        } catch (final CompletionException ex) {
+        }
+        MatcherAssert.assertThat(
+            capture.get().toCompletableFuture().isDone(),
+            new IsEqual<>(true)
+        );
+    }
+
+    private Content captureConnectionAccept(
+        final AtomicReference<CompletionStage<Void>> capture,
+        final boolean failure
+    ) {
+        final byte[] data = "1234".getBytes();
+        return new ProxyBlob(
+            (line, headers, body) -> connection -> {
+                final Content content;
+                if (failure) {
+                    content = new Content.From(Flowable.error(new IllegalStateException()));
+                } else {
+                    content = new Content.From(data);
+                }
+                final CompletionStage<Void> accept = connection.accept(
+                    RsStatus.OK,
+                    new Headers.From(new ContentLength(String.valueOf(data.length))),
+                    content
+                );
+                capture.set(accept);
+                return accept;
+            },
+            new RepoName.Valid("abc"),
+            new Digest.FromString("sha256:987"),
+            data.length
+        ).content().toCompletableFuture().join();
     }
 }

@@ -100,17 +100,32 @@ public final class ProxyBlob implements Blob {
 
     @Override
     public CompletionStage<Content> content() {
-        final CompletableFuture<Content> promise = new CompletableFuture<>();
-        return this.remote.response(
+        final CompletableFuture<Content> result = new CompletableFuture<>();
+        this.remote.response(
             new RequestLine(RqMethod.GET, new BlobPath(this.name, this.dig).string()).toString(),
             Headers.EMPTY,
             Flowable.empty()
         ).send(
             (status, headers, body) -> {
-                final long size = new ContentLength(headers).longValue();
-                promise.complete(new Content.From(size, body));
-                return CompletableFuture.allOf();
+                final CompletableFuture<Void> terminated = new CompletableFuture<>();
+                result.complete(
+                    new Content.From(
+                        new ContentLength(headers).longValue(),
+                        Flowable.fromPublisher(body)
+                            .doOnError(terminated::completeExceptionally)
+                            .doOnTerminate(() -> terminated.complete(null))
+                    )
+                );
+                return terminated;
             }
-        ).thenCompose(nothing -> promise);
+        ).handle(
+            (nothing, throwable) -> {
+                if (throwable != null) {
+                    result.completeExceptionally(throwable);
+                }
+                return nothing;
+            }
+        );
+        return result;
     }
 }
