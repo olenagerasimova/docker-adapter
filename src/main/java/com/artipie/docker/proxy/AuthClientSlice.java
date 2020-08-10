@@ -28,6 +28,7 @@ import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.client.ClientSlices;
 import com.artipie.http.headers.Authorization;
 import com.artipie.http.headers.WwwAuthenticate;
 import com.artipie.http.rq.RequestLine;
@@ -150,7 +151,7 @@ public final class AuthClientSlice implements Slice {
             .map(param -> String.format("%s=%s", param.name(), param.value()))
             .collect(Collectors.joining("&"));
         final CompletableFuture<String> promise = new CompletableFuture<>();
-        return this.client.slice(realm.getHost()).response(
+        return this.client.https(realm.getHost()).response(
             new RequestLine(
                 RqMethod.GET,
                 String.format("%s?%s", path, query)
