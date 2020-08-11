@@ -27,7 +27,7 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.ContentDigest;
+import com.artipie.asto.ext.Digests;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import io.reactivex.Flowable;
@@ -75,7 +75,7 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     public CompletionStage<Blob> put(final Content blob, final Digest digest) {
-        final MessageDigest sha = ContentDigest.Digests.SHA256.get();
+        final MessageDigest sha = Digests.SHA256.get();
         final Publisher<ByteBuffer> checked = Flowable.fromPublisher(blob).map(
             buf -> {
                 sha.update(new Remaining(buf, true).bytes());
