@@ -24,6 +24,7 @@
 
 package com.artipie.docker;
 
+import com.artipie.docker.error.InvalidRepoNameException;
 import java.util.regex.Pattern;
 
 /**
@@ -100,7 +101,7 @@ public interface RepoName {
             final String src = this.origin.value();
             final int len = src.length();
             if (len < 1 || len >= RepoName.Valid.MAX_NAME_LEN) {
-                throw new IllegalStateException(
+                throw new InvalidRepoNameException(
                     String.format(
                         "repo name must be between 1 and %d chars long",
                         RepoName.Valid.MAX_NAME_LEN
@@ -108,17 +109,17 @@ public interface RepoName {
                 );
             }
             if (src.charAt(len - 1) == '/') {
-                throw new IllegalStateException(
+                throw new InvalidRepoNameException(
                     "repo name can't end with a slash"
                 );
             }
             final String[] parts = src.split("/");
             if (parts.length == 0) {
-                throw new IllegalStateException("repo name can't be empty");
+                throw new InvalidRepoNameException("repo name can't be empty");
             }
             for (final String part : parts) {
                 if (!RepoName.Valid.PART_PTN.matcher(part).matches()) {
-                    throw new IllegalStateException(
+                    throw new InvalidRepoNameException(
                         String.format("invalid repo name part: %s", part)
                     );
                 }
