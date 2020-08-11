@@ -24,16 +24,20 @@
 
 package com.artipie.docker;
 
+import com.artipie.docker.error.InvalidRepoNameException;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Test case for {@link RepoName}.
  * @since 0.1
  */
 final class RepoNameTest {
+
     @Test
     void acceptsValidRepoName() {
         MatcherAssert.assertThat(
@@ -42,33 +46,27 @@ final class RepoNameTest {
         );
     }
 
-    @Test
-    void cannotBeEmpty() {
-        Assertions.assertThrows(IllegalStateException.class, () -> new RepoName.Valid("").value());
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "",
+        "asd/",
+        "asd+zxc",
+        "-asd",
+        "a/.b"
+    })
+    void cannotBeInvalid(final String name) {
+        Assertions.assertThrows(
+            InvalidRepoNameException.class,
+            () -> new RepoName.Valid(name).value()
+        );
     }
 
     @Test
     void cannotBeGreaterThanMaxLength() {
         Assertions.assertThrows(
-            IllegalStateException.class,
+            InvalidRepoNameException.class,
             // @checkstyle MagicNumberCheck (1 line)
             () -> new RepoName.Valid(RepoNameTest.repeatChar('a', 256)).value()
-        );
-    }
-
-    @Test
-    void cannotEndWithSlash() {
-        Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> new RepoName.Valid("asd/").value()
-        );
-    }
-
-    @Test
-    void cannotIncludeStrangeSymbols() {
-        Assertions.assertThrows(
-            IllegalStateException.class,
-            () -> new RepoName.Valid("asd+zxc").value()
         );
     }
 
