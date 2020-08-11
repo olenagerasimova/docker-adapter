@@ -28,14 +28,13 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.misc.DigestFromContent;
 import com.artipie.docker.proxy.AuthClientSlice;
-import com.artipie.docker.proxy.ClientSlices;
 import com.artipie.docker.proxy.ProxyLayers;
+import com.artipie.http.client.Settings;
+import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.slice.LoggingSlice;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
@@ -53,29 +52,26 @@ class MultiReadLayersIT {
     /**
      * HTTP client used for proxy.
      */
-    private HttpClient client;
+    private JettyClientSlices slices;
 
     @BeforeEach
     void setUp() throws Exception {
-        this.client = new HttpClient(new SslContextFactory.Client());
-        this.client.start();
+        this.slices = new JettyClientSlices(new Settings.WithFollowRedirects(true));
+        this.slices.start();
     }
 
     @AfterEach
     void tearDown() throws Exception {
-        if (this.client != null) {
-            this.client.stop();
-        }
+        this.slices.stop();
     }
 
     @Test
     void shouldGetBlob() {
-        final ClientSlices slices = new ClientSlices(this.client);
         final RepoName name = new RepoName.Valid("library/busybox");
         final MultiReadLayers layers = new MultiReadLayers(
             Stream.of(
-                slices.slice("mcr.microsoft.com"),
-                new AuthClientSlice(slices, slices.slice("registry-1.docker.io"))
+                this.slices.https("mcr.microsoft.com"),
+                new AuthClientSlice(this.slices, this.slices.https("registry-1.docker.io"))
             ).map(LoggingSlice::new).map(
                 slice -> new ProxyLayers(slice, name)
             ).collect(Collectors.toList())

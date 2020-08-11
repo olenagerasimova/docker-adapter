@@ -27,9 +27,8 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
+import com.artipie.http.client.jetty.JettyClientSlices;
 import java.util.Optional;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.AfterEach;
@@ -48,7 +47,7 @@ class AuthClientSliceIT {
     /**
      * HTTP client used for proxy.
      */
-    private HttpClient client;
+    private JettyClientSlices client;
 
     /**
      * Repository URL.
@@ -57,20 +56,17 @@ class AuthClientSliceIT {
 
     @BeforeEach
     void setUp() throws Exception {
-        this.client = new HttpClient(new SslContextFactory.Client());
+        this.client = new JettyClientSlices();
         this.client.start();
-        final ClientSlices slices = new ClientSlices(this.client);
         this.slice = new AuthClientSlice(
-            slices,
-            slices.slice("registry-1.docker.io")
+            this.client,
+            this.client.https("registry-1.docker.io")
         );
     }
 
     @AfterEach
     void tearDown() throws Exception {
-        if (this.client != null) {
-            this.client.stop();
-        }
+        this.client.stop();
     }
 
     @Test

@@ -25,6 +25,7 @@ package com.artipie.docker.proxy;
 
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
+import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
@@ -33,7 +34,6 @@ import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
-import org.eclipse.jetty.client.HttpClient;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +52,7 @@ class AuthClientSliceTest {
         final byte[] body = "text".getBytes();
         final RsStatus status = RsStatus.OK;
         final Response response = new AuthClientSlice(
-            new ClientSlices(new HttpClient()),
+            new JettyClientSlices(),
             (rsline, rsheaders, rsbody) -> {
                 if (!rsline.equals(line)) {
                     throw new IllegalArgumentException(String.format("Line modified: %s", rsline));

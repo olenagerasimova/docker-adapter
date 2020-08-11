@@ -36,13 +36,12 @@ import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
 import com.artipie.docker.proxy.AuthClientSlice;
-import com.artipie.docker.proxy.ClientSlices;
 import com.artipie.docker.proxy.ProxyDocker;
 import com.artipie.docker.ref.ManifestRef;
+import com.artipie.http.client.Settings;
+import com.artipie.http.client.jetty.JettyClientSlices;
 import com.google.common.base.Stopwatch;
 import java.util.concurrent.TimeUnit;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
@@ -78,7 +77,7 @@ final class CachingProxyITCase {
     /**
      * HTTP client used for proxy.
      */
-    private HttpClient client;
+    private JettyClientSlices client;
 
     /**
      * Docker repository.
@@ -88,9 +87,8 @@ final class CachingProxyITCase {
     @BeforeEach
     void setUp() throws Exception {
         this.img = new Image.ForOs();
-        this.client = new HttpClient(new SslContextFactory.Client());
+        this.client = new JettyClientSlices(new Settings.WithFollowRedirects(true));
         this.client.start();
-        final ClientSlices slices = new ClientSlices(this.client);
         this.cache = new AstoDocker(new InMemoryStorage());
         final Docker local = new AstoDocker(new InMemoryStorage());
         this.repo = new DockerRepository(
@@ -99,11 +97,11 @@ final class CachingProxyITCase {
                     local,
                     new CacheDocker(
                         new MultiReadDocker(
-                            new ProxyDocker(slices.slice("mcr.microsoft.com")),
+                            new ProxyDocker(this.client.https("mcr.microsoft.com")),
                             new ProxyDocker(
                                 new AuthClientSlice(
-                                    slices,
-                                    slices.slice("registry-1.docker.io")
+                                    this.client,
+                                    this.client.https("registry-1.docker.io")
                                 )
                             )
                         ),
