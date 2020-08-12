@@ -85,76 +85,78 @@ public final class DockerSlice extends Slice.Wrap {
     @SuppressWarnings("PMD.UnusedFormalParameter")
     public DockerSlice(final Docker docker, final Permissions perms, final Identities ids) {
         super(
-            new SliceRoute(
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(BaseEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.GET)
+            new ErrorHandlingSlice(
+                new SliceRoute(
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(BaseEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.GET)
+                        ),
+                        authRead(new BaseEntity(), perms, ids)
                     ),
-                    authRead(new BaseEntity(), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(ManifestEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.HEAD)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(ManifestEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.HEAD)
+                        ),
+                        authRead(new ManifestEntity.Head(docker), perms, ids)
                     ),
-                    authRead(new ManifestEntity.Head(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(ManifestEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.GET)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(ManifestEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.GET)
+                        ),
+                        authRead(new ManifestEntity.Get(docker), perms, ids)
                     ),
-                    authRead(new ManifestEntity.Get(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(ManifestEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.PUT)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(ManifestEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.PUT)
+                        ),
+                        authWrite(new ManifestEntity.Put(docker), perms, ids)
                     ),
-                    authWrite(new ManifestEntity.Put(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(BlobEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.HEAD)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(BlobEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.HEAD)
+                        ),
+                        authRead(new BlobEntity.Head(docker), perms, ids)
                     ),
-                    authRead(new BlobEntity.Head(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(BlobEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.GET)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(BlobEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.GET)
+                        ),
+                        authRead(new BlobEntity.Get(docker), perms, ids)
                     ),
-                    authRead(new BlobEntity.Get(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(UploadEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.POST)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(UploadEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.POST)
+                        ),
+                        authWrite(new UploadEntity.Post(docker), perms, ids)
                     ),
-                    authWrite(new UploadEntity.Post(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(UploadEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.PATCH)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(UploadEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.PATCH)
+                        ),
+                        authWrite(new UploadEntity.Patch(docker), perms, ids)
                     ),
-                    authWrite(new UploadEntity.Patch(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(UploadEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.PUT)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(UploadEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.PUT)
+                        ),
+                        authWrite(new UploadEntity.Put(docker), perms, ids)
                     ),
-                    authWrite(new UploadEntity.Put(docker), perms, ids)
-                ),
-                new RtRulePath(
-                    new RtRule.All(
-                        new RtRule.ByPath(UploadEntity.PATH),
-                        new RtRule.ByMethod(RqMethod.GET)
-                    ),
-                    authRead(new UploadEntity.Get(docker), perms, ids)
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(UploadEntity.PATH),
+                            new RtRule.ByMethod(RqMethod.GET)
+                        ),
+                        authRead(new UploadEntity.Get(docker), perms, ids)
+                    )
                 )
             )
         );
