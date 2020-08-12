@@ -21,39 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.error;
+package com.artipie.docker.http;
 
-import java.util.Optional;
+import com.artipie.docker.error.InvalidRepoNameException;
+import com.artipie.http.Headers;
+import com.artipie.http.rq.RequestLine;
+import com.artipie.http.rq.RqMethod;
+import com.artipie.http.rs.RsStatus;
+import io.reactivex.Flowable;
+import java.util.concurrent.CompletableFuture;
+import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Test;
 
 /**
- * Invalid repository name encountered either during manifest validation or any API operation.
+ * Tests for {@link ErrorHandlingSlice}.
  *
  * @since 0.5
  */
-@SuppressWarnings("serial")
-public final class InvalidRepoNameException extends RuntimeException implements DockerError {
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+class ErrorHandlingSliceTest {
 
-    /**
-     * Ctor.
-     *
-     * @param details Error details.
-     */
-    public InvalidRepoNameException(final String details) {
-        super(details);
-    }
-
-    @Override
-    public String code() {
-        return "NAME_INVALID";
-    }
-
-    @Override
-    public String message() {
-        return "invalid repository name";
-    }
-
-    @Override
-    public Optional<String> detail() {
-        return Optional.of(this.getMessage());
+    @Test
+    void shouldHandleError() {
+        MatcherAssert.assertThat(
+            new ErrorHandlingSlice(
+                (line, headers, body) -> connection -> CompletableFuture.failedFuture(
+                    new InvalidRepoNameException("something went wrong")
+                )
+            ).response(
+                new RequestLine(RqMethod.GET, "/").toString(),
+                Headers.EMPTY,
+                Flowable.empty()
+            ),
+            new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+        );
     }
 }
