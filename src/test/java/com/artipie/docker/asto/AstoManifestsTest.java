@@ -26,13 +26,13 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
 import javax.json.Json;
@@ -131,7 +131,7 @@ final class AstoManifestsTest {
     private byte[] manifest(final ManifestRef ref) {
         return this.manifests.get(ref)
             .thenCompose(
-                opt -> opt.map(mnf -> new ByteBufPublisher(mnf.content()).bytes()).orElseThrow()
+                opt -> opt.map(mnf -> new PublisherAs(mnf.content()).bytes()).orElseThrow()
             ).toCompletableFuture().join();
     }
 }

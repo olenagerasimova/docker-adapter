@@ -26,13 +26,13 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -77,7 +77,7 @@ public final class AstoManifests implements Manifests {
 
     @Override
     public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-        return new ByteBufPublisher(content).bytes().thenCompose(
+        return new PublisherAs(content).bytes().thenCompose(
             bytes -> {
                 final Digest digest = new Digest.Sha256(bytes);
                 return this.blobs.put(new Content.From(bytes), digest)
@@ -100,8 +100,8 @@ public final class AstoManifests implements Manifests {
                         blobOpt -> blobOpt
                             .map(
                                 blob -> blob.content()
-                                    .thenApply(ByteBufPublisher::new)
-                                    .thenCompose(ByteBufPublisher::bytes)
+                                    .thenApply(PublisherAs::new)
+                                    .thenCompose(PublisherAs::bytes)
                                     .<Manifest>thenApply(
                                         bytes -> new JsonManifest(blob.digest(), bytes)
                                     )
@@ -182,7 +182,7 @@ public final class AstoManifests implements Manifests {
                 if (exists) {
                     stage = this.asto.value(key)
                         .thenCompose(
-                            pub -> new ByteBufPublisher(pub).asciiString()
+                            pub -> new PublisherAs(pub).asciiString()
                         )
                         .<Digest>thenApply(Digest.FromString::new)
                         .thenApply(Optional::of);

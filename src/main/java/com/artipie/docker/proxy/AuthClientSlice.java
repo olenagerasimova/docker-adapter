@@ -23,7 +23,7 @@
  */
 package com.artipie.docker.proxy;
 
-import com.artipie.docker.misc.ByteBufPublisher;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -159,7 +159,7 @@ public final class AuthClientSlice implements Slice {
             this.credentials.headers(),
             Flowable.empty()
         ).send(
-            (status, headers, body) -> new ByteBufPublisher(body).bytes()
+            (status, headers, body) -> new PublisherAs(body).bytes()
                 .thenApply(TokenResponse::new)
                 .thenApply(TokenResponse::token)
                 .thenCompose(

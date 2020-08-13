@@ -24,6 +24,7 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
@@ -31,7 +32,6 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.http.DigestHeader;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
@@ -88,7 +88,7 @@ public final class ProxyManifests implements Manifests {
                 final CompletionStage<Optional<Manifest>> result;
                 if (status == RsStatus.OK) {
                     final Digest digest = new DigestHeader(headers).value();
-                    result = new ByteBufPublisher(body).bytes().thenApply(
+                    result = new PublisherAs(body).bytes().thenApply(
                         bytes -> Optional.of(new JsonManifest(digest, bytes))
                     );
                 } else if (status == RsStatus.NOT_FOUND) {
