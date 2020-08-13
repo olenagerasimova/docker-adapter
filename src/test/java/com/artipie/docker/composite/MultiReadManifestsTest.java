@@ -24,10 +24,7 @@
 package com.artipie.docker.composite;
 
 import com.artipie.docker.Digest;
-import com.artipie.docker.Manifests;
-import com.artipie.docker.fake.EmptyGetManifests;
-import com.artipie.docker.fake.FaultyGetManifests;
-import com.artipie.docker.fake.FullGetManifests;
+import com.artipie.docker.fake.FakeManifests;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Arrays;
@@ -60,8 +57,13 @@ final class MultiReadManifestsTest {
         final String cache,
         final String expected
     ) {
+        final FakeManifests fmsorigin = new FakeManifests(origin, "one");
+        final FakeManifests fmscache = new FakeManifests(cache, "two");
         final MultiReadManifests manifests = new MultiReadManifests(
-            Arrays.asList(manifests(origin, "one"), manifests(cache, "two"))
+            Arrays.asList(
+                fmsorigin.manifests(),
+                fmscache.manifests()
+            )
         );
         MatcherAssert.assertThat(
             manifests.get(new ManifestRef.FromString("ref"))
@@ -70,23 +72,5 @@ final class MultiReadManifestsTest {
                 .map(Digest::hex),
             new IsEqual<>(Optional.ofNullable(expected))
         );
-    }
-
-    private static Manifests manifests(final String type, final String code) {
-        final Manifests manifests;
-        switch (type) {
-            case "empty":
-                manifests = new EmptyGetManifests();
-                break;
-            case "full":
-                manifests = new FullGetManifests(code);
-                break;
-            case "faulty":
-                manifests = new FaultyGetManifests();
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unsupported type: %s", type));
-        }
-        return manifests;
     }
 }

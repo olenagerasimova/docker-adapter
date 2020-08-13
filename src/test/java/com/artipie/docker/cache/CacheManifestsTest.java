@@ -34,9 +34,7 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Uploads;
 import com.artipie.docker.asto.AstoDocker;
-import com.artipie.docker.fake.EmptyGetManifests;
-import com.artipie.docker.fake.FaultyGetManifests;
-import com.artipie.docker.fake.FullGetManifests;
+import com.artipie.docker.fake.FakeManifests;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import com.google.common.base.Stopwatch;
@@ -72,9 +70,11 @@ final class CacheManifestsTest {
         final String cache,
         final String expected
     ) {
+        final FakeManifests fmsorigin = new FakeManifests(origin, "origin");
+        final FakeManifests fmscache = new FakeManifests(cache, "cache");
         final CacheManifests manifests = new CacheManifests(
-            new SimpleRepo(manifests(origin, "origin")),
-            new SimpleRepo(manifests(cache, "cache"))
+            new SimpleRepo(fmsorigin.manifests()),
+            new SimpleRepo(fmscache.manifests())
         );
         MatcherAssert.assertThat(
             manifests.get(new ManifestRef.FromString("ref"))
@@ -111,24 +111,6 @@ final class CacheManifestsTest {
             cache.manifests().get(ref).toCompletableFuture().join().isPresent(),
             new IsEqual<>(true)
         );
-    }
-
-    private static Manifests manifests(final String type, final String code) {
-        final Manifests manifests;
-        switch (type) {
-            case "empty":
-                manifests = new EmptyGetManifests();
-                break;
-            case "full":
-                manifests = new FullGetManifests(code);
-                break;
-            case "faulty":
-                manifests = new FaultyGetManifests();
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unsupported type: %s", type));
-        }
-        return manifests;
     }
 
     /**

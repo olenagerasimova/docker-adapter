@@ -24,22 +24,18 @@
 package com.artipie.docker.cache;
 
 import com.artipie.docker.Digest;
-import com.artipie.docker.Layers;
-import com.artipie.docker.fake.EmptyGetLayers;
-import com.artipie.docker.fake.FaultyGetLayers;
-import com.artipie.docker.fake.FullGetLayers;
+import com.artipie.docker.fake.FakeLayers;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 /**
- * Tests for {@link CacheManifests}.
+ * Tests for {@link CacheLayers}.
  *
  * @since 0.3
  */
 final class CacheLayersTest {
-
     @ParameterizedTest
     @CsvSource({
         "empty,empty,false",
@@ -55,29 +51,16 @@ final class CacheLayersTest {
         final String cache,
         final boolean expected
     ) {
+        final FakeLayers flsorigin = new FakeLayers(origin);
+        final FakeLayers flscache = new FakeLayers(cache);
         MatcherAssert.assertThat(
-            new CacheLayers(layers(origin), layers(cache)).get(new Digest.FromString("123"))
+            new CacheLayers(
+                flsorigin.layers(),
+                flscache.layers()
+            ).get(new Digest.FromString("123"))
                 .toCompletableFuture().join()
                 .isPresent(),
             new IsEqual<>(expected)
         );
-    }
-
-    private static Layers layers(final String type) {
-        final Layers layers;
-        switch (type) {
-            case "empty":
-                layers = new EmptyGetLayers();
-                break;
-            case "full":
-                layers = new FullGetLayers();
-                break;
-            case "faulty":
-                layers = new FaultyGetLayers();
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unsupported type: %s", type));
-        }
-        return layers;
     }
 }

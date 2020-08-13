@@ -24,10 +24,7 @@
 package com.artipie.docker.composite;
 
 import com.artipie.docker.Digest;
-import com.artipie.docker.Layers;
-import com.artipie.docker.fake.EmptyGetLayers;
-import com.artipie.docker.fake.FaultyGetLayers;
-import com.artipie.docker.fake.FullGetLayers;
+import com.artipie.docker.fake.FakeLayers;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -40,7 +37,6 @@ import org.junit.jupiter.params.provider.CsvSource;
  * @since 0.3
  */
 final class MultiReadLayersTest {
-
     @ParameterizedTest
     @CsvSource({
         "empty,empty,false",
@@ -52,30 +48,18 @@ final class MultiReadLayersTest {
         "empty,faulty,false"
     })
     void shouldReturnExpectedValue(final String one, final String two, final boolean present) {
+        final FakeLayers flsone = new FakeLayers(one);
+        final FakeLayers flstwo = new FakeLayers(two);
         MatcherAssert.assertThat(
-            new MultiReadLayers(Arrays.asList(layers(one), layers(two)))
-                .get(new Digest.FromString("123"))
+            new MultiReadLayers(
+                Arrays.asList(
+                    flsone.layers(),
+                    flstwo.layers()
+                )
+            ).get(new Digest.FromString("123"))
                 .toCompletableFuture().join()
                 .isPresent(),
             new IsEqual<>(present)
         );
-    }
-
-    private static Layers layers(final String type) {
-        final Layers layers;
-        switch (type) {
-            case "empty":
-                layers = new EmptyGetLayers();
-                break;
-            case "full":
-                layers = new FullGetLayers();
-                break;
-            case "faulty":
-                layers = new FaultyGetLayers();
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("Unsupported type: %s", type));
-        }
-        return layers;
     }
 }
