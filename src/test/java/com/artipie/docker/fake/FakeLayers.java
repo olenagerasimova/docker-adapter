@@ -23,26 +23,32 @@
  */
 package com.artipie.docker.fake;
 
+import com.artipie.asto.Content;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
+import com.artipie.docker.cache.CacheLayers;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Auxiliary class for tests for {@link com.artipie.docker.cache.CacheLayers}.
  *
  * @since 0.5
  */
-public final class FakeLayers {
+public final class FakeLayers implements Layers {
     /**
-     * Type of layers.
+     * Layers.
      */
-    private final String type;
+    private final Layers layers;
 
     /**
      * Ctor.
      *
-     * @param type Type of layers
+     * @param type Type of layers.
      */
-    public FakeLayers(final String type) {
-        this.type = type;
+    public FakeLayers(String type) {
+        layers = layersFromType(type);
     }
 
     /**
@@ -50,9 +56,9 @@ public final class FakeLayers {
      *
      * @return Layers.
      */
-    public Layers layers() {
+    private Layers layersFromType(String type) {
         final Layers layers;
-        switch (this.type) {
+        switch (type) {
             case "empty":
                 layers = new EmptyGetLayers();
                 break;
@@ -64,9 +70,19 @@ public final class FakeLayers {
                 break;
             default:
                 throw new IllegalArgumentException(
-                    String.format("Unsupported type: %s", this.type)
+                    String.format("Unsupported type: %s", type)
                 );
         }
         return layers;
+    }
+
+    @Override
+    public CompletionStage<Blob> put(Content content, Digest digest) {
+        return layers.put(content, digest);
+    }
+
+    @Override
+    public CompletionStage<Optional<Blob>> get(Digest digest) {
+        return layers.get(digest);
     }
 }

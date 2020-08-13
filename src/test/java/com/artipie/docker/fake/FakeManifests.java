@@ -23,24 +23,23 @@
  */
 package com.artipie.docker.fake;
 
+import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
+import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.ref.ManifestRef;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Auxiliary class for tests for {@link com.artipie.docker.cache.CacheManifests}.
  *
  * @since 0.5
  */
-public final class FakeManifests {
-
+public final class FakeManifests implements Manifests {
     /**
-     * Type of manifests.
+     * Manifests.
      */
-    private final String type;
-
-    /**
-     * Code of manifests.
-     */
-    private final String code;
+    private final Manifests mnfs;
 
     /**
      * Ctor.
@@ -49,8 +48,7 @@ public final class FakeManifests {
      * @param code Code of manifests.
      */
     public FakeManifests(final String type, final String code) {
-        this.type = type;
-        this.code = code;
+        mnfs = manifests(type, code);
     }
 
     /**
@@ -58,23 +56,33 @@ public final class FakeManifests {
      *
      * @return Manifests.
      */
-    public Manifests manifests() {
+    public Manifests manifests(String type, String code) {
         final Manifests manifests;
-        switch (this.type) {
+        switch (type) {
             case "empty":
                 manifests = new EmptyGetManifests();
                 break;
             case "full":
-                manifests = new FullGetManifests(this.code);
+                manifests = new FullGetManifests(code);
                 break;
             case "faulty":
                 manifests = new FaultyGetManifests();
                 break;
             default:
                 throw new IllegalArgumentException(
-                    String.format("Unsupported type: %s", this.type)
+                    String.format("Unsupported type: %s", type)
                 );
         }
         return manifests;
+    }
+
+    @Override
+    public CompletionStage<Manifest> put(ManifestRef ref, Content content) {
+        return mnfs.put(ref, content);
+    }
+
+    @Override
+    public CompletionStage<Optional<Manifest>> get(ManifestRef ref) {
+        return mnfs.get(ref);
     }
 }

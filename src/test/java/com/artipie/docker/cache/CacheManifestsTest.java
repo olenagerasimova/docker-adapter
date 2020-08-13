@@ -49,11 +49,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 /**
  * Tests for {@link CacheManifests}.
  *
- * @since 0.3
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
+ * @since 0.3
  */
 final class CacheManifestsTest {
-
     @ParameterizedTest
     @CsvSource({
         "empty,empty,",
@@ -70,11 +69,9 @@ final class CacheManifestsTest {
         final String cache,
         final String expected
     ) {
-        final FakeManifests fmsorigin = new FakeManifests(origin, "origin");
-        final FakeManifests fmscache = new FakeManifests(cache, "cache");
         final CacheManifests manifests = new CacheManifests(
-            new SimpleRepo(fmsorigin.manifests()),
-            new SimpleRepo(fmscache.manifests())
+            new SimpleRepo(new FakeManifests(origin, "origin")),
+            new SimpleRepo(new FakeManifests(cache, "cache"))
         );
         MatcherAssert.assertThat(
             manifests.get(new ManifestRef.FromString("ref"))
@@ -89,7 +86,7 @@ final class CacheManifestsTest {
     void shouldCacheManifest() throws Exception {
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("1"));
         final Repo cache = new AstoDocker(new LoggingStorage(new InMemoryStorage()))
-            .repo(new RepoName.Simple("my-cache"));
+                               .repo(new RepoName.Simple("my-cache"));
         new CacheManifests(
             new AstoDocker(new ExampleStorage()).repo(new RepoName.Simple("my-alpine")),
             cache
@@ -119,7 +116,6 @@ final class CacheManifestsTest {
      * @since 0.3
      */
     private static final class SimpleRepo implements Repo {
-
         /**
          * Manifests.
          */

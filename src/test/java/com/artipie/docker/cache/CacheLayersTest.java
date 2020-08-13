@@ -51,12 +51,10 @@ final class CacheLayersTest {
         final String cache,
         final boolean expected
     ) {
-        final FakeLayers flsorigin = new FakeLayers(origin);
-        final FakeLayers flscache = new FakeLayers(cache);
         MatcherAssert.assertThat(
             new CacheLayers(
-                flsorigin.layers(),
-                flscache.layers()
+                new FakeLayers(origin),
+                new FakeLayers(cache)
             ).get(new Digest.FromString("123"))
                 .toCompletableFuture().join()
                 .isPresent(),

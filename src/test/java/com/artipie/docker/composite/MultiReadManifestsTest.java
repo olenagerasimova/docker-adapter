@@ -57,12 +57,10 @@ final class MultiReadManifestsTest {
         final String cache,
         final String expected
     ) {
-        final FakeManifests fmsorigin = new FakeManifests(origin, "one");
-        final FakeManifests fmscache = new FakeManifests(cache, "two");
         final MultiReadManifests manifests = new MultiReadManifests(
             Arrays.asList(
-                fmsorigin.manifests(),
-                fmscache.manifests()
+                new FakeManifests(origin, "one"),
+                new FakeManifests(cache, "two")
             )
         );
         MatcherAssert.assertThat(

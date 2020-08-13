@@ -48,13 +48,11 @@ final class MultiReadLayersTest {
         "empty,faulty,false"
     })
     void shouldReturnExpectedValue(final String one, final String two, final boolean present) {
-        final FakeLayers flsone = new FakeLayers(one);
-        final FakeLayers flstwo = new FakeLayers(two);
         MatcherAssert.assertThat(
             new MultiReadLayers(
                 Arrays.asList(
-                    flsone.layers(),
-                    flstwo.layers()
+                    new FakeLayers(one),
+                    new FakeLayers(two)
                 )
             ).get(new Digest.FromString("123"))
                 .toCompletableFuture().join()
