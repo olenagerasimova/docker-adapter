@@ -24,11 +24,11 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
-import com.artipie.docker.misc.ByteBufPublisher;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -90,7 +90,7 @@ final class AstoLayersTest {
     }
 
     private static byte[] bytes(final Blob blob) {
-        return new ByteBufPublisher(blob.content().toCompletableFuture().join())
+        return new PublisherAs(blob.content().toCompletableFuture().join())
             .bytes()
             .toCompletableFuture().join();
     }

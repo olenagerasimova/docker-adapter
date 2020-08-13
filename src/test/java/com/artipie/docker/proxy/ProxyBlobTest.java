@@ -24,9 +24,9 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rs.RsFull;
@@ -67,7 +67,7 @@ class ProxyBlobTest {
             data.length
         ).content().toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new ByteBufPublisher(content).bytes().toCompletableFuture().join(),
+            new PublisherAs(content).bytes().toCompletableFuture().join(),
             new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
@@ -107,7 +107,7 @@ class ProxyBlobTest {
     void shouldFinishSendWhenContentConsumed() {
         final AtomicReference<CompletionStage<Void>> capture = new AtomicReference<>();
         final Content content = this.captureConnectionAccept(capture, false);
-        new ByteBufPublisher(content).bytes().toCompletableFuture().join();
+        new PublisherAs(content).bytes().toCompletableFuture().join();
         MatcherAssert.assertThat(
             capture.get().toCompletableFuture().isDone(),
             new IsEqual<>(true)
@@ -120,7 +120,7 @@ class ProxyBlobTest {
         final AtomicReference<CompletionStage<Void>> capture = new AtomicReference<>();
         final Content content = this.captureConnectionAccept(capture, true);
         try {
-            new ByteBufPublisher(content).bytes().toCompletableFuture().join();
+            new PublisherAs(content).bytes().toCompletableFuture().join();
         } catch (final CompletionException ex) {
         }
         MatcherAssert.assertThat(

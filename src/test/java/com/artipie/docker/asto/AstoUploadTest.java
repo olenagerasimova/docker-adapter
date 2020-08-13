@@ -25,9 +25,9 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.misc.ByteBufPublisher;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -92,7 +92,7 @@ class AstoUploadTest {
         this.upload.start().toCompletableFuture().join();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new ByteBufPublisher(this.contentFromUpload()).bytes().toCompletableFuture().join(),
+            new PublisherAs(this.contentFromUpload()).bytes().toCompletableFuture().join(),
             new IsEqual<>(chunk)
         );
     }
@@ -126,7 +126,7 @@ class AstoUploadTest {
         final byte[] chunk = "content".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new ByteBufPublisher(this.contentFromUpload()).bytes().toCompletableFuture().join(),
+            new PublisherAs(this.contentFromUpload()).bytes().toCompletableFuture().join(),
             new IsEqual<>(chunk)
         );
     }

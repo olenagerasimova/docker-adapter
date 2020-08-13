@@ -24,11 +24,11 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.http.DigestHeader;
 import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.misc.ByteBufPublisher;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Headers;
 import com.artipie.http.rs.RsFull;
@@ -69,7 +69,7 @@ class ProxyManifestsTest {
         MatcherAssert.assertThat(manifest.digest().string(), new IsEqual<>(digest));
         final Content content = manifest.content();
         MatcherAssert.assertThat(
-            new ByteBufPublisher(content).bytes().toCompletableFuture().join(),
+            new PublisherAs(content).bytes().toCompletableFuture().join(),
             new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
