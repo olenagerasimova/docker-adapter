@@ -49,8 +49,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 /**
  * Tests for {@link CacheManifests}.
  *
- * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  * @since 0.3
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class CacheManifestsTest {
     @ParameterizedTest
@@ -86,7 +86,7 @@ final class CacheManifestsTest {
     void shouldCacheManifest() throws Exception {
         final ManifestRef ref = new ManifestRef.FromTag(new Tag.Valid("1"));
         final Repo cache = new AstoDocker(new LoggingStorage(new InMemoryStorage()))
-                               .repo(new RepoName.Simple("my-cache"));
+            .repo(new RepoName.Simple("my-cache"));
         new CacheManifests(
             new AstoDocker(new ExampleStorage()).repo(new RepoName.Simple("my-alpine")),
             cache

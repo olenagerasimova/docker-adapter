@@ -27,7 +27,6 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
-import com.artipie.docker.cache.CacheLayers;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -47,42 +46,43 @@ public final class FakeLayers implements Layers {
      *
      * @param type Type of layers.
      */
-    public FakeLayers(String type) {
-        layers = layersFromType(type);
+    public FakeLayers(final String type) {
+        this.layers = layersFromType(type);
+    }
+
+    @Override
+    public CompletionStage<Blob> put(final Content content, final Digest digest) {
+        return this.layers.put(content, digest);
+    }
+
+    @Override
+    public CompletionStage<Optional<Blob>> get(final Digest digest) {
+        return this.layers.get(digest);
     }
 
     /**
      * Creates layers.
      *
+     * @param type Type of layers.
      * @return Layers.
      */
-    private Layers layersFromType(String type) {
-        final Layers layers;
+    private static Layers layersFromType(final String type) {
+        final Layers tmplayers;
         switch (type) {
             case "empty":
-                layers = new EmptyGetLayers();
+                tmplayers = new EmptyGetLayers();
                 break;
             case "full":
-                layers = new FullGetLayers();
+                tmplayers = new FullGetLayers();
                 break;
             case "faulty":
-                layers = new FaultyGetLayers();
+                tmplayers = new FaultyGetLayers();
                 break;
             default:
                 throw new IllegalArgumentException(
                     String.format("Unsupported type: %s", type)
                 );
         }
-        return layers;
-    }
-
-    @Override
-    public CompletionStage<Blob> put(Content content, Digest digest) {
-        return layers.put(content, digest);
-    }
-
-    @Override
-    public CompletionStage<Optional<Blob>> get(Digest digest) {
-        return layers.get(digest);
+        return tmplayers;
     }
 }

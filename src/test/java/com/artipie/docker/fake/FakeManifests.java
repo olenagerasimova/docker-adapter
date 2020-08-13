@@ -48,15 +48,27 @@ public final class FakeManifests implements Manifests {
      * @param code Code of manifests.
      */
     public FakeManifests(final String type, final String code) {
-        mnfs = manifests(type, code);
+        this.mnfs = manifests(type, code);
+    }
+
+    @Override
+    public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
+        return this.mnfs.put(ref, content);
+    }
+
+    @Override
+    public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
+        return this.mnfs.get(ref);
     }
 
     /**
      * Creates manifests.
      *
+     * @param type Type of manifests.
+     * @param code Code of manifests.
      * @return Manifests.
      */
-    public Manifests manifests(String type, String code) {
+    private static Manifests manifests(final String type, final String code) {
         final Manifests manifests;
         switch (type) {
             case "empty":
@@ -74,15 +86,5 @@ public final class FakeManifests implements Manifests {
                 );
         }
         return manifests;
-    }
-
-    @Override
-    public CompletionStage<Manifest> put(ManifestRef ref, Content content) {
-        return mnfs.put(ref, content);
-    }
-
-    @Override
-    public CompletionStage<Optional<Manifest>> get(ManifestRef ref) {
-        return mnfs.get(ref);
     }
 }
