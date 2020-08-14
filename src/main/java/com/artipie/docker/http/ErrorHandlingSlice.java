@@ -57,25 +57,42 @@ final class ErrorHandlingSlice implements Slice {
     }
 
     @Override
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     public Response response(
         final String line,
         final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body
     ) {
-        final Response response = this.origin.response(line, headers, body);
-        return connection -> response.send(connection).handle(
-            (nothing, throwable) -> {
-                final CompletionStage<Void> result;
-                if (throwable == null) {
-                    result = CompletableFuture.completedFuture(nothing);
-                } else {
-                    result = handle(throwable)
-                        .map(rsp -> rsp.send(connection))
-                        .orElseGet(() -> CompletableFuture.failedFuture(throwable));
+        Response response;
+        try {
+            final Response original = this.origin.response(line, headers, body);
+            response = connection -> {
+                CompletionStage<Void> sent;
+                try {
+                    sent = original.send(connection);
+                    // @checkstyle IllegalCatchCheck (1 line)
+                } catch (final RuntimeException ex) {
+                    sent = handle(ex).map(rsp -> rsp.send(connection)).orElseThrow(() -> ex);
                 }
-                return result;
-            }
-        ).thenCompose(Function.identity());
+                return sent.handle(
+                    (nothing, throwable) -> {
+                        final CompletionStage<Void> result;
+                        if (throwable == null) {
+                            result = CompletableFuture.completedFuture(nothing);
+                        } else {
+                            result = handle(throwable)
+                                .map(rsp -> rsp.send(connection))
+                                .orElseGet(() -> CompletableFuture.failedFuture(throwable));
+                        }
+                        return result;
+                    }
+                ).thenCompose(Function.identity());
+            };
+            // @checkstyle IllegalCatchCheck (1 line)
+        } catch (final RuntimeException ex) {
+            response = handle(ex).orElseThrow(() -> ex);
+        }
+        return response;
     }
 
     /**
