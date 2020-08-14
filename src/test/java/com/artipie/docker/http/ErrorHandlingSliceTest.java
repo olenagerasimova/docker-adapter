@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.proxy.AuthClientSlice;
@@ -42,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -116,6 +118,90 @@ class ErrorHandlingSliceTest {
                 Flowable.empty()
             ),
             new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+        );
+    }
+
+    @Test
+    void shouldHandleSliceError() {
+        MatcherAssert.assertThat(
+            new ErrorHandlingSlice(
+                (line, headers, body) -> {
+                    throw new InvalidRepoNameException("slice error");
+                }
+            ).response(
+                new RequestLine(RqMethod.GET, "/").toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ),
+            new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+        );
+    }
+
+    @Test
+    void shouldHandleConnectionError() {
+        MatcherAssert.assertThat(
+            new ErrorHandlingSlice(
+                (line, headers, body) -> connection -> {
+                    throw new InvalidRepoNameException("connection error");
+                }
+            ).response(
+                new RequestLine(RqMethod.GET, "/").toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ),
+            new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+        );
+    }
+
+    @Test
+    void shouldPassSliceError() {
+        final RuntimeException exception = new IllegalStateException();
+        final ErrorHandlingSlice slice = new ErrorHandlingSlice(
+            (line, headers, body) -> {
+                throw exception;
+            }
+        );
+        final Exception actual = Assertions.assertThrows(
+            exception.getClass(),
+            () -> slice.response(
+                new RequestLine(RqMethod.GET, "/").toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ).send(
+                (status, headers, body) -> CompletableFuture.allOf()
+            ).toCompletableFuture().join(),
+            "Exception not handled"
+        );
+        MatcherAssert.assertThat(
+            "Original exception preserved",
+            actual,
+            new IsEqual<>(exception)
+        );
+    }
+
+    @Test
+    void shouldPassConnectionError() {
+        final RuntimeException exception = new IllegalStateException();
+        final ErrorHandlingSlice slice = new ErrorHandlingSlice(
+            (line, headers, body) -> connection -> {
+                throw exception;
+            }
+        );
+        final Exception actual = Assertions.assertThrows(
+            exception.getClass(),
+            () -> slice.response(
+                new RequestLine(RqMethod.GET, "/").toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ).send(
+                (status, headers, body) -> CompletableFuture.allOf()
+            ).toCompletableFuture().join(),
+            "Exception not handled"
+        );
+        MatcherAssert.assertThat(
+            "Original exception preserved",
+            actual,
+            new IsEqual<>(exception)
         );
     }
 }
