@@ -68,7 +68,7 @@ final class ReadWriteManifestsTest {
         final ManifestRef ref = new ManifestRef.FromString("get");
         this.mnfs.get(ref).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.getmnf.refcheck,
+            this.getmnf.ref(),
             new IsEqual<>(ref)
         );
     }
@@ -82,11 +82,11 @@ final class ReadWriteManifestsTest {
             new Content.From(data)
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.putmnf.refcheck,
+            this.putmnf.ref(),
             new IsEqual<>(ref)
         );
         MatcherAssert.assertThat(
-            this.putmnf.contentcheck.size().get(),
+            this.putmnf.content().size().get(),
             new IsEqual<>((long) data.length)
         );
     }
