@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.error.DeniedError;
 import com.artipie.docker.error.UnauthorizedError;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -67,6 +68,11 @@ final class DockerAuthSlice implements Slice {
                 if (rsstatus == RsStatus.UNAUTHORIZED) {
                     sent = new RsWithHeaders(
                         new ErrorsResponse(rsstatus, new UnauthorizedError()),
+                        rsheaders
+                    ).send(connection);
+                } else if (rsstatus == RsStatus.FORBIDDEN) {
+                    sent = new RsWithHeaders(
+                        new ErrorsResponse(rsstatus, new DeniedError()),
                         rsheaders
                     ).send(connection);
                 } else {
