@@ -82,10 +82,12 @@ final class ReadWriteManifestsTest {
             new Content.From(data)
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
+            "ManifestRef from put method is wrong.",
             this.putmnf.ref(),
             new IsEqual<>(ref)
         );
         MatcherAssert.assertThat(
+            "Size of content from put method is wrong.",
             this.putmnf.content().size().get(),
             new IsEqual<>((long) data.length)
         );
