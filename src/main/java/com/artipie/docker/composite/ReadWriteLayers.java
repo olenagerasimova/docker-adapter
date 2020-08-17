@@ -34,9 +34,6 @@ import java.util.concurrent.CompletionStage;
  * Read-write {@link Layers} implementation.
  *
  * @since 0.3
- * @todo #255:30min Add unit tests for `ReadWriteLayers` class.
- *  `ReadWriteLayers` class lacks test coverage. It should be verified that it delegates calls
- *  to expected `Layers` passing data correctly and returning results as-is.
  */
 public final class ReadWriteLayers implements Layers {
 
