@@ -24,60 +24,68 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Storage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.Upload;
 import com.artipie.docker.Uploads;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletionStage;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
- * Asto implementation of {@link Uploads}.
+ * Test for {@link AstoUploads}.
  *
- * @since 0.3
+ * @since 0.5
  */
-public final class AstoUploads implements Uploads {
+final class AstoUploadsTest {
+    /**
+     * Slice being tested.
+     */
+    private Uploads uploads;
 
     /**
-     * Asto storage.
+     * Storage.
      */
-    private final Storage asto;
+    private Storage storage;
 
     /**
-     * Repository name.
+     * RepoName.
      */
-    private final RepoName name;
+    private RepoName reponame;
 
-    /**
-     * Ctor.
-     *
-     * @param asto Asto storage
-     * @param name Repository name
-     */
-    public AstoUploads(final Storage asto, final RepoName name) {
-        this.asto = asto;
-        this.name = name;
+    @BeforeEach
+    void setUp() {
+        this.storage = new InMemoryStorage();
+        this.reponame = new RepoName.Valid("test");
+        this.uploads = new AstoUploads(
+            this.storage,
+            this.reponame
+        );
     }
 
-    @Override
-    public CompletionStage<Upload> start() {
-        final String uuid = UUID.randomUUID().toString();
-        final AstoUpload upload = new AstoUpload(this.asto, this.name, uuid);
-        return upload.start().thenApply(ignored -> upload);
+    @Test
+    void shouldStartNewAstoUpload() {
+        final String uuid = this.uploads.start()
+            .toCompletableFuture().join()
+            .uuid();
+        MatcherAssert.assertThat(
+            this.storage.list(
+                new UploadKey(this.reponame, uuid)
+            ).join().isEmpty(),
+            new IsEqual<>(false)
+        );
     }
 
-    @Override
-    public CompletionStage<Optional<Upload>> get(final String uuid) {
-        return this.asto.list(new UploadKey(this.name, uuid)).thenApply(
-            list -> {
-                final Optional<Upload> upload;
-                if (list.isEmpty()) {
-                    upload = Optional.empty();
-                } else {
-                    upload = Optional.of(new AstoUpload(this.asto, this.name, uuid));
-                }
-                return upload;
-            }
+    @Test
+    void shouldFindUploadByUuid() {
+        final String uuid = this.uploads.start()
+            .toCompletableFuture().join()
+            .uuid();
+        MatcherAssert.assertThat(
+            this.uploads.get(uuid)
+                .toCompletableFuture().join()
+                .get().uuid(),
+            new IsEqual<>(uuid)
         );
     }
 }
