@@ -34,9 +34,6 @@ import java.util.concurrent.CompletionStage;
  * Read-write {@link Manifests} implementation.
  *
  * @since 0.3
- * @todo #255:30min Add unit tests for `ReadWriteManifests` class.
- *  `ReadWriteManifests` class lacks test coverage. It should be verified that it delegates calls
- *  to expected `Manifests` passing data correctly and returning results as-is.
  */
 public final class ReadWriteManifests implements Manifests {
 
