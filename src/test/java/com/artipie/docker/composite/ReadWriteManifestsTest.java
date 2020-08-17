@@ -34,8 +34,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Tests for {@link ReadWriteManifests}.
@@ -44,23 +42,25 @@ import org.junit.jupiter.params.provider.ValueSource;
  */
 final class ReadWriteManifestsTest {
     /**
-     * Manifest reference.
+     * Manifests that implement only get method.
      */
-    private ManifestRef refcheck;
+    private CaptureGetManifests getmnf;
 
     /**
-     * Manifest content.
+     * Manifests that implement only put method.
      */
-    private Content contentcheck;
+    private CapturePutManifests putmnf;
 
     /**
-     * Manifests.
+     * ReadWriteManifests.
      */
-    private Manifests mnfs;
+    private ReadWriteManifests mnfs;
 
     @BeforeEach
     void init() {
-        this.mnfs = new ReadWriteManifests(new ReadManifests(), new WriteManifests());
+        this.getmnf = new CaptureGetManifests();
+        this.putmnf = new CapturePutManifests();
+        this.mnfs = new ReadWriteManifests(this.getmnf, this.putmnf);
     }
 
     @Test
@@ -68,36 +68,41 @@ final class ReadWriteManifestsTest {
         final ManifestRef ref = new ManifestRef.FromString("get");
         this.mnfs.get(ref).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.refcheck,
+            this.getmnf.refcheck,
             new IsEqual<>(ref)
         );
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"data", "<p>**data**</p>"})
-    void shouldCallPutPassingCorrectData(final String str) {
-        final byte[] data = str.getBytes();
-        final ManifestRef ref = new ManifestRef.FromString(str);
+    @Test
+    void shouldCallPutPassingCorrectData() {
+        final byte[] data = "data".getBytes();
+        final ManifestRef ref = new ManifestRef.FromString("ref");
         this.mnfs.put(
             ref,
             new Content.From(data)
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.refcheck,
+            this.putmnf.refcheck,
             new IsEqual<>(ref)
         );
         MatcherAssert.assertThat(
-            this.contentcheck.size().get(),
+            this.putmnf.contentcheck.size().get(),
             new IsEqual<>((long) data.length)
         );
     }
 
     /**
-     * ReadManifests implementation.
+     * Manifests implementation that captures get method for checking
+     * correctness of parameters. Put method is unsupported.
      *
      * @since 0.5
      */
-    private class ReadManifests implements Manifests {
+    private static class CaptureGetManifests implements Manifests {
+        /**
+         * Manifest reference.
+         */
+        private volatile ManifestRef refcheck;
+
         @Override
         public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
             throw new UnsupportedOperationException();
@@ -105,27 +110,50 @@ final class ReadWriteManifestsTest {
 
         @Override
         public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-            ReadWriteManifestsTest.this.refcheck = ref;
+            this.refcheck = ref;
             return CompletableFuture.completedFuture(Optional.empty());
+        }
+
+        public ManifestRef ref() {
+            return this.refcheck;
         }
     }
 
     /**
-     * WriteManifests implementation.
+     * Manifests implementation that captures put method for checking
+     * correctness of parameters. Get method is unsupported.
      *
      * @since 0.5
      */
-    private class WriteManifests implements Manifests {
+    private static class CapturePutManifests implements Manifests {
+        /**
+         * Manifest reference.
+         */
+        private volatile ManifestRef refcheck;
+
+        /**
+         * Manifest content.
+         */
+        private volatile Content contentcheck;
+
         @Override
         public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-            ReadWriteManifestsTest.this.refcheck = ref;
-            ReadWriteManifestsTest.this.contentcheck = content;
+            this.refcheck = ref;
+            this.contentcheck = content;
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
         public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
             throw new UnsupportedOperationException();
+        }
+
+        public ManifestRef ref() {
+            return this.refcheck;
+        }
+
+        public Content content() {
+            return this.contentcheck;
         }
     }
 }
