@@ -64,6 +64,20 @@ final class AstoUploadsTest {
     }
 
     @Test
+    void checkUniquenessUuids() {
+        final String uuid = this.uploads.start()
+            .toCompletableFuture().join()
+            .uuid();
+        final String otheruuid = this.uploads.start()
+            .toCompletableFuture().join()
+            .uuid();
+        MatcherAssert.assertThat(
+            uuid.equals(otheruuid),
+            new IsEqual<>(false)
+        );
+    }
+
+    @Test
     void shouldStartNewAstoUpload() {
         final String uuid = this.uploads.start()
             .toCompletableFuture().join()
@@ -86,6 +100,16 @@ final class AstoUploadsTest {
                 .toCompletableFuture().join()
                 .get().uuid(),
             new IsEqual<>(uuid)
+        );
+    }
+
+    @Test
+    void shouldReturnEmptyOptional() {
+        MatcherAssert.assertThat(
+            this.uploads.get("uuid")
+                .toCompletableFuture().join()
+                .isPresent(),
+            new IsEqual<>(false)
         );
     }
 }
