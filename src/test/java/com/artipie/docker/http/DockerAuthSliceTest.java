@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.headers.Header;
@@ -54,7 +55,7 @@ import org.junit.jupiter.api.Test;
 public final class DockerAuthSliceTest {
 
     @Test
-    void shouldReturnErrorsWhenForbidden() {
+    void shouldReturnErrorsWhenUnathorized() {
         final Headers headers = new Headers.From(
             new WwwAuthenticate("Basic"),
             new Header("X-Something", "Value")
@@ -74,6 +75,32 @@ public final class DockerAuthSliceTest {
                 Arrays.asList(
                     new IsUnauthorizedResponse(),
                     new RsHasHeaders(new Headers.From(headers, new ContentLength("72")))
+                )
+            )
+        );
+    }
+
+    @Test
+    void shouldReturnErrorsWhenForbidden() {
+        final Headers headers = new Headers.From(
+            new WwwAuthenticate("Basic realm=\"123\""),
+            new Header("X-Foo", "Bar")
+        );
+        MatcherAssert.assertThat(
+            new DockerAuthSlice(
+                (rqline, rqheaders, rqbody) -> new RsWithHeaders(
+                    new RsWithStatus(RsStatus.FORBIDDEN),
+                    new Headers.From(headers)
+                )
+            ).response(
+                new RequestLine(RqMethod.GET, "/file.txt").toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ),
+            new AllOf<>(
+                Arrays.asList(
+                    new IsErrorsResponse(RsStatus.FORBIDDEN, "DENIED"),
+                    new RsHasHeaders(new Headers.From(headers, new ContentLength("85")))
                 )
             )
         );
