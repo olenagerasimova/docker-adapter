@@ -35,9 +35,6 @@ import java.util.concurrent.CompletionStage;
  * Asto implementation of {@link Uploads}.
  *
  * @since 0.3
- * @todo #169:30min Add unit tests for `AstoUpload` class
- *  `AstoUpload` lacks test coverage. It would be nice to test both `start` and `get` methods
- *  of this class.
  */
 public final class AstoUploads implements Uploads {
 
