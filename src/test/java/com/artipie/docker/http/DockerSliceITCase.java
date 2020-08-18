@@ -27,8 +27,8 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
-import com.artipie.docker.junit.DockerImage;
 import com.artipie.docker.junit.DockerRepository;
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.StringContains;
@@ -41,13 +41,16 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.2
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
+@SuppressWarnings({
+    "PMD.AvoidDuplicateLiterals",
+    "PMD.TooManyMethods"
+})
 @DockerClientSupport
-public final class DockerSliceITCase {
+final class DockerSliceITCase {
     /**
      * Example docker image to use in tests.
      */
-    private DockerImage image;
+    private Image image;
 
     /**
      * Docker client.
@@ -59,15 +62,19 @@ public final class DockerSliceITCase {
      */
     private DockerRepository repository;
 
+    /**
+     * Full image name in remote registry.
+     */
+    private String remote;
+
     @BeforeEach
     void setUp() throws Exception {
         this.repository = new DockerRepository(
             new AstoDocker(new InMemoryStorage())
         );
         this.repository.start();
-        this.image = new DockerImage(this.repository.url());
-        this.image.initialize();
-        this.prepare();
+        this.image = this.prepareImage();
+        this.remote = this.image.remote().split("@")[0];
     }
 
     @AfterEach
@@ -77,59 +84,89 @@ public final class DockerSliceITCase {
 
     @Test
     void shouldPush() throws Exception {
-        final String output = this.client.run("push", this.image.remote());
+        final String output = this.client.run("push", this.remote);
         MatcherAssert.assertThat(
             output,
-            Matchers.allOf(this.image.layersPushed(), this.image.manifestPushed())
+            Matchers.allOf(this.layersPushed(), this.manifestPushed())
         );
     }
 
     @Test
     void shouldPushExisting() throws Exception {
-        this.client.run("push", this.image.remote());
-        final String output = this.client.run("push", this.image.remote());
+        this.client.run("push", this.remote);
+        final String output = this.client.run("push", this.remote);
         MatcherAssert.assertThat(
             output,
-            Matchers.allOf(this.image.layersAlreadyExist(), this.image.manifestPushed())
+            Matchers.allOf(this.layersAlreadyExist(), this.manifestPushed())
         );
     }
 
     @Test
     void shouldPullPushedByTag() throws Exception {
-        this.client.run("push", this.image.remote());
-        this.client.run("image", "rm", this.image.local());
-        this.client.run("image", "rm", this.image.remote());
-        final String output = this.client.run("pull", this.image.remote());
+        this.client.run("push", this.remote);
+        this.client.run("image", "rm", this.local());
+        this.client.run("image", "rm", this.remote);
+        final String output = this.client.run("pull", this.remote);
         MatcherAssert.assertThat(
             output,
             new StringContains(
                 false,
-                String.format("Status: Downloaded newer image for %s", this.image.remote())
+                String.format("Status: Downloaded newer image for %s", this.remote)
             )
         );
     }
 
     @Test
     void shouldPullPushedByDigest() throws Exception {
-        this.client.run("push", this.image.remote());
-        this.client.run("image", "rm", this.image.local());
-        this.client.run("image", "rm", this.image.remote());
-        final String output = this.client.run("pull", this.image.remoteByDigest());
+        this.client.run("push", this.remote);
+        this.client.run("image", "rm", this.local());
+        this.client.run("image", "rm", this.remote);
+        final String output = this.client.run("pull", this.remoteByDigest());
         MatcherAssert.assertThat(
             output,
             new StringContains(
                 false,
-                String.format("Status: Downloaded newer image for %s", this.image.remoteByDigest())
+                String.format("Status: Downloaded newer image for %s", this.remoteByDigest())
             )
         );
     }
 
-    private void prepare() throws Exception {
-        final String original = String.format("%s@%s", this.image.local(), this.image.digest());
+    private Image prepareImage() throws Exception {
+        final Image tmpimg = new Image.ForOs();
+        final String original = tmpimg.remote();
         this.client.run("pull", original);
         final String local = "my-test";
         this.client.run("tag", original, String.format("%s:latest", local));
-        this.image.updateName(local);
-        this.client.run("tag", original, this.image.remote());
+        final Image img = new Image.From(
+            this.repository.url(),
+            local,
+            tmpimg.digest(),
+            tmpimg.layer()
+        );
+        this.client.run("tag", original, img.remote().split("@")[0]);
+        return img;
+    }
+
+    private String local() {
+        return this.image.name();
+    }
+
+    private String remoteByDigest() {
+        return this.image.remote();
+    }
+
+    private Matcher<String> manifestPushed() {
+        return new StringContains(false, String.format("latest: digest: %s", this.image.digest()));
+    }
+
+    private Matcher<String> layersPushed() {
+        return new StringContains(false, String.format("%s: Pushed", this.image.layer()));
+    }
+
+    private Matcher<String> layersAlreadyExist() {
+        return new StringContains(
+            false,
+            String.format("%s: Layer already exists", this.image.layer())
+        );
     }
 }

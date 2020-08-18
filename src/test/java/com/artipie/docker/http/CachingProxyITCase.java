@@ -140,7 +140,7 @@ final class CachingProxyITCase {
     @Test
     void shouldPullRemote() throws Exception {
         final String image = new Image.From(
-            this.repo.url(), this.img.name(), this.img.digest()
+            this.repo.url(), this.img.name(), this.img.digest(), this.img.layer()
         ).remote();
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
@@ -149,7 +149,7 @@ final class CachingProxyITCase {
     @Test
     void shouldPullWhenRemoteIsDown() throws Exception {
         final String image = new Image.From(
-            this.repo.url(), this.img.name(), this.img.digest()
+            this.repo.url(), this.img.name(), this.img.digest(), this.img.layer()
         ).remote();
         this.cli.run("pull", image);
         this.awaitManifestCached();
