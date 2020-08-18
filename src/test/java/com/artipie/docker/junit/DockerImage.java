@@ -32,7 +32,6 @@ import org.hamcrest.core.StringContains;
  *
  * @since 0.5
  */
-@SuppressWarnings("PMD.ConstructorOnlyInitializesOrCallOtherConstructors")
 public final class DockerImage {
     /**
      * Repo URL.
