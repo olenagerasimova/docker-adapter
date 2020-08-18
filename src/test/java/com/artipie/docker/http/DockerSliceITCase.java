@@ -41,10 +41,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.2
  */
-@SuppressWarnings({
-    "PMD.AvoidDuplicateLiterals",
-    "PMD.TooManyMethods"
-})
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 @DockerClientSupport
 final class DockerSliceITCase {
     /**
@@ -62,11 +59,6 @@ final class DockerSliceITCase {
      */
     private DockerRepository repository;
 
-    /**
-     * Full image name in remote registry.
-     */
-    private String remote;
-
     @BeforeEach
     void setUp() throws Exception {
         this.repository = new DockerRepository(
@@ -74,7 +66,6 @@ final class DockerSliceITCase {
         );
         this.repository.start();
         this.image = this.prepareImage();
-        this.remote = this.image.remote().split("@")[0];
     }
 
     @AfterEach
@@ -84,7 +75,7 @@ final class DockerSliceITCase {
 
     @Test
     void shouldPush() throws Exception {
-        final String output = this.client.run("push", this.remote);
+        final String output = this.client.run("push", this.image.remote());
         MatcherAssert.assertThat(
             output,
             Matchers.allOf(this.layersPushed(), this.manifestPushed())
@@ -93,8 +84,8 @@ final class DockerSliceITCase {
 
     @Test
     void shouldPushExisting() throws Exception {
-        this.client.run("push", this.remote);
-        final String output = this.client.run("push", this.remote);
+        this.client.run("push", this.image.remote());
+        final String output = this.client.run("push", this.image.remote());
         MatcherAssert.assertThat(
             output,
             Matchers.allOf(this.layersAlreadyExist(), this.manifestPushed())
@@ -103,37 +94,37 @@ final class DockerSliceITCase {
 
     @Test
     void shouldPullPushedByTag() throws Exception {
-        this.client.run("push", this.remote);
-        this.client.run("image", "rm", this.local());
-        this.client.run("image", "rm", this.remote);
-        final String output = this.client.run("pull", this.remote);
+        this.client.run("push", this.image.remote());
+        this.client.run("image", "rm", this.image.name());
+        this.client.run("image", "rm", this.image.remote());
+        final String output = this.client.run("pull", this.image.remote());
         MatcherAssert.assertThat(
             output,
             new StringContains(
                 false,
-                String.format("Status: Downloaded newer image for %s", this.remote)
+                String.format("Status: Downloaded newer image for %s", this.image.remote())
             )
         );
     }
 
     @Test
     void shouldPullPushedByDigest() throws Exception {
-        this.client.run("push", this.remote);
-        this.client.run("image", "rm", this.local());
-        this.client.run("image", "rm", this.remote);
-        final String output = this.client.run("pull", this.remoteByDigest());
+        this.client.run("push", this.image.remote());
+        this.client.run("image", "rm", this.image.name());
+        this.client.run("image", "rm", this.image.remote());
+        final String output = this.client.run("pull", this.image.remoteByDigest());
         MatcherAssert.assertThat(
             output,
             new StringContains(
                 false,
-                String.format("Status: Downloaded newer image for %s", this.remoteByDigest())
+                String.format("Status: Downloaded newer image for %s", this.image.remoteByDigest())
             )
         );
     }
 
     private Image prepareImage() throws Exception {
         final Image tmpimg = new Image.ForOs();
-        final String original = tmpimg.remote();
+        final String original = tmpimg.remoteByDigest();
         this.client.run("pull", original);
         final String local = "my-test";
         this.client.run("tag", original, String.format("%s:latest", local));
@@ -143,16 +134,8 @@ final class DockerSliceITCase {
             tmpimg.digest(),
             tmpimg.layer()
         );
-        this.client.run("tag", original, img.remote().split("@")[0]);
+        this.client.run("tag", original, img.remote());
         return img;
-    }
-
-    private String local() {
-        return this.image.name();
-    }
-
-    private String remoteByDigest() {
-        return this.image.remote();
     }
 
     private Matcher<String> manifestPushed() {

@@ -107,9 +107,9 @@ final class DockerAuthITCase {
     }
 
     private String copy(final Image original) throws Exception {
-        this.cli.run("pull", original.remote());
+        this.cli.run("pull", original.remoteByDigest());
         final String copy = String.format("%s/my-test/latest", this.repo.url());
-        this.cli.run("tag", original.remote(), copy);
+        this.cli.run("tag", original.remoteByDigest(), copy);
         return copy;
     }
 }

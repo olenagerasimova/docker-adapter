@@ -31,7 +31,6 @@ import com.artipie.docker.Digest;
  * @since 0.4
  */
 public interface Image {
-
     /**
      * Image name.
      *
@@ -49,14 +48,21 @@ public interface Image {
     /**
      * Full image name in remote registry.
      *
-     * @return Full image name string.
+     * @return Full image name in remote registry string.
      */
     String remote();
 
     /**
-     * Image layer.
+     * Full image name in remote registry with digest.
      *
-     * @return Image layer string.
+     * @return Full image name with digest string.
+     */
+    String remoteByDigest();
+
+    /**
+     * Digest of one of the layers the image consists of.
+     *
+     * @return Digest of the layer of the image.
      */
     String layer();
 
@@ -66,7 +72,6 @@ public interface Image {
      * @since 0.4
      */
     abstract class Wrap implements Image {
-
         /**
          * Origin image.
          */
@@ -97,6 +102,11 @@ public interface Image {
         }
 
         @Override
+        public final String remoteByDigest() {
+            return this.origin.remoteByDigest();
+        }
+
+        @Override
         public final String layer() {
             return this.origin.layer();
         }
@@ -108,7 +118,6 @@ public interface Image {
      * @since 0.4
      */
     final class From implements Image {
-
         /**
          * Registry.
          */
@@ -162,6 +171,11 @@ public interface Image {
 
         @Override
         public String remote() {
+            return String.format("%s/%s", this.registry, this.name);
+        }
+
+        @Override
+        public String remoteByDigest() {
             return String.format("%s/%s@%s", this.registry, this.name, this.digest);
         }
 
@@ -177,7 +191,6 @@ public interface Image {
      * @since 0.4
      */
     final class ForOs extends Image.Wrap {
-
         /**
          * Ctor.
          */
