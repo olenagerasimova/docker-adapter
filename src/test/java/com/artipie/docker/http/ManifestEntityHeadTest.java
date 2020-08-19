@@ -57,11 +57,17 @@ class ManifestEntityHeadTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             new AstoDocker(new ExampleStorage()),
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new Permissions.Single(this.user.name(), DockerSlice.READ),
             new TestAuthentication()
         );
     }
@@ -146,12 +152,12 @@ class ManifestEntityHeadTest {
      *
      * @since 0.4
      */
-    private static class Headers extends com.artipie.http.Headers.Wrap {
+    private class Headers extends com.artipie.http.Headers.Wrap {
 
         Headers() {
             super(
                 new Headers.From(
-                    new TestAuthentication.Headers(),
+                    ManifestEntityHeadTest.this.user.headers(),
                     new Header("Accept", "application/vnd.docker.distribution.manifest.v2+json")
                 )
             );

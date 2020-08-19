@@ -52,11 +52,17 @@ class BaseEntityGetTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             new AstoDocker(new InMemoryStorage()),
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new Permissions.Single(this.user.name(), DockerSlice.READ),
             new TestAuthentication()
         );
     }
@@ -65,7 +71,7 @@ class BaseEntityGetTest {
     void shouldRespondOkToVersionCheck() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, "/v2/").toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(

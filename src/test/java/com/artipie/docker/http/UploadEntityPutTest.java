@@ -72,13 +72,19 @@ class UploadEntityPutTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
         this.storage = new InMemoryStorage();
         this.docker = new AstoDocker(this.storage);
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new Permissions.Single(this.user.name(), DockerSlice.WRITE),
             new TestAuthentication()
         );
     }
@@ -98,7 +104,7 @@ class UploadEntityPutTest {
         );
         final Response response = this.slice.response(
             UploadEntityPutTest.requestLine(name, upload.uuid(), digest),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -130,7 +136,7 @@ class UploadEntityPutTest {
             "Returns 400 status",
             this.slice.response(
                 UploadEntityPutTest.requestLine(name, upload.uuid(), "sha256:0000"),
-                new TestAuthentication.Headers(),
+                this.user.headers(),
                 Flowable.empty()
             ),
             new RsHasStatus(RsStatus.BAD_REQUEST)
@@ -148,7 +154,7 @@ class UploadEntityPutTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PUT, "/v2/test/blobs/uploads/12345").toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(

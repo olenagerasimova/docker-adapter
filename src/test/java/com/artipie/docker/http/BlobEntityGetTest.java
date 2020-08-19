@@ -55,11 +55,17 @@ class BlobEntityGetTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             new AstoDocker(new ExampleStorage()),
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new Permissions.Single(this.user.name(), DockerSlice.READ),
             new TestAuthentication()
         );
     }
@@ -76,7 +82,7 @@ class BlobEntityGetTest {
                 RqMethod.GET,
                 String.format("/v2/test/blobs/%s", digest)
             ).toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         final Key expected = new Key.From(
@@ -106,7 +112,7 @@ class BlobEntityGetTest {
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
                     )
                 ).toString(),
-                new TestAuthentication.Headers(),
+                this.user.headers(),
                 Flowable.empty()
             ),
             new IsErrorsResponse(RsStatus.NOT_FOUND, "BLOB_UNKNOWN")
