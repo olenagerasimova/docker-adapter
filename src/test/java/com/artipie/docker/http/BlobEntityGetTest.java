@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.docker.ExampleStorage;
@@ -128,6 +129,18 @@ class BlobEntityGetTest {
                 Flowable.empty()
             ),
             new IsUnauthorizedResponse()
+        );
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenNoPermissions() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:123").toString(),
+                TestAuthentication.BOB.headers(),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
         );
     }
 }

@@ -176,4 +176,16 @@ public final class UploadEntityGetTest {
             new IsUnauthorizedResponse()
         );
     }
+
+    @Test
+    void shouldReturnForbiddenWhenNoPermissions() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.GET, "/v2/test/blobs/uploads/123").toString(),
+                TestAuthentication.BOB.headers(),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
+        );
+    }
 }

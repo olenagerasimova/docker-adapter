@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Response;
@@ -102,6 +103,18 @@ class UploadEntityPostTest {
                 Flowable.empty()
             ),
             new IsUnauthorizedResponse()
+        );
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenNoPermissions() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
+                TestAuthentication.BOB.headers(),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
         );
     }
 }
