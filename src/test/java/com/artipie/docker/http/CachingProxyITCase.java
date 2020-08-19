@@ -126,7 +126,7 @@ final class CachingProxyITCase {
 
     @Test
     void shouldPushAndPullLocal() throws Exception {
-        final String original = this.img.remote();
+        final String original = this.img.remoteByDigest();
         this.cli.run("pull", original);
         final String image = String.format("%s/my-test/latest", this.repo.url());
         this.cli.run("tag", original, image);
@@ -140,8 +140,8 @@ final class CachingProxyITCase {
     @Test
     void shouldPullRemote() throws Exception {
         final String image = new Image.From(
-            this.repo.url(), this.img.name(), this.img.digest()
-        ).remote();
+            this.repo.url(), this.img.name(), this.img.digest(), this.img.layer()
+        ).remoteByDigest();
         final String output = this.cli.run("pull", image);
         MatcherAssert.assertThat(output, CachingProxyITCase.imagePulled(image));
     }
@@ -149,8 +149,8 @@ final class CachingProxyITCase {
     @Test
     void shouldPullWhenRemoteIsDown() throws Exception {
         final String image = new Image.From(
-            this.repo.url(), this.img.name(), this.img.digest()
-        ).remote();
+            this.repo.url(), this.img.name(), this.img.digest(), this.img.layer()
+        ).remoteByDigest();
         this.cli.run("pull", image);
         this.awaitManifestCached();
         this.cli.run("image", "rm", image);

@@ -31,7 +31,6 @@ import com.artipie.docker.Digest;
  * @since 0.4
  */
 public interface Image {
-
     /**
      * Image name.
      *
@@ -49,9 +48,23 @@ public interface Image {
     /**
      * Full image name in remote registry.
      *
-     * @return Full image name string.
+     * @return Full image name in remote registry string.
      */
     String remote();
+
+    /**
+     * Full image name in remote registry with digest.
+     *
+     * @return Full image name with digest string.
+     */
+    String remoteByDigest();
+
+    /**
+     * Digest of one of the layers the image consists of.
+     *
+     * @return Digest of the layer of the image.
+     */
+    String layer();
 
     /**
      * Abstract decorator for Image.
@@ -59,7 +72,6 @@ public interface Image {
      * @since 0.4
      */
     abstract class Wrap implements Image {
-
         /**
          * Origin image.
          */
@@ -88,6 +100,16 @@ public interface Image {
         public final String remote() {
             return this.origin.remote();
         }
+
+        @Override
+        public final String remoteByDigest() {
+            return this.origin.remoteByDigest();
+        }
+
+        @Override
+        public final String layer() {
+            return this.origin.layer();
+        }
     }
 
     /**
@@ -96,7 +118,6 @@ public interface Image {
      * @since 0.4
      */
     final class From implements Image {
-
         /**
          * Registry.
          */
@@ -113,16 +134,29 @@ public interface Image {
         private final String digest;
 
         /**
+         * Image layer.
+         */
+        private final String layer;
+
+        /**
          * Ctor.
          *
          * @param registry Registry.
          * @param name Image name.
          * @param digest Manifest digest.
+         * @param layer Image layer.
+         * @checkstyle ParameterNumberCheck (6 lines)
          */
-        public From(final String registry, final String name, final String digest) {
+        public From(
+            final String registry,
+            final String name,
+            final String digest,
+            final String layer
+        ) {
             this.registry = registry;
             this.name = name;
             this.digest = digest;
+            this.layer = layer;
         }
 
         @Override
@@ -137,7 +171,17 @@ public interface Image {
 
         @Override
         public String remote() {
+            return String.format("%s/%s", this.registry, this.name);
+        }
+
+        @Override
+        public String remoteByDigest() {
             return String.format("%s/%s@%s", this.registry, this.name, this.digest);
+        }
+
+        @Override
+        public String layer() {
+            return this.layer;
         }
     }
 
@@ -147,7 +191,6 @@ public interface Image {
      * @since 0.4
      */
     final class ForOs extends Image.Wrap {
-
         /**
          * Ctor.
          */
@@ -168,7 +211,8 @@ public interface Image {
                     "dotnet/core/runtime",
                     new Digest.Sha256(
                         "c91e7b0fcc21d5ee1c7d3fad7e31c71ed65aa59f448f7dcc1756153c724c8b07"
-                    ).string()
+                    ).string(),
+                    "d9e06d032060"
                 );
             } else {
                 img = new Image.From(
@@ -176,7 +220,8 @@ public interface Image {
                     "library/busybox",
                     new Digest.Sha256(
                         "a7766145a775d39e53a713c75b6fd6d318740e70327aaa3ed5d09e0ef33fc3df"
-                    ).string()
+                    ).string(),
+                    "1079c30efc82"
                 );
             }
             return img;
