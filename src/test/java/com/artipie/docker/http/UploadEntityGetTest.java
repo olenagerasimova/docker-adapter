@@ -61,12 +61,18 @@ public final class UploadEntityGetTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.READ),
+            new Permissions.Single(this.user.name(), DockerSlice.READ),
             new TestAuthentication()
         );
     }
@@ -81,7 +87,7 @@ public final class UploadEntityGetTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -106,7 +112,7 @@ public final class UploadEntityGetTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -132,7 +138,7 @@ public final class UploadEntityGetTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response get = this.slice.response(
             new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -150,7 +156,7 @@ public final class UploadEntityGetTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, "/v2/test/blobs/uploads/12345").toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(

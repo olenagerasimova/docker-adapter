@@ -63,12 +63,18 @@ class ManifestEntityPutTest {
      */
     private Docker docker;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new Permissions.Single(this.user.name(), DockerSlice.WRITE),
             new TestAuthentication()
         );
     }
@@ -79,7 +85,7 @@ class ManifestEntityPutTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
-                new TestAuthentication.Headers(),
+                this.user.headers(),
                 this.manifest()
             ),
             new ResponseMatcher(
@@ -105,7 +111,7 @@ class ManifestEntityPutTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
-                new TestAuthentication.Headers(),
+                this.user.headers(),
                 this.manifest()
             ),
             new ResponseMatcher(

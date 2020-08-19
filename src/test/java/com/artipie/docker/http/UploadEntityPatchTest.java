@@ -62,12 +62,18 @@ class UploadEntityPatchTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new Permissions.Single(this.user.name(), DockerSlice.WRITE),
             new TestAuthentication()
         );
     }
@@ -83,7 +89,7 @@ class UploadEntityPatchTest {
         final byte[] data = "data".getBytes();
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PATCH, String.format("%s", path)).toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.just(ByteBuffer.wrap(data))
         );
         MatcherAssert.assertThat(
@@ -102,7 +108,7 @@ class UploadEntityPatchTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/12345").toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(

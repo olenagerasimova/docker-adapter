@@ -56,11 +56,17 @@ class UploadEntityPostTest {
      */
     private DockerSlice slice;
 
+    /**
+     * User with right permissions.
+     */
+    private TestAuthentication.User user;
+
     @BeforeEach
     void setUp() {
+        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             new AstoDocker(new InMemoryStorage()),
-            new Permissions.Single(TestAuthentication.USERNAME, DockerSlice.WRITE),
+            new Permissions.Single(this.user.name(), DockerSlice.WRITE),
             new TestAuthentication()
         );
     }
@@ -69,7 +75,7 @@ class UploadEntityPostTest {
     void shouldReturnInitialUploadStatus() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
-            new TestAuthentication.Headers(),
+            this.user.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(

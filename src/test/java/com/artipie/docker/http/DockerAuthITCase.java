@@ -56,18 +56,19 @@ final class DockerAuthITCase {
 
     @BeforeEach
     void setUp() throws Exception {
+        final TestAuthentication.User user = TestAuthentication.ALICE;
         this.repo = new DockerRepository(
             new DockerSlice(
                 new AstoDocker(new InMemoryStorage()),
-                (name, action) -> TestAuthentication.USERNAME.equals(name),
+                (name, action) -> user.name().equals(name),
                 new TestAuthentication()
             )
         );
         this.repo.start();
         this.cli.run(
             "login",
-            "--username", TestAuthentication.USERNAME,
-            "--password", TestAuthentication.PASSWORD,
+            "--username", user.name(),
+            "--password", user.password(),
             this.repo.url()
         );
     }

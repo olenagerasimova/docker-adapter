@@ -23,89 +23,97 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.http.Headers;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.headers.Authorization;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Spliterator;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * Single user basic authentication for usage in tests.
+ * Basic authentication for usage in tests aware of two users: Alice and Bob.
  *
  * @since 0.4
  */
 public final class TestAuthentication extends Authentication.Wrap {
 
     /**
-     * User name.
+     * Example Alice user.
      */
-    public static final String USERNAME = "Aladdin";
+    public static final User ALICE = new User("Alice", "OpenSesame");
 
     /**
-     * Password.
+     * Example Bob user.
      */
-    public static final String PASSWORD = "OpenSesame";
+    public static final User BOB = new User("Bob", "iamgod");
 
     /**
      * Ctor.
      */
     protected TestAuthentication() {
-        super(new Authentication.Single(TestAuthentication.USERNAME, TestAuthentication.PASSWORD));
+        super(
+            new Authentication.Joined(
+                Stream.of(TestAuthentication.ALICE, TestAuthentication.BOB)
+                    .map(user -> new Authentication.Single(user.name(), user.password()))
+                    .collect(Collectors.toList())
+            )
+        );
     }
 
     /**
-     * Basic authentication header.
+     * User with name and password.
      *
-     * @since 0.4
+     * @since 0.5
      */
-    public static final class Header extends com.artipie.http.headers.Header.Wrap {
+    public static final class User {
+
+        /**
+         * Username.
+         */
+        private final String username;
+
+        /**
+         * Password.
+         */
+        private final String pwd;
 
         /**
          * Ctor.
+         *
+         * @param username Username.
+         * @param pwd Password.
          */
-        public Header() {
-            super(
-                new Authorization.Basic(
-                    TestAuthentication.USERNAME,
-                    TestAuthentication.PASSWORD
-                )
+        User(final String username, final String pwd) {
+            this.username = username;
+            this.pwd = pwd;
+        }
+
+        /**
+         * Get username.
+         *
+         * @return Username.
+         */
+        public String name() {
+            return this.username;
+        }
+
+        /**
+         * Get password.
+         *
+         * @return Password.
+         */
+        public String password() {
+            return this.pwd;
+        }
+
+        /**
+         * Create basic authentication headers.
+         *
+         * @return Headers.
+         */
+        public Headers headers() {
+            return new Headers.From(
+                new Authorization.Basic(this.name(), this.password())
             );
-        }
-    }
-
-    /**
-     * Basic authentication headers.
-     *
-     * @since 0.4
-     */
-    public static final class Headers implements com.artipie.http.Headers {
-
-        /**
-         * Origin headers.
-         */
-        private final com.artipie.http.Headers origin;
-
-        /**
-         * Ctor.
-         */
-        public Headers() {
-            this.origin = new From(new Header());
-        }
-
-        @Override
-        public Iterator<Map.Entry<String, String>> iterator() {
-            return this.origin.iterator();
-        }
-
-        @Override
-        public void forEach(final Consumer<? super Map.Entry<String, String>> action) {
-            this.origin.forEach(action);
-        }
-
-        @Override
-        public Spliterator<Map.Entry<String, String>> spliterator() {
-            return this.origin.spliterator();
         }
     }
 }
