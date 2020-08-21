@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.ExampleStorage;
@@ -156,6 +157,18 @@ class ManifestEntityGetTest {
                 Flowable.empty()
             ),
             new IsUnauthorizedResponse()
+        );
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/latest").toString(),
+                TestAuthentication.BOB.headers(),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
         );
     }
 

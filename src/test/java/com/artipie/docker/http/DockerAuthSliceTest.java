@@ -99,7 +99,7 @@ public final class DockerAuthSliceTest {
             ),
             new AllOf<>(
                 Arrays.asList(
-                    new IsErrorsResponse(RsStatus.FORBIDDEN, "DENIED"),
+                    new IsDeniedResponse(),
                     new RsHasHeaders(new Headers.From(headers, new ContentLength("85")))
                 )
             )

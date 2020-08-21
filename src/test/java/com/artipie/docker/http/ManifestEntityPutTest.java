@@ -135,6 +135,18 @@ class ManifestEntityPutTest {
         );
     }
 
+    @Test
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest").toString(),
+                TestAuthentication.BOB.headers(),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
+        );
+    }
+
     /**
      * Create manifest content.
      *
