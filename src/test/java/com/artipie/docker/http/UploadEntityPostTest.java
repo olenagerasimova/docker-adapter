@@ -107,7 +107,7 @@ class UploadEntityPostTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenNoPermissions() {
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),

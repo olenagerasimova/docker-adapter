@@ -136,7 +136,7 @@ class ManifestEntityPutTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenNoPermissions() {
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest").toString(),

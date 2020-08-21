@@ -149,7 +149,7 @@ class ManifestEntityHeadTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenNoPermissions() {
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/latest").toString(),

@@ -126,7 +126,7 @@ class BlobEntityHeadTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenNoPermissions() {
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123").toString(),

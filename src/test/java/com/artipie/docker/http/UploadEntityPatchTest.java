@@ -131,7 +131,7 @@ class UploadEntityPatchTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenNoPermissions() {
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/123").toString(),
