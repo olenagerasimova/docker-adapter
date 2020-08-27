@@ -24,6 +24,7 @@
 package com.artipie.docker.http;
 
 import com.artipie.docker.error.InvalidRepoNameException;
+import com.artipie.docker.error.InvalidTagNameException;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
@@ -107,6 +108,11 @@ final class ErrorHandlingSlice implements Slice {
         if (throwable instanceof InvalidRepoNameException) {
             return Optional.of(
                 new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidRepoNameException) throwable)
+            );
+        }
+        if (throwable instanceof InvalidTagNameException) {
+            return Optional.of(
+                new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidTagNameException) throwable)
             );
         }
         return Optional.empty();

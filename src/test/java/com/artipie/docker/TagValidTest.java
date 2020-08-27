@@ -23,6 +23,7 @@
  */
 package com.artipie.docker;
 
+import com.artipie.docker.error.InvalidTagNameException;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
@@ -70,7 +71,7 @@ class TagValidTest {
         final Tag.Valid tag = new Tag.Valid(original);
         MatcherAssert.assertThat(tag.valid(), new IsEqual<>(false));
         final Throwable throwable = Assertions.assertThrows(
-            IllegalStateException.class,
+            InvalidTagNameException.class,
             tag::value
         );
         MatcherAssert.assertThat(

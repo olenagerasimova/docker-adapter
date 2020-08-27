@@ -24,6 +24,7 @@
 
 package com.artipie.docker;
 
+import com.artipie.docker.error.InvalidTagNameException;
 import java.util.regex.Pattern;
 
 /**
@@ -77,7 +78,9 @@ public interface Tag {
         @Override
         public String value() {
             if (!this.valid()) {
-                throw new IllegalStateException(String.format("Invalid tag: '%s'", this.original));
+                throw new InvalidTagNameException(
+                    String.format("Invalid tag: '%s'", this.original)
+                );
             }
             return this.original;
         }
