@@ -26,8 +26,9 @@ package com.artipie.docker.http;
 import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.auth.Permissions;
+import com.artipie.http.headers.Authorization;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
@@ -53,17 +54,11 @@ class BaseEntityGetTest {
      */
     private DockerSlice slice;
 
-    /**
-     * User with right permissions.
-     */
-    private TestAuthentication.User user;
-
     @BeforeEach
     void setUp() {
-        this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             new AstoDocker(new InMemoryStorage()),
-            new Permissions.Single(this.user.name(), DockerSlice.READ),
+            (user, action) -> false,
             new TestAuthentication()
         );
     }
@@ -72,7 +67,7 @@ class BaseEntityGetTest {
     void shouldRespondOkToVersionCheck() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, "/v2/").toString(),
-            this.user.headers(),
+            TestAuthentication.ALICE.headers(),
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -96,14 +91,14 @@ class BaseEntityGetTest {
     }
 
     @Test
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
+    void shouldReturnUnauthorizedWhenUserIsUnknown() {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.GET, "/v2/").toString(),
-                TestAuthentication.BOB.headers(),
+                new Headers.From(new Authorization.Basic("chuck", "letmein")),
                 Content.EMPTY
             ),
-            new IsDeniedResponse()
+            new IsUnauthorizedResponse()
         );
     }
 }

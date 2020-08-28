@@ -93,7 +93,7 @@ public final class DockerSlice extends Slice.Wrap {
                             new RtRule.ByPath(BaseEntity.PATH),
                             ByMethodsRule.Standard.GET
                         ),
-                        authRead(new BaseEntity(), perms, ids)
+                        new BaseEntity(ids)
                     ),
                     new RtRulePath(
                         new RtRule.All(
