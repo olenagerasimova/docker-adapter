@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.asto.Content;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.error.InvalidRepoNameException;
+import com.artipie.docker.error.InvalidTagNameException;
 import com.artipie.docker.proxy.AuthClientSlice;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
@@ -40,11 +41,15 @@ import com.artipie.http.rs.StandardRs;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests for {@link ErrorHandlingSlice}.
@@ -105,51 +110,54 @@ class ErrorHandlingSliceTest {
         );
     }
 
-    @Test
-    void shouldHandleError() {
+    @ParameterizedTest
+    @MethodSource("exceptions")
+    void shouldHandleErrorInvalid(final RuntimeException exception, final String code) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
                 (line, headers, body) -> connection -> CompletableFuture.failedFuture(
-                    new InvalidRepoNameException("something went wrong")
+                    exception
                 )
             ).response(
                 new RequestLine(RqMethod.GET, "/").toString(),
                 Headers.EMPTY,
                 Flowable.empty()
             ),
-            new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+            new IsErrorsResponse(RsStatus.BAD_REQUEST, code)
         );
     }
 
-    @Test
-    void shouldHandleSliceError() {
+    @ParameterizedTest
+    @MethodSource("exceptions")
+    void shouldHandleSliceError(final RuntimeException exception, final String code) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
                 (line, headers, body) -> {
-                    throw new InvalidRepoNameException("slice error");
+                    throw exception;
                 }
             ).response(
                 new RequestLine(RqMethod.GET, "/").toString(),
                 Headers.EMPTY,
                 Content.EMPTY
             ),
-            new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+            new IsErrorsResponse(RsStatus.BAD_REQUEST, code)
         );
     }
 
-    @Test
-    void shouldHandleConnectionError() {
+    @ParameterizedTest
+    @MethodSource("exceptions")
+    void shouldHandleConnectionError(final RuntimeException exception, final String code) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
                 (line, headers, body) -> connection -> {
-                    throw new InvalidRepoNameException("connection error");
+                    throw exception;
                 }
             ).response(
                 new RequestLine(RqMethod.GET, "/").toString(),
                 Headers.EMPTY,
                 Content.EMPTY
             ),
-            new IsErrorsResponse(RsStatus.BAD_REQUEST, "NAME_INVALID")
+            new IsErrorsResponse(RsStatus.BAD_REQUEST, code)
         );
     }
 
@@ -202,6 +210,16 @@ class ErrorHandlingSliceTest {
             "Original exception preserved",
             actual,
             new IsEqual<>(exception)
+        );
+    }
+
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private static Stream<Arguments> exceptions() {
+        final InvalidRepoNameException repo = new InvalidRepoNameException("repo name exception");
+        final InvalidTagNameException tag = new InvalidTagNameException("tag name exception");
+        return Stream.of(
+            Arguments.of(repo, repo.code()),
+            Arguments.of(tag, tag.code())
         );
     }
 }
