@@ -62,7 +62,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.23.6</version>
+      <version>0.26</version>
     </dependency>
     <dependency>
       <groupId>org.cactoos</groupId>
@@ -80,7 +80,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http-client</artifactId>
-      <version>0.1.1</version>
+      <version>0.2</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -95,7 +95,7 @@ SOFTWARE.
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest</artifactId>
-      <version>2.1</version>
+      <version>2.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -117,7 +117,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>vertx-server</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
