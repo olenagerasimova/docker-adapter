@@ -25,6 +25,7 @@ package com.artipie.docker.http;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.ext.PublisherAs;
+import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.error.InvalidTagNameException;
 import com.artipie.docker.proxy.AuthClientSlice;
@@ -217,9 +218,11 @@ class ErrorHandlingSliceTest {
     private static Stream<Arguments> exceptions() {
         final InvalidRepoNameException repo = new InvalidRepoNameException("repo name exception");
         final InvalidTagNameException tag = new InvalidTagNameException("tag name exception");
+        final InvalidManifestException mnf = new InvalidManifestException("manifest exception");
         return Stream.of(
             Arguments.of(repo, repo.code()),
-            Arguments.of(tag, tag.code())
+            Arguments.of(tag, tag.code()),
+            Arguments.of(mnf, mnf.code())
         );
     }
 }
