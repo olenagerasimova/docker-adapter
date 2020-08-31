@@ -23,8 +23,12 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.error.UnauthorizedError;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Identities;
+import com.artipie.http.headers.WwwAuthenticate;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
@@ -39,12 +43,26 @@ import org.reactivestreams.Publisher;
  *
  * @since 0.1
  */
-class BaseEntity implements Slice {
+public final class BaseEntity implements Slice {
 
     /**
      * RegEx pattern for path.
      */
     public static final Pattern PATH = Pattern.compile("^/v2/$");
+
+    /**
+     * Authentication.
+     */
+    private final Identities ids;
+
+    /**
+     * Ctor.
+     *
+     * @param ids Authentication mechanism
+     */
+    public BaseEntity(final Identities ids) {
+        this.ids = ids;
+    }
 
     @Override
     public Response response(
@@ -52,9 +70,16 @@ class BaseEntity implements Slice {
         final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body
     ) {
-        return new RsWithHeaders(
-            new RsWithStatus(RsStatus.OK),
-            "Docker-Distribution-API-Version", "registry/2.0"
+        return this.ids.user(line, headers).map(
+            ignored -> new RsWithHeaders(
+                new RsWithStatus(RsStatus.OK),
+                "Docker-Distribution-API-Version", "registry/2.0"
+            )
+        ).orElseGet(
+            () -> new RsWithHeaders(
+                new ErrorsResponse(RsStatus.UNAUTHORIZED, new UnauthorizedError()),
+                new Headers.From(new WwwAuthenticate("Basic"))
+            )
         );
     }
 }
