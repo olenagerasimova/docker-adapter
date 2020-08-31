@@ -30,6 +30,7 @@ import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
 import com.artipie.docker.manifest.Manifest;
@@ -129,7 +130,7 @@ public final class AstoManifests implements Manifests {
                 digest -> this.blobs.blob(digest).thenCompose(
                     opt -> {
                         if (opt.isEmpty()) {
-                            throw new IllegalArgumentException(
+                            throw new InvalidManifestException(
                                 String.format("Blob does not exist: %s", digest)
                             );
                         }

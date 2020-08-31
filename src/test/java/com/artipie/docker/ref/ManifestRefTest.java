@@ -26,7 +26,6 @@ package com.artipie.docker.ref;
 
 import com.artipie.docker.Digest;
 import com.artipie.docker.Tag;
-import com.artipie.docker.error.InvalidManifestException;
 import java.util.Arrays;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -67,7 +66,7 @@ public final class ManifestRefTest {
     })
     void failsToResolveInvalid(final String string) {
         final Throwable throwable = Assertions.assertThrows(
-            InvalidManifestException.class,
+            IllegalStateException.class,
             () -> new ManifestRef.FromString(string).link().string()
         );
         MatcherAssert.assertThat(

@@ -27,7 +27,6 @@ package com.artipie.docker.ref;
 import com.artipie.asto.Key;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Tag;
-import com.artipie.docker.error.InvalidManifestException;
 import java.util.Arrays;
 
 /**
@@ -156,7 +155,7 @@ public interface ManifestRef {
             } else if (tag.valid()) {
                 ref = new ManifestRef.FromTag(tag);
             } else {
-                throw new InvalidManifestException(
+                throw new IllegalStateException(
                     String.format("Unsupported reference: `%s`", this.value)
                 );
             }
