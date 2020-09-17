@@ -25,6 +25,7 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.Docker;
 import com.artipie.http.Slice;
+import com.artipie.http.auth.Action;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.BasicIdentities;
 import com.artipie.http.auth.Identities;
@@ -45,16 +46,6 @@ import com.artipie.http.rt.SliceRoute;
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
 public final class DockerSlice extends Slice.Wrap {
-
-    /**
-     * Read permission name.
-     */
-    public static final String READ = "read";
-
-    /**
-     * Write permission name.
-     */
-    public static final String WRITE = "write";
 
     /**
      * Ctor.
@@ -179,7 +170,7 @@ public final class DockerSlice extends Slice.Wrap {
         return new DockerAuthSlice(
             new SliceAuth(
                 origin,
-                new Permission.ByName(DockerSlice.READ, perms),
+                new Permission.ByName(perms, Action.Standard.READ),
                 ids
             )
         );
@@ -201,7 +192,7 @@ public final class DockerSlice extends Slice.Wrap {
         return new DockerAuthSlice(
             new SliceAuth(
                 origin,
-                new Permission.ByName(DockerSlice.WRITE, perms),
+                new Permission.ByName(perms, Action.Standard.WRITE),
                 ids
             )
         );

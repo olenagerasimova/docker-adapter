@@ -74,7 +74,7 @@ class UploadEntityPatchTest {
         this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
-            new Permissions.Single(this.user.name(), DockerSlice.WRITE),
+            new Permissions.Single(this.user.name(), "write"),
             new TestAuthentication()
         );
     }

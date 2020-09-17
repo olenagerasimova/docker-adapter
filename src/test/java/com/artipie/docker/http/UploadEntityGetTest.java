@@ -72,7 +72,7 @@ public final class UploadEntityGetTest {
         this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
-            new Permissions.Single(this.user.name(), DockerSlice.READ),
+            new Permissions.Single(this.user.name(), "read"),
             new TestAuthentication()
         );
     }

@@ -64,7 +64,7 @@ class BlobEntityHeadTest {
         this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             new AstoDocker(new ExampleStorage()),
-            new Permissions.Single(this.user.name(), DockerSlice.READ),
+            new Permissions.Single(this.user.name(), "read"),
             new TestAuthentication()
         );
     }
