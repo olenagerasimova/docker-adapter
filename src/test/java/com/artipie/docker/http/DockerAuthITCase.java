@@ -60,7 +60,7 @@ final class DockerAuthITCase {
         this.repo = new DockerRepository(
             new DockerSlice(
                 new AstoDocker(new InMemoryStorage()),
-                (name, action) -> user.name().equals(name),
+                (identity, action) -> user.name().equals(identity.name()),
                 new TestAuthentication()
             )
         );
