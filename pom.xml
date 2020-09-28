@@ -29,7 +29,7 @@ SOFTWARE.
   <parent>
     <groupId>com.artipie</groupId>
     <artifactId>ppom</artifactId>
-    <version>0.3.9</version>
+    <version>0.4.1</version>
   </parent>
   <name>docker-adapter</name>
   <url>https://github.com/artipie/docker-adapter</url>
@@ -62,7 +62,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>asto</artifactId>
-      <version>0.26</version>
+      <version>0.28</version>
     </dependency>
     <dependency>
       <groupId>org.cactoos</groupId>
@@ -75,7 +75,7 @@ SOFTWARE.
     <dependency>
       <groupId>com.artipie</groupId>
       <artifactId>http</artifactId>
-      <version>0.16.1</version>
+      <version>0.16.2</version>
     </dependency>
     <dependency>
       <groupId>com.artipie</groupId>
