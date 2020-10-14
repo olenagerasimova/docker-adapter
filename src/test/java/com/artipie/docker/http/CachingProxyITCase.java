@@ -35,10 +35,11 @@ import com.artipie.docker.composite.ReadWriteDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
-import com.artipie.docker.proxy.AuthClientSlice;
 import com.artipie.docker.proxy.ProxyDocker;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.client.Settings;
+import com.artipie.http.client.auth.AuthClientSlice;
+import com.artipie.http.client.auth.GenericAuthenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.google.common.base.Stopwatch;
 import java.util.concurrent.TimeUnit;
@@ -100,8 +101,8 @@ final class CachingProxyITCase {
                             new ProxyDocker(this.client.https("mcr.microsoft.com")),
                             new ProxyDocker(
                                 new AuthClientSlice(
-                                    this.client,
-                                    this.client.https("registry-1.docker.io")
+                                    this.client.https("registry-1.docker.io"),
+                                    new GenericAuthenticator(this.client)
                                 )
                             )
                         ),

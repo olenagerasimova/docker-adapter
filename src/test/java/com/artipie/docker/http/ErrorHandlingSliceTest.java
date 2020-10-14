@@ -28,10 +28,10 @@ import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.error.InvalidTagNameException;
-import com.artipie.docker.proxy.AuthClientSlice;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.client.jetty.JettyClientSlices;
+import com.artipie.http.client.auth.AuthClientSlice;
+import com.artipie.http.client.auth.Authenticator;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
@@ -98,12 +98,12 @@ class ErrorHandlingSliceTest {
         final byte[] body = "text".getBytes();
         final RsStatus status = RsStatus.OK;
         final Response response = new AuthClientSlice(
-            new JettyClientSlices(),
             (rsline, rsheaders, rsbody) -> new RsFull(
                 status,
                 new Headers.From(header),
                 Flowable.just(ByteBuffer.wrap(body))
-            )
+            ),
+            Authenticator.ANONYMOUS
         ).response(new RequestLine(RqMethod.GET, "/").toString(), Headers.EMPTY, Flowable.empty());
         MatcherAssert.assertThat(
             response,
