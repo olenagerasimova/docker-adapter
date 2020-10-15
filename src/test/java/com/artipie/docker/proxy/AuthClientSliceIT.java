@@ -27,6 +27,8 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
+import com.artipie.http.client.auth.AuthClientSlice;
+import com.artipie.http.client.auth.GenericAuthenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
@@ -59,8 +61,8 @@ class AuthClientSliceIT {
         this.client = new JettyClientSlices();
         this.client.start();
         this.slice = new AuthClientSlice(
-            this.client,
-            this.client.https("registry-1.docker.io")
+            this.client.https("registry-1.docker.io"),
+            new GenericAuthenticator(this.client)
         );
     }
 

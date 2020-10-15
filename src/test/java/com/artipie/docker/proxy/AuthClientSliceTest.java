@@ -25,7 +25,8 @@ package com.artipie.docker.proxy;
 
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.client.jetty.JettyClientSlices;
+import com.artipie.http.client.auth.AuthClientSlice;
+import com.artipie.http.client.auth.Authenticator;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
@@ -52,13 +53,13 @@ class AuthClientSliceTest {
         final byte[] body = "text".getBytes();
         final RsStatus status = RsStatus.OK;
         final Response response = new AuthClientSlice(
-            new JettyClientSlices(),
             (rsline, rsheaders, rsbody) -> {
                 if (!rsline.equals(line)) {
                     throw new IllegalArgumentException(String.format("Line modified: %s", rsline));
                 }
                 return new RsFull(status, rsheaders, rsbody);
-            }
+            },
+            Authenticator.ANONYMOUS
         ).response(line, new Headers.From(header), Flowable.just(ByteBuffer.wrap(body)));
         MatcherAssert.assertThat(
             response,

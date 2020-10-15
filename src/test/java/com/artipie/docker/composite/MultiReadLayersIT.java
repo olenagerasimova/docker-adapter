@@ -27,9 +27,10 @@ import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.misc.DigestFromContent;
-import com.artipie.docker.proxy.AuthClientSlice;
 import com.artipie.docker.proxy.ProxyLayers;
 import com.artipie.http.client.Settings;
+import com.artipie.http.client.auth.AuthClientSlice;
+import com.artipie.http.client.auth.GenericAuthenticator;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import com.artipie.http.slice.LoggingSlice;
 import java.util.Optional;
@@ -71,7 +72,10 @@ class MultiReadLayersIT {
         final MultiReadLayers layers = new MultiReadLayers(
             Stream.of(
                 this.slices.https("mcr.microsoft.com"),
-                new AuthClientSlice(this.slices, this.slices.https("registry-1.docker.io"))
+                new AuthClientSlice(
+                    this.slices.https("registry-1.docker.io"),
+                    new GenericAuthenticator(this.slices)
+                )
             ).map(LoggingSlice::new).map(
                 slice -> new ProxyLayers(slice, name)
             ).collect(Collectors.toList())
