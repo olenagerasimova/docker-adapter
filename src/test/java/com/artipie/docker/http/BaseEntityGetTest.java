@@ -28,6 +28,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Authorization;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
@@ -58,7 +59,7 @@ class BaseEntityGetTest {
     void setUp() {
         this.slice = new DockerSlice(
             new AstoDocker(new InMemoryStorage()),
-            (user, action) -> false,
+            new Permissions.Single(TestAuthentication.ALICE.name(), "read"),
             new TestAuthentication()
         );
     }
@@ -99,6 +100,18 @@ class BaseEntityGetTest {
                 Content.EMPTY
             ),
             new IsUnauthorizedResponse()
+        );
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
+        MatcherAssert.assertThat(
+            this.slice.response(
+                new RequestLine(RqMethod.GET, "/v2/").toString(),
+                TestAuthentication.BOB.headers(),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
         );
     }
 }

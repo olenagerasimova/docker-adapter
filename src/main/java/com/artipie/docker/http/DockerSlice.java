@@ -27,16 +27,15 @@ import com.artipie.docker.Docker;
 import com.artipie.http.Slice;
 import com.artipie.http.auth.Action;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicIdentities;
-import com.artipie.http.auth.Identities;
+import com.artipie.http.auth.BasicAuthSlice;
 import com.artipie.http.auth.Permission;
 import com.artipie.http.auth.Permissions;
-import com.artipie.http.auth.SliceAuth;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
+import java.util.Optional;
 
 /**
  * Slice implementing Docker Registry HTTP API.
@@ -53,7 +52,11 @@ public final class DockerSlice extends Slice.Wrap {
      * @param docker Docker repository.
      */
     public DockerSlice(final Docker docker) {
-        this(docker, Permissions.FREE, Identities.ANONYMOUS);
+        this(
+            docker,
+            Permissions.FREE,
+            (username, password) -> Optional.of(new Authentication.User("anonymous"))
+        );
     }
 
     /**
@@ -64,18 +67,6 @@ public final class DockerSlice extends Slice.Wrap {
      * @param auth Authentication mechanism.
      */
     public DockerSlice(final Docker docker, final Permissions perms, final Authentication auth) {
-        this(docker, perms, new BasicIdentities(auth));
-    }
-
-    /**
-     * Ctor.
-     *
-     * @param docker Docker repository.
-     * @param perms Access permissions.
-     * @param ids User identities.
-     */
-    @SuppressWarnings("PMD.UnusedFormalParameter")
-    public DockerSlice(final Docker docker, final Permissions perms, final Identities ids) {
         super(
             new ErrorHandlingSlice(
                 new SliceRoute(
@@ -84,70 +75,70 @@ public final class DockerSlice extends Slice.Wrap {
                             new RtRule.ByPath(BaseEntity.PATH),
                             ByMethodsRule.Standard.GET
                         ),
-                        new BaseEntity(ids)
+                        authRead(new BaseEntity(), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(ManifestEntity.PATH),
                             new ByMethodsRule(RqMethod.HEAD)
                         ),
-                        authRead(new ManifestEntity.Head(docker), perms, ids)
+                        authRead(new ManifestEntity.Head(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(ManifestEntity.PATH),
                             ByMethodsRule.Standard.GET
                         ),
-                        authRead(new ManifestEntity.Get(docker), perms, ids)
+                        authRead(new ManifestEntity.Get(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(ManifestEntity.PATH),
                             ByMethodsRule.Standard.PUT
                         ),
-                        authWrite(new ManifestEntity.Put(docker), perms, ids)
+                        authWrite(new ManifestEntity.Put(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(BlobEntity.PATH),
                             new ByMethodsRule(RqMethod.HEAD)
                         ),
-                        authRead(new BlobEntity.Head(docker), perms, ids)
+                        authRead(new BlobEntity.Head(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(BlobEntity.PATH),
                             ByMethodsRule.Standard.GET
                         ),
-                        authRead(new BlobEntity.Get(docker), perms, ids)
+                        authRead(new BlobEntity.Get(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             ByMethodsRule.Standard.POST
                         ),
-                        authWrite(new UploadEntity.Post(docker), perms, ids)
+                        authWrite(new UploadEntity.Post(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             new ByMethodsRule(RqMethod.PATCH)
                         ),
-                        authWrite(new UploadEntity.Patch(docker), perms, ids)
+                        authWrite(new UploadEntity.Patch(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             ByMethodsRule.Standard.PUT
                         ),
-                        authWrite(new UploadEntity.Put(docker), perms, ids)
+                        authWrite(new UploadEntity.Put(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
                             new RtRule.ByPath(UploadEntity.PATH),
                             ByMethodsRule.Standard.GET
                         ),
-                        authRead(new UploadEntity.Get(docker), perms, ids)
+                        authRead(new UploadEntity.Get(docker), perms, auth)
                     )
                 )
             )
@@ -159,19 +150,19 @@ public final class DockerSlice extends Slice.Wrap {
      *
      * @param origin Origin slice.
      * @param perms Access permissions.
-     * @param ids Authentication mechanism.
+     * @param auth Authentication mechanism.
      * @return Authorized slice.
      */
     private static Slice authRead(
         final Slice origin,
         final Permissions perms,
-        final Identities ids
+        final Authentication auth
     ) {
         return new DockerAuthSlice(
-            new SliceAuth(
+            new BasicAuthSlice(
                 origin,
-                new Permission.ByName(perms, Action.Standard.READ),
-                ids
+                auth,
+                new Permission.ByName(perms, Action.Standard.READ)
             )
         );
     }
@@ -181,19 +172,19 @@ public final class DockerSlice extends Slice.Wrap {
      *
      * @param origin Origin slice.
      * @param perms Access permissions.
-     * @param ids Authentication mechanism.
+     * @param auth Authentication mechanism.
      * @return Authorized slice.
      */
     private static Slice authWrite(
         final Slice origin,
         final Permissions perms,
-        final Identities ids
+        final Authentication auth
     ) {
         return new DockerAuthSlice(
-            new SliceAuth(
+            new BasicAuthSlice(
                 origin,
-                new Permission.ByName(perms, Action.Standard.WRITE),
-                ids
+                auth,
+                new Permission.ByName(perms, Action.Standard.WRITE)
             )
         );
     }
