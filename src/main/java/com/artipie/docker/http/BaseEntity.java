@@ -23,12 +23,8 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.docker.error.UnauthorizedError;
-import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
-import com.artipie.http.auth.Identities;
-import com.artipie.http.headers.WwwAuthenticate;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
@@ -38,10 +34,11 @@ import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
 /**
- * Base entity in Docker HTTP API..
+ * Base entity in Docker HTTP API.
  * See <a href="https://docs.docker.com/registry/spec/api/#base">Base</a>.
  *
  * @since 0.1
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class BaseEntity implements Slice {
 
@@ -50,36 +47,15 @@ public final class BaseEntity implements Slice {
      */
     public static final Pattern PATH = Pattern.compile("^/v2/$");
 
-    /**
-     * Authentication.
-     */
-    private final Identities ids;
-
-    /**
-     * Ctor.
-     *
-     * @param ids Authentication mechanism
-     */
-    public BaseEntity(final Identities ids) {
-        this.ids = ids;
-    }
-
     @Override
     public Response response(
         final String line,
         final Iterable<Map.Entry<String, String>> headers,
         final Publisher<ByteBuffer> body
     ) {
-        return this.ids.user(line, headers).map(
-            ignored -> new RsWithHeaders(
-                new RsWithStatus(RsStatus.OK),
-                "Docker-Distribution-API-Version", "registry/2.0"
-            )
-        ).orElseGet(
-            () -> new RsWithHeaders(
-                new ErrorsResponse(RsStatus.UNAUTHORIZED, new UnauthorizedError()),
-                new Headers.From(new WwwAuthenticate("Basic"))
-            )
+        return new RsWithHeaders(
+            new RsWithStatus(RsStatus.OK),
+            "Docker-Distribution-API-Version", "registry/2.0"
         );
     }
 }
