@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.error.InvalidTagNameException;
@@ -84,7 +85,7 @@ final class ErrorHandlingSlice implements Slice {
                         } else {
                             result = handle(throwable)
                                 .map(rsp -> rsp.send(connection))
-                                .orElseGet(() -> CompletableFuture.failedFuture(throwable));
+                                .orElseGet(() -> new FailedCompletionStage<>(throwable));
                         }
                         return result;
                     }

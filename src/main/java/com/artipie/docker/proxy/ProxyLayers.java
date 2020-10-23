@@ -24,6 +24,7 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
@@ -96,7 +97,7 @@ public final class ProxyLayers implements Layers {
                 } else if (status == RsStatus.NOT_FOUND) {
                     result = CompletableFuture.completedFuture(Optional.empty());
                 } else {
-                    result = CompletableFuture.failedFuture(
+                    result = new FailedCompletionStage<>(
                         new IllegalArgumentException(String.format("Unexpected status: %s", status))
                     );
                 }

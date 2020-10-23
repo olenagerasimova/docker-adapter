@@ -24,11 +24,11 @@
 package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -45,6 +45,6 @@ public final class FaultyGetLayers implements Layers {
 
     @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
-        return CompletableFuture.failedFuture(new IllegalStateException());
+        return new FailedCompletionStage<>(new IllegalStateException());
     }
 }
