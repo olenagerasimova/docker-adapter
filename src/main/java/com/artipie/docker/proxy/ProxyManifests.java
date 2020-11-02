@@ -24,6 +24,7 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
@@ -94,7 +95,7 @@ public final class ProxyManifests implements Manifests {
                 } else if (status == RsStatus.NOT_FOUND) {
                     result = CompletableFuture.completedFuture(Optional.empty());
                 } else {
-                    result = CompletableFuture.failedFuture(
+                    result = new FailedCompletionStage<>(
                         new IllegalArgumentException(String.format("Unexpected status: %s", status))
                     );
                 }

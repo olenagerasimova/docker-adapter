@@ -24,11 +24,11 @@
 package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -45,6 +45,6 @@ public final class FaultyGetManifests implements Manifests {
 
     @Override
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-        return CompletableFuture.failedFuture(new IllegalStateException());
+        return new FailedCompletionStage<>(new IllegalStateException());
     }
 }

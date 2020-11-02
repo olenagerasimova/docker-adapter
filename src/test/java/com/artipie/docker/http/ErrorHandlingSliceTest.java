@@ -24,6 +24,7 @@
 package com.artipie.docker.http;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
@@ -116,9 +117,7 @@ class ErrorHandlingSliceTest {
     void shouldHandleErrorInvalid(final RuntimeException exception, final String code) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
-                (line, headers, body) -> connection -> CompletableFuture.failedFuture(
-                    exception
-                )
+                (line, headers, body) -> connection -> new FailedCompletionStage<>(exception)
             ).response(
                 new RequestLine(RqMethod.GET, "/").toString(),
                 Headers.EMPTY,
