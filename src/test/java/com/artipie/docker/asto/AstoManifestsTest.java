@@ -130,8 +130,8 @@ final class AstoManifestsTest {
 
     private byte[] manifest(final ManifestRef ref) {
         return this.manifests.get(ref)
-            .thenCompose(
-                opt -> opt.map(mnf -> new PublisherAs(mnf.content()).bytes()).orElseThrow()
-            ).toCompletableFuture().join();
+            .thenApply(Optional::get)
+            .thenCompose(mnf -> new PublisherAs(mnf.content()).bytes())
+            .toCompletableFuture().join();
     }
 }

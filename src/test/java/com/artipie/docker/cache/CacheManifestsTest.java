@@ -92,7 +92,7 @@ final class CacheManifestsTest {
             cache
         ).get(ref).toCompletableFuture().join();
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        while (cache.manifests().get(ref).toCompletableFuture().join().isEmpty()) {
+        while (!cache.manifests().get(ref).toCompletableFuture().join().isPresent()) {
             final int timeout = 10;
             if (stopwatch.elapsed(TimeUnit.SECONDS) > timeout) {
                 break;

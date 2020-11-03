@@ -89,6 +89,6 @@ class ProxyManifestsTest {
             },
             new RepoName.Valid("my-test")
         ).get(new ManifestRef.FromString("latest")).toCompletableFuture().join();
-        MatcherAssert.assertThat(found.isEmpty(), new IsEqual<>(true));
+        MatcherAssert.assertThat(found.isPresent(), new IsEqual<>(false));
     }
 }

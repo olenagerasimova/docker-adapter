@@ -128,7 +128,7 @@ public final class CacheManifests implements Manifests {
     private CompletionStage<Void> copy(final Digest digest) {
         return this.origin.layers().get(digest).thenCompose(
             blob -> {
-                if (blob.isEmpty()) {
+                if (!blob.isPresent()) {
                     throw new IllegalArgumentException(
                         String.format("Failed loading blob %s", digest)
                     );

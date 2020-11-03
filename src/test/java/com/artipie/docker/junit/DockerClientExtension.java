@@ -100,7 +100,7 @@ public final class DockerClientExtension
                 Logger.debug(
                     this, "Found %s field. Try to set DockerClient instance", field.getName()
                 );
-                this.ensureFieldIsAccessible(field, instance);
+                this.ensureFieldIsAccessible(field);
                 field.set(instance, client);
             }
         }
@@ -110,13 +110,9 @@ public final class DockerClientExtension
      * Try to set field accessible.
      *
      * @param field Class field that need to be accessible
-     * @param instance Object instance
      */
-    private void ensureFieldIsAccessible(final Field field, final Object instance) {
-        if (!field.canAccess(instance)) {
-            Logger.debug(this, "%s field is not accessible. Try to change", field.getName());
-            field.setAccessible(true);
-            Logger.debug(this, "%s field is accessible now", field.getName());
-        }
+    private void ensureFieldIsAccessible(final Field field) {
+        field.setAccessible(true);
+        Logger.debug(this, "%s field is accessible now", field.getName());
     }
 }

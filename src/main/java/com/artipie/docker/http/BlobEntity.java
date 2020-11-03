@@ -41,6 +41,7 @@ import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -100,7 +101,7 @@ final class BlobEntity {
                         blob -> new AsyncResponse(
                             blob.content().thenCompose(
                                 content -> content.size()
-                                    .map(CompletableFuture::completedStage)
+                                    .<CompletionStage<Long>>map(CompletableFuture::completedFuture)
                                     .orElseGet(blob::size)
                                     .thenApply(
                                         size -> new RsWithBody(

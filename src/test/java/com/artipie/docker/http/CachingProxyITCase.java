@@ -168,7 +168,7 @@ final class CachingProxyITCase {
             new Digest.FromString(this.img.digest())
         );
         final Stopwatch stopwatch = Stopwatch.createStarted();
-        while (manifests.get(ref).toCompletableFuture().join().isEmpty()) {
+        while (!manifests.get(ref).toCompletableFuture().join().isPresent()) {
             if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(1)) {
                 throw new IllegalStateException(
                     String.format(
