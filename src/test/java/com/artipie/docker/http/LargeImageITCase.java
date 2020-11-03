@@ -24,12 +24,12 @@
 package com.artipie.docker.http;
 
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.test.TestResource;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
 import java.nio.file.Path;
-import java.util.Objects;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
@@ -110,13 +110,8 @@ public final class LargeImageITCase {
         this.client.run("build", this.dockerFile().getParent().toString(), "-t", this.remote());
     }
 
-    private Path dockerFile() throws Exception {
-        return Path.of(
-            Objects.requireNonNull(
-                Thread.currentThread().getContextClassLoader()
-                    .getResource("large-image/Dockerfile")
-            ).toURI()
-        );
+    private Path dockerFile() {
+        return new TestResource("large-image/Dockerfile").asPath();
     }
 
     private String remote() {

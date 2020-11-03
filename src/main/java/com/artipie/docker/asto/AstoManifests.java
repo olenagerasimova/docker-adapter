@@ -129,7 +129,7 @@ public final class AstoManifests implements Manifests {
             digests.map(
                 digest -> this.blobs.blob(digest).thenCompose(
                     opt -> {
-                        if (opt.isEmpty()) {
+                        if (!opt.isPresent()) {
                             throw new InvalidManifestException(
                                 String.format("Blob does not exist: %s", digest)
                             );

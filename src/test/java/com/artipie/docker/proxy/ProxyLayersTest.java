@@ -86,6 +86,6 @@ class ProxyLayersTest {
             },
             new RepoName.Valid(repo)
         ).get(new Digest.FromString(digest)).toCompletableFuture().join();
-        MatcherAssert.assertThat(found.isEmpty(), new IsEqual<>(true));
+        MatcherAssert.assertThat(found.isPresent(), new IsEqual<>(false));
     }
 }

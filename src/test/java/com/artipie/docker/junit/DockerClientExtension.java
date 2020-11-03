@@ -113,10 +113,7 @@ public final class DockerClientExtension
      * @param instance Object instance
      */
     private void ensureFieldIsAccessible(final Field field, final Object instance) {
-        if (!field.canAccess(instance)) {
-            Logger.debug(this, "%s field is not accessible. Try to change", field.getName());
-            field.setAccessible(true);
-            Logger.debug(this, "%s field is accessible now", field.getName());
-        }
+        field.setAccessible(true);
+        Logger.debug(this, "%s field is accessible now", field.getName());
     }
 }

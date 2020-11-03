@@ -25,8 +25,7 @@ package com.artipie.docker;
 
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
+import com.artipie.asto.test.TestResource;
 
 /**
  * Storage with example docker repository data from resources folder 'example-my-alpine'.
@@ -39,22 +38,6 @@ public final class ExampleStorage extends Storage.Wrap {
      * Ctor.
      */
     public ExampleStorage() {
-        super(new FileStorage(path()));
-    }
-
-    /**
-     * Path to example storage files.
-     *
-     * @return Files path.
-     */
-    private static Path path() {
-        try {
-            return Path.of(
-                Thread.currentThread().getContextClassLoader()
-                    .getResource("example-my-alpine").toURI()
-            );
-        } catch (final URISyntaxException ex) {
-            throw new IllegalStateException("Failed to resolve resources path", ex);
-        }
+        super(new FileStorage(new TestResource("example-my-alpine").asPath()));
     }
 }

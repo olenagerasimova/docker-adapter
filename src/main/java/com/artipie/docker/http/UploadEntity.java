@@ -205,7 +205,7 @@ public final class UploadEntity {
                                                     any -> Put.getResponse(name, request.digest())
                                                 );
                                             } else {
-                                                res = CompletableFuture.completedStage(
+                                                res = CompletableFuture.completedFuture(
                                                     new RsWithStatus(RsStatus.BAD_REQUEST)
                                                 );
                                             }
