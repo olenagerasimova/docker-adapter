@@ -34,6 +34,7 @@ import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.cactoos.io.BytesOf;
 import org.cactoos.text.HexOf;
@@ -89,9 +90,17 @@ public final class AstoBlobs implements BlobStore {
                 }
             }
         );
-        return this.asto.save(
-            new BlobKey(digest),
-            new Content.From(blob.size(), checked)
-        ).thenApply(ignored -> new AstoBlob(this.asto, digest));
+        final BlobKey key = new BlobKey(digest);
+        return this.asto.exists(key).thenCompose(
+            exists -> {
+                final CompletionStage<Void> result;
+                if (exists) {
+                    result = CompletableFuture.allOf();
+                } else {
+                    result = this.asto.save(key, new Content.From(blob.size(), checked));
+                }
+                return result;
+            }
+        ).thenApply(nothing -> new AstoBlob(this.asto, digest));
     }
 }
