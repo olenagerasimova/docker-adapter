@@ -42,7 +42,6 @@ public final class BlobKey extends Key.Wrap {
     public BlobKey(final Digest digest) {
         super(
             new Key.From(
-                RegistryRoot.V2,
                 "blobs", digest.alg(), digest.hex().substring(0, 2), digest.hex(), "data"
             )
         );

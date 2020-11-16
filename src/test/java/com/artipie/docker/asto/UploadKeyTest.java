@@ -43,7 +43,7 @@ public final class UploadKeyTest {
         MatcherAssert.assertThat(
             new UploadKey(new RepoName.Valid(name), uuid).string(),
             Matchers.equalTo(
-                String.format("docker/registry/v2/repositories/%s/_uploads/%s", name, uuid)
+                String.format("repositories/%s/_uploads/%s", name, uuid)
             )
         );
     }

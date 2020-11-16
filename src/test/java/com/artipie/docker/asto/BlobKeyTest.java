@@ -43,7 +43,7 @@ public final class BlobKeyTest {
             Matchers.equalTo(
                 String.join(
                     "/",
-                    "docker", "registry", "v2", "blobs", "sha256", "00", hex, "data"
+                    "blobs", "sha256", "00", hex, "data"
                 )
             )
         );

@@ -87,7 +87,7 @@ class BlobEntityGetTest {
             Flowable.empty()
         );
         final Key expected = new Key.From(
-            "docker", "registry", "v2", "blobs", "sha256", "aa",
+            "blobs", "sha256", "aa",
             "aad63a9339440e7c3e1fff2b988991b9bfb81280042fa7f39a5e327023056819", "data"
         );
         MatcherAssert.assertThat(

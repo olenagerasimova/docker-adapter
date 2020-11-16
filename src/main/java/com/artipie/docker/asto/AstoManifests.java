@@ -203,8 +203,7 @@ public final class AstoManifests implements Manifests {
      */
     private Key link(final ManifestRef ref) {
         return new Key.From(
-            RegistryRoot.V2, "repositories", this.name.value(),
-            "_manifests", ref.link().string()
+            "repositories", this.name.value(), "_manifests", ref.link().string()
         );
     }
 }
