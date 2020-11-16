@@ -43,8 +43,7 @@ final class UploadKey extends Key.Wrap {
     UploadKey(final RepoName name, final String uuid) {
         super(
             new Key.From(
-                RegistryRoot.V2, "repositories", name.value(),
-                "_uploads", uuid
+                "repositories", name.value(), "_uploads", uuid
             )
         );
     }

@@ -25,6 +25,7 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.SubStorage;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
@@ -50,7 +51,7 @@ final class AstoBlobsITCase {
     @Test
     void saveBlobDataAtCorrectPath() throws Exception {
         final InMemoryStorage storage = new InMemoryStorage();
-        final AstoBlobs blobs = new AstoBlobs(storage);
+        final AstoBlobs blobs = new AstoBlobs(new SubStorage(RegistryRoot.V2, storage));
         final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
         final Digest digest = blobs.put(
             new Content.From(Flowable.fromArray(buf)), new Digest.Sha256(buf.array())
