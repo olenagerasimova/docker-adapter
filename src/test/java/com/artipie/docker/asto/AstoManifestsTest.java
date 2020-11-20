@@ -54,9 +54,9 @@ import org.junit.jupiter.api.Timeout;
 final class AstoManifestsTest {
 
     /**
-     * Storage used in tests.
+     * Blobs used in tests.
      */
-    private Storage storage;
+    private AstoBlobs blobs;
 
     /**
      * Repository manifests being tested.
@@ -65,12 +65,10 @@ final class AstoManifestsTest {
 
     @BeforeEach
     void setUp() {
-        this.storage = new ExampleStorage();
-        this.manifests = new AstoManifests(
-            this.storage,
-            new AstoBlobs(this.storage),
-            new RepoName.Simple("my-alpine")
-        );
+        final Storage storage = new ExampleStorage();
+        final RepoName name = new RepoName.Simple("my-alpine");
+        this.blobs = new AstoBlobs(storage, new DefaultLayout(), name);
+        this.manifests = new AstoManifests(storage, this.blobs, name);
     }
 
     @Test
@@ -95,11 +93,11 @@ final class AstoManifestsTest {
     @Timeout(5)
     void shouldReadAddedManifest() {
         final byte[] conf = "config".getBytes();
-        final Blob config = new AstoBlobs(this.storage)
-            .put(new Content.From(conf), new Digest.Sha256(conf)).toCompletableFuture().join();
+        final Blob config = this.blobs.put(new Content.From(conf), new Digest.Sha256(conf))
+            .toCompletableFuture().join();
         final byte[] lyr = "layer".getBytes();
-        final Blob layer = new AstoBlobs(this.storage)
-            .put(new Content.From(lyr), new Digest.Sha256(lyr)).toCompletableFuture().join();
+        final Blob layer = this.blobs.put(new Content.From(lyr), new Digest.Sha256(lyr))
+            .toCompletableFuture().join();
         final byte[] data = Json.createObjectBuilder()
             .add(
                 "config",

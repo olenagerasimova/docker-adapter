@@ -23,60 +23,19 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Storage;
-import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
-import java.util.concurrent.CompletionStage;
+import com.artipie.docker.RepoName;
 
 /**
- * Asto implementation of {@link Blob}.
+ * Original storage layout that is compatible with reference Docker Registry implementation.
  *
- * @since 0.2
+ * @since 0.7
  */
-public final class AstoBlob implements Blob {
-
-    /**
-     * Storage.
-     */
-    private final Storage storage;
-
-    /**
-     * Blob key.
-     */
-    private final Key key;
-
-    /**
-     * Blob digest.
-     */
-    private final Digest dig;
-
-    /**
-     * Ctor.
-     *
-     * @param storage Storage.
-     * @param key Blob key.
-     * @param digest Blob digest.
-     */
-    public AstoBlob(final Storage storage, final Key key, final Digest digest) {
-        this.storage = storage;
-        this.key = key;
-        this.dig = digest;
-    }
+public final class DefaultLayout implements BlobsLayout {
 
     @Override
-    public Digest digest() {
-        return this.dig;
-    }
-
-    @Override
-    public CompletionStage<Long> size() {
-        return this.storage.size(this.key);
-    }
-
-    @Override
-    public CompletionStage<Content> content() {
-        return this.storage.value(this.key);
+    public Key blob(final RepoName repo, final Digest digest) {
+        return new BlobKey(digest);
     }
 }

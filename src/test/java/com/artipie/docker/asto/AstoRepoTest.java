@@ -46,7 +46,12 @@ final class AstoRepoTest {
     @BeforeEach
     void setUp() {
         final InMemoryStorage storage = new InMemoryStorage();
-        this.repo = new AstoRepo(storage, new AstoBlobs(storage), new RepoName.Valid("test"));
+        final RepoName name = new RepoName.Valid("test");
+        this.repo = new AstoRepo(
+            storage,
+            new AstoBlobs(storage, new DefaultLayout(), name),
+            name
+        );
     }
 
     @Test
