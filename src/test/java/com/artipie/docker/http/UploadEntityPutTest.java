@@ -31,7 +31,6 @@ import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
-import com.artipie.docker.asto.BlobKey;
 import com.artipie.http.Response;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
@@ -43,6 +42,7 @@ import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,11 +57,6 @@ import org.junit.jupiter.api.Test;
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class UploadEntityPutTest {
-
-    /**
-     * Storage used in tests.
-     */
-    private Storage storage;
 
     /**
      * Docker registry used in tests.
@@ -80,8 +75,8 @@ class UploadEntityPutTest {
 
     @BeforeEach
     void setUp() {
-        this.storage = new InMemoryStorage();
-        this.docker = new AstoDocker(this.storage);
+        final Storage storage = new InMemoryStorage();
+        this.docker = new AstoDocker(storage);
         this.user = TestAuthentication.ALICE;
         this.slice = new DockerSlice(
             this.docker,
@@ -120,7 +115,9 @@ class UploadEntityPutTest {
         );
         MatcherAssert.assertThat(
             "Puts blob into storage",
-            this.storage.exists(new BlobKey(new Digest.FromString(digest))).join(),
+            this.docker.repo(new RepoName.Simple(name)).layers().get(new Digest.FromString(digest))
+                .thenApply(Optional::isPresent)
+                .toCompletableFuture().join(),
             new IsEqual<>(true)
         );
     }
@@ -144,9 +141,9 @@ class UploadEntityPutTest {
         );
         MatcherAssert.assertThat(
             "Does not put blob into storage",
-            this.storage.exists(
-                new BlobKey(new Digest.Sha256(content))
-            ).join(),
+            this.docker.repo(new RepoName.Simple(name)).layers().get(new Digest.Sha256(content))
+                .thenApply(Optional::isPresent)
+                .toCompletableFuture().join(),
             new IsEqual<>(false)
         );
     }

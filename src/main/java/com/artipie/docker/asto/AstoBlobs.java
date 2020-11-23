@@ -25,11 +25,13 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.Digests;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
+import com.artipie.docker.RepoName;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -52,20 +54,35 @@ public final class AstoBlobs implements BlobStore {
     private final Storage asto;
 
     /**
+     * Blobs layout.
+     */
+    private final BlobsLayout layout;
+
+    /**
+     * Repository name.
+     */
+    private final RepoName name;
+
+    /**
      * Ctor.
      * @param asto Storage
+     * @param layout Blobs layout.
+     * @param name Repository name.
      */
-    public AstoBlobs(final Storage asto) {
+    public AstoBlobs(final Storage asto, final BlobsLayout layout, final RepoName name) {
         this.asto = asto;
+        this.layout = layout;
+        this.name = name;
     }
 
     @Override
     public CompletionStage<Optional<Blob>> blob(final Digest digest) {
-        return this.asto.exists(new BlobKey(digest)).thenApply(
+        final Key key = this.layout.blob(this.name, digest);
+        return this.asto.exists(key).thenApply(
             exists -> {
                 final Optional<Blob> blob;
                 if (exists) {
-                    blob = Optional.of(new AstoBlob(this.asto, digest));
+                    blob = Optional.of(new AstoBlob(this.asto, key, digest));
                 } else {
                     blob = Optional.empty();
                 }
@@ -90,7 +107,7 @@ public final class AstoBlobs implements BlobStore {
                 }
             }
         );
-        final BlobKey key = new BlobKey(digest);
+        final Key key = this.layout.blob(this.name, digest);
         return this.asto.exists(key).thenCompose(
             exists -> {
                 final CompletionStage<Void> result;
@@ -101,6 +118,6 @@ public final class AstoBlobs implements BlobStore {
                 }
                 return result;
             }
-        ).thenApply(nothing -> new AstoBlob(this.asto, digest));
+        ).thenApply(nothing -> new AstoBlob(this.asto, key, digest));
     }
 }

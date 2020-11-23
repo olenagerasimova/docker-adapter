@@ -41,15 +41,31 @@ public final class AstoDocker implements Docker {
     private final Storage asto;
 
     /**
+     * Storage layout.
+     */
+    private final BlobsLayout layout;
+
+    /**
      * Ctor.
      * @param asto Asto storage
      */
     public AstoDocker(final Storage asto) {
+        this(asto, new DefaultLayout());
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param asto Storage.
+     * @param layout Storage layout.
+     */
+    public AstoDocker(final Storage asto, final BlobsLayout layout) {
         this.asto = asto;
+        this.layout = layout;
     }
 
     @Override
     public Repo repo(final RepoName name) {
-        return new AstoRepo(this.asto, new AstoBlobs(this.asto), name);
+        return new AstoRepo(this.asto, new AstoBlobs(this.asto, this.layout, name), name);
     }
 }

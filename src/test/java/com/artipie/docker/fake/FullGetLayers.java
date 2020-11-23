@@ -24,6 +24,7 @@
 package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
@@ -48,7 +49,7 @@ public final class FullGetLayers implements Layers {
     @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
         return CompletableFuture.completedFuture(
-            Optional.of(new AstoBlob(new InMemoryStorage(), digest))
+            Optional.of(new AstoBlob(new InMemoryStorage(), new Key.From("test"), digest))
         );
     }
 }

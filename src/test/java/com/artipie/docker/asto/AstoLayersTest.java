@@ -29,6 +29,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
+import com.artipie.docker.RepoName;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -56,7 +57,7 @@ final class AstoLayersTest {
     @BeforeEach
     void setUp() {
         final InMemoryStorage storage = new InMemoryStorage();
-        this.blobs = new AstoBlobs(storage);
+        this.blobs = new AstoBlobs(storage, new DefaultLayout(), new RepoName.Simple("any"));
         this.layers = new AstoLayers(this.blobs);
     }
 

@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
+import com.artipie.docker.RepoName;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -50,7 +51,9 @@ final class AstoBlobsTest {
             "054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8"
         );
         final FakeStorage storage = new FakeStorage();
-        final AstoBlobs blobs = new AstoBlobs(storage);
+        final AstoBlobs blobs = new AstoBlobs(
+            storage, new DefaultLayout(), new RepoName.Simple("any")
+        );
         blobs.put(new Content.From(bytes), digest).toCompletableFuture().join();
         blobs.put(new Content.From(bytes), digest).toCompletableFuture().join();
         MatcherAssert.assertThat(storage.saves, new IsEqual<>(1));

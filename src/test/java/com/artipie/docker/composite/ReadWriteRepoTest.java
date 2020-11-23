@@ -32,6 +32,7 @@ import com.artipie.docker.Uploads;
 import com.artipie.docker.asto.AstoBlobs;
 import com.artipie.docker.asto.AstoRepo;
 import com.artipie.docker.asto.AstoUploads;
+import com.artipie.docker.asto.DefaultLayout;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
@@ -89,10 +90,11 @@ final class ReadWriteRepoTest {
     }
 
     private static Repo repo() {
+        final RepoName name = new RepoName.Simple("test-repo");
         return new AstoRepo(
             new InMemoryStorage(),
-            new AstoBlobs(new InMemoryStorage()),
-            new RepoName.Simple("test-repo")
+            new AstoBlobs(new InMemoryStorage(), new DefaultLayout(), name),
+            name
         );
     }
 }
