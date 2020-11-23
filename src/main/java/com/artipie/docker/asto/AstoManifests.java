@@ -59,6 +59,11 @@ public final class AstoManifests implements Manifests {
     private final BlobStore blobs;
 
     /**
+     * Manifests layout.
+     */
+    private final ManifestsLayout layout;
+
+    /**
      * Repository name.
      */
     private final RepoName name;
@@ -68,11 +73,19 @@ public final class AstoManifests implements Manifests {
      *
      * @param asto Asto storage
      * @param blobs Blobs storage.
+     * @param layout Manifests layout.
      * @param name Repository name
+     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    public AstoManifests(final Storage asto, final BlobStore blobs, final RepoName name) {
+    public AstoManifests(
+        final Storage asto,
+        final BlobStore blobs,
+        final ManifestsLayout layout,
+        final RepoName name
+    ) {
         this.asto = asto;
         this.blobs = blobs;
+        this.layout = layout;
         this.name = name;
     }
 
@@ -164,7 +177,7 @@ public final class AstoManifests implements Manifests {
      */
     private CompletableFuture<Void> addLink(final ManifestRef ref, final Digest digest) {
         return this.asto.save(
-            this.link(ref),
+            this.layout.manifest(this.name, ref),
             new Content.From(digest.string().getBytes(StandardCharsets.US_ASCII))
         ).toCompletableFuture();
     }
@@ -176,7 +189,7 @@ public final class AstoManifests implements Manifests {
      * @return Blob digest, empty if no link found.
      */
     private CompletableFuture<Optional<Digest>> readLink(final ManifestRef ref) {
-        final Key key = this.link(ref);
+        final Key key = this.layout.manifest(this.name, ref);
         return this.asto.exists(key).thenCompose(
             exists -> {
                 final CompletionStage<Optional<Digest>> stage;
@@ -192,18 +205,6 @@ public final class AstoManifests implements Manifests {
                 }
                 return stage;
             }
-        );
-    }
-
-    /**
-     * Create link key from manifest reference.
-     *
-     * @param ref Manifest reference.
-     * @return Link key.
-     */
-    private Key link(final ManifestRef ref) {
-        return new Key.From(
-            "repositories", this.name.value(), "_manifests", ref.link().string()
         );
     }
 }

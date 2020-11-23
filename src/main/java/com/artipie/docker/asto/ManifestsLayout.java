@@ -23,46 +23,23 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.docker.Repo;
+import com.artipie.asto.Key;
 import com.artipie.docker.RepoName;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.artipie.docker.ref.ManifestRef;
 
 /**
- * Tests for {@link AstoRepo}.
+ * Manifests layout in storage. Used to evaluate location for manifest link in storage.
  *
- * @since 0.3
+ * @since 0.7
  */
-final class AstoRepoTest {
+public interface ManifestsLayout {
 
     /**
-     * Layers tested.
+     * Create manifest link key by it's reference.
+     *
+     * @param repo Repository name.
+     * @param ref Manifest reference.
+     * @return Key for storing manifest.
      */
-    private Repo repo;
-
-    @BeforeEach
-    void setUp() {
-        final InMemoryStorage storage = new InMemoryStorage();
-        final RepoName name = new RepoName.Valid("test");
-        this.repo = new AstoRepo(storage, new DefaultLayout(), name);
-    }
-
-    @Test
-    void shouldCreateAstoLayers() {
-        MatcherAssert.assertThat(
-            this.repo.layers(),
-            Matchers.instanceOf(AstoLayers.class)
-        );
-    }
-
-    @Test
-    void shouldCreateAstoManifests() {
-        MatcherAssert.assertThat(
-            this.repo.manifests(),
-            Matchers.instanceOf(AstoManifests.class)
-        );
-    }
+    Key manifest(RepoName repo, ManifestRef ref);
 }
