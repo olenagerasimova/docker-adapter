@@ -59,6 +59,7 @@ final class AstoUploadsTest {
         this.reponame = new RepoName.Valid("test");
         this.uploads = new AstoUploads(
             this.storage,
+            new DefaultLayout(),
             this.reponame
         );
     }

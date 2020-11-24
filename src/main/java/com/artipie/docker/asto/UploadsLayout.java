@@ -24,31 +24,21 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Key;
-import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.ref.ManifestRef;
 
 /**
- * Original storage layout that is compatible with reference Docker Registry implementation.
+ * Uploads layout in storage. Used to evaluate location for uploads in storage.
  *
  * @since 0.7
  */
-public final class DefaultLayout implements Layout {
+public interface UploadsLayout {
 
-    @Override
-    public Key blob(final RepoName repo, final Digest digest) {
-        return new BlobKey(digest);
-    }
-
-    @Override
-    public Key manifest(final RepoName repo, final ManifestRef ref) {
-        return new Key.From(
-            "repositories", repo.value(), "_manifests", ref.link().string()
-        );
-    }
-
-    @Override
-    public Key upload(final RepoName repo, final String uuid) {
-        return new UploadKey(repo, uuid);
-    }
+    /**
+     * Create upload key by it's UUID.
+     *
+     * @param repo Repository name.
+     * @param uuid Manifest reference.
+     * @return Key for storing upload.
+     */
+    Key upload(RepoName repo, String uuid);
 }

@@ -44,6 +44,11 @@ public final class AstoUploads implements Uploads {
     private final Storage asto;
 
     /**
+     * Uploads layout.
+     */
+    private final UploadsLayout layout;
+
+    /**
      * Repository name.
      */
     private final RepoName name;
@@ -52,29 +57,31 @@ public final class AstoUploads implements Uploads {
      * Ctor.
      *
      * @param asto Asto storage
+     * @param layout Uploads layout.
      * @param name Repository name
      */
-    public AstoUploads(final Storage asto, final RepoName name) {
+    public AstoUploads(final Storage asto, final UploadsLayout layout, final RepoName name) {
         this.asto = asto;
+        this.layout = layout;
         this.name = name;
     }
 
     @Override
     public CompletionStage<Upload> start() {
         final String uuid = UUID.randomUUID().toString();
-        final AstoUpload upload = new AstoUpload(this.asto, this.name, uuid);
+        final AstoUpload upload = new AstoUpload(this.asto, this.layout, this.name, uuid);
         return upload.start().thenApply(ignored -> upload);
     }
 
     @Override
     public CompletionStage<Optional<Upload>> get(final String uuid) {
-        return this.asto.list(new UploadKey(this.name, uuid)).thenApply(
+        return this.asto.list(this.layout.upload(this.name, uuid)).thenApply(
             list -> {
                 final Optional<Upload> upload;
                 if (list.isEmpty()) {
                     upload = Optional.empty();
                 } else {
-                    upload = Optional.of(new AstoUpload(this.asto, this.name, uuid));
+                    upload = Optional.of(new AstoUpload(this.asto, this.layout, this.name, uuid));
                 }
                 return upload;
             }

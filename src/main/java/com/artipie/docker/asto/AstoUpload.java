@@ -46,6 +46,11 @@ public final class AstoUpload implements Upload {
     private final Storage storage;
 
     /**
+     * Uploads layout.
+     */
+    private final UploadsLayout layout;
+
+    /**
      * Repository name.
      */
     private final RepoName name;
@@ -60,11 +65,19 @@ public final class AstoUpload implements Upload {
      * Ctor.
      *
      * @param storage Storage.
+     * @param layout Uploads layout.
      * @param name Repository name.
      * @param uuid Upload UUID.
+     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    public AstoUpload(final Storage storage, final RepoName name, final String uuid) {
+    public AstoUpload(
+        final Storage storage,
+        final UploadsLayout layout,
+        final RepoName name,
+        final String uuid
+    ) {
         this.storage = storage;
+        this.layout = layout;
         this.name = name;
         this.uuid = uuid;
     }
@@ -120,7 +133,7 @@ public final class AstoUpload implements Upload {
      * @return Root key.
      */
     Key root() {
-        return new UploadKey(this.name, this.uuid);
+        return this.layout.upload(this.name, this.uuid);
     }
 
     /**
