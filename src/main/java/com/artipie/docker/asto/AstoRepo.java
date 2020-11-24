@@ -50,35 +50,44 @@ public final class AstoRepo implements Repo {
     private final RepoName name;
 
     /**
-     * Blobs storage.
+     * Storage layout.
      */
-    private final BlobStore blobs;
+    private final Layout layout;
 
     /**
      * Ctor.
      *
      * @param asto Asto storage
-     * @param blobs Blobs storage.
+     * @param layout Storage layout.
      * @param name Repository name
      */
-    public AstoRepo(final Storage asto, final BlobStore blobs, final RepoName name) {
+    public AstoRepo(final Storage asto, final Layout layout, final RepoName name) {
         this.asto = asto;
-        this.blobs = blobs;
+        this.layout = layout;
         this.name = name;
     }
 
     @Override
     public Layers layers() {
-        return new AstoLayers(this.blobs);
+        return new AstoLayers(this.blobs());
     }
 
     @Override
     public Manifests manifests() {
-        return new AstoManifests(this.asto, this.blobs, this.name);
+        return new AstoManifests(this.asto, this.blobs(), this.layout, this.name);
     }
 
     @Override
     public Uploads uploads() {
         return new AstoUploads(this.asto, this.name);
+    }
+
+    /**
+     * Get blobs storage.
+     *
+     * @return Blobs storage.
+     */
+    private AstoBlobs blobs() {
+        return new AstoBlobs(this.asto, this.layout, this.name);
     }
 }

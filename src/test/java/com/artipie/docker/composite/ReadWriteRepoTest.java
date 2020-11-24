@@ -29,7 +29,6 @@ import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Uploads;
-import com.artipie.docker.asto.AstoBlobs;
 import com.artipie.docker.asto.AstoRepo;
 import com.artipie.docker.asto.AstoUploads;
 import com.artipie.docker.asto.DefaultLayout;
@@ -90,11 +89,10 @@ final class ReadWriteRepoTest {
     }
 
     private static Repo repo() {
-        final RepoName name = new RepoName.Simple("test-repo");
         return new AstoRepo(
             new InMemoryStorage(),
-            new AstoBlobs(new InMemoryStorage(), new DefaultLayout(), name),
-            name
+            new DefaultLayout(),
+            new RepoName.Simple("test-repo")
         );
     }
 }
