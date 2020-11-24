@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link AstoUpload}.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 class AstoUploadTest {
 
@@ -63,6 +64,7 @@ class AstoUploadTest {
         this.storage = new InMemoryStorage();
         this.upload = new AstoUpload(
             this.storage,
+            new DefaultLayout(),
             new RepoName.Valid("test"),
             UUID.randomUUID().toString()
         );

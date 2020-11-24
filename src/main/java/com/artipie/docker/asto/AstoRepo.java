@@ -79,7 +79,7 @@ public final class AstoRepo implements Repo {
 
     @Override
     public Uploads uploads() {
-        return new AstoUploads(this.asto, this.name);
+        return new AstoUploads(this.asto, this.layout, this.name);
     }
 
     /**

@@ -29,5 +29,5 @@ package com.artipie.docker.asto;
  *
  * @since 0.7
  */
-public interface Layout extends BlobsLayout, ManifestsLayout {
+public interface Layout extends BlobsLayout, ManifestsLayout, UploadsLayout {
 }

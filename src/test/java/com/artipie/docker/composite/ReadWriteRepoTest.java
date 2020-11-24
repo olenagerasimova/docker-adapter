@@ -63,7 +63,11 @@ final class ReadWriteRepoTest {
 
     @Test
     void createsWriteUploads() {
-        final Uploads uploads = new AstoUploads(new InMemoryStorage(), new RepoName.Simple("test"));
+        final Uploads uploads = new AstoUploads(
+            new InMemoryStorage(),
+            new DefaultLayout(),
+            new RepoName.Simple("test")
+        );
         MatcherAssert.assertThat(
             new ReadWriteRepo(
                 repo(),
