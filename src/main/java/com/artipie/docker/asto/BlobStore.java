@@ -34,7 +34,7 @@ import java.util.concurrent.CompletionStage;
  * Docker registry blob store.
  * @since 0.1
  */
-interface BlobStore {
+public interface BlobStore {
 
     /**
      * Load blob by digest.
