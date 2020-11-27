@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
+import javax.json.JsonException;
 
 /**
  * Asto implementation of {@link Manifests}.
@@ -134,10 +135,20 @@ public final class AstoManifests implements Manifests {
      * @return Validation completion.
      */
     private CompletionStage<Void> validate(final Manifest manifest) {
-        final Stream<Digest> digests = Stream.concat(
-            Stream.of(manifest.config()),
-            manifest.layers().stream().filter(layer -> layer.urls().isEmpty()).map(Layer::digest)
-        );
+        final Stream<Digest> digests;
+        try {
+            digests = Stream.concat(
+                Stream.of(manifest.config()),
+                manifest.layers().stream()
+                    .filter(layer -> layer.urls().isEmpty())
+                    .map(Layer::digest)
+            );
+        } catch (final JsonException ex) {
+            throw new InvalidManifestException(
+                String.format("Failed to parse manifest: %s", ex.getMessage()),
+                ex
+            );
+        }
         return CompletableFuture.allOf(
             digests.map(
                 digest -> this.blobs.blob(digest).thenCompose(

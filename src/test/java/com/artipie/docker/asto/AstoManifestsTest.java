@@ -32,13 +32,18 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
+import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import javax.json.Json;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -124,6 +129,23 @@ final class AstoManifestsTest {
         MatcherAssert.assertThat(
             this.manifest(new ManifestRef.FromDigest(manifest.digest())),
             new IsEqual<>(data)
+        );
+    }
+
+    @Test
+    @Timeout(5)
+    void shouldFailPutEmptyManifest() {
+        final CompletionStage<Manifest> future = this.manifests.put(
+            new ManifestRef.FromTag(new Tag.Valid("ttt")),
+            Content.EMPTY
+        );
+        final CompletionException exception = Assertions.assertThrows(
+            CompletionException.class,
+            () -> future.toCompletableFuture().join()
+        );
+        MatcherAssert.assertThat(
+            exception.getCause(),
+            new IsInstanceOf(InvalidManifestException.class)
         );
     }
 

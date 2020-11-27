@@ -40,9 +40,13 @@ import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.StandardRs;
+import com.google.common.collect.Streams;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -218,10 +222,19 @@ class ErrorHandlingSliceTest {
         final InvalidRepoNameException repo = new InvalidRepoNameException("repo name exception");
         final InvalidTagNameException tag = new InvalidTagNameException("tag name exception");
         final InvalidManifestException mnf = new InvalidManifestException("manifest exception");
-        return Stream.of(
+        final List<Arguments> plain = Stream.of(
             Arguments.of(repo, repo.code()),
             Arguments.of(tag, tag.code()),
             Arguments.of(mnf, mnf.code())
+        ).collect(Collectors.toList());
+        return Streams.concat(
+            plain.stream(),
+            plain.stream().map(
+                original -> Arguments.of(
+                    new CompletionException((Throwable) original.get()[0]),
+                    original.get()[1]
+                )
+            )
         );
     }
 }
