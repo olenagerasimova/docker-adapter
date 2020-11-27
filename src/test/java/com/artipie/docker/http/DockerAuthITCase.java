@@ -28,6 +28,7 @@ import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
+import com.artipie.http.auth.BasicAuthScheme;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
@@ -61,7 +62,7 @@ final class DockerAuthITCase {
             new DockerSlice(
                 new AstoDocker(new InMemoryStorage()),
                 (identity, action) -> user.name().equals(identity.name()),
-                new TestAuthentication()
+                new BasicAuthScheme(new TestAuthentication())
             )
         );
         this.repo.start();

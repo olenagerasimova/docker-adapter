@@ -28,6 +28,10 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
+import com.artipie.http.Slice;
+import com.artipie.http.auth.Authentication;
+import com.artipie.http.auth.BasicAuthScheme;
+import com.artipie.http.auth.BearerAuthScheme;
 import com.artipie.http.auth.JoinedPermissions;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Authorization;
@@ -36,11 +40,11 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsNot;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -55,38 +59,29 @@ import org.junit.jupiter.params.provider.MethodSource;
 public final class AuthTest {
 
     /**
-     * Slice being tested.
+     * Permissions used in tests.
      */
-    private DockerSlice slice;
-
-    @BeforeEach
-    void setUp() {
-        this.slice = new DockerSlice(
-            new AstoDocker(new InMemoryStorage()),
-            new JoinedPermissions(
-                new Permissions.Single(TestAuthentication.ALICE.name(), "read"),
-                new Permissions.Single(TestAuthentication.BOB.name(), "write")
-            ),
-            new TestAuthentication()
-        );
-    }
+    private static final JoinedPermissions PERMISSIONS = new JoinedPermissions(
+        new Permissions.Single(TestAuthentication.ALICE.name(), "read"),
+        new Permissions.Single(TestAuthentication.BOB.name(), "write")
+    );
 
     @ParameterizedTest
     @MethodSource("setups")
-    void shouldReturnUnauthorizedWhenNoAuth(final RequestLine line) {
+    void shouldReturnUnauthorizedWhenNoAuth(final Method method, final RequestLine line) {
         MatcherAssert.assertThat(
-            this.slice.response(line.toString(), Headers.EMPTY, Content.EMPTY),
+            method.slice().response(line.toString(), Headers.EMPTY, Content.EMPTY),
             new IsUnauthorizedResponse()
         );
     }
 
     @ParameterizedTest
     @MethodSource("setups")
-    void shouldReturnUnauthorizedWhenUserIsUnknown(final RequestLine line) {
+    void shouldReturnUnauthorizedWhenUserIsUnknown(final Method method, final RequestLine line) {
         MatcherAssert.assertThat(
-            this.slice.response(
+            method.slice().response(
                 line.toString(),
-                new Headers.From(new Authorization.Basic("chuck", "letmein")),
+                method.headers(new TestAuthentication.User("chuck", "letmein")),
                 Content.EMPTY
             ),
             new IsUnauthorizedResponse()
@@ -96,13 +91,14 @@ public final class AuthTest {
     @ParameterizedTest
     @MethodSource("setups")
     void shouldReturnForbiddenWhenUserHasNoRequiredPermissions(
+        final Method method,
         final RequestLine line,
         final TestAuthentication.User user
     ) {
         MatcherAssert.assertThat(
-            this.slice.response(
+            method.slice().response(
                 line.toString(),
-                this.anotherUser(user).headers(),
+                method.headers(this.anotherUser(user)),
                 Content.EMPTY
             ),
             new IsDeniedResponse()
@@ -112,12 +108,13 @@ public final class AuthTest {
     @ParameterizedTest
     @MethodSource("setups")
     void shouldNotReturnUnauthorizedOrForbiddenWhenUserHasPermissions(
+        final Method method,
         final RequestLine line,
         final TestAuthentication.User user
     ) {
-        final Response response = this.slice.response(
+        final Response response = method.slice().response(
             line.toString(),
-            user.headers(),
+            method.headers(user),
             Content.EMPTY
         );
         MatcherAssert.assertThat(
@@ -145,12 +142,16 @@ public final class AuthTest {
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static Stream<Arguments> setups() {
+        return Stream.of(new Basic(), new Bearer()).flatMap(AuthTest::setups);
+    }
+
+    private static Stream<Arguments> setups(final Method method) {
         return Stream.concat(
             readEndpoints().map(
-                line -> Arguments.of(line, TestAuthentication.ALICE)
+                line -> Arguments.of(method, line, TestAuthentication.ALICE)
             ),
             writeEndpoints().map(
-                line -> Arguments.of(line, TestAuthentication.BOB)
+                line -> Arguments.of(method, line, TestAuthentication.BOB)
             )
         );
     }
@@ -175,5 +176,86 @@ public final class AuthTest {
             new RequestLine(RqMethod.PATCH, "/v2/my-alpine/blobs/uploads/123"),
             new RequestLine(RqMethod.PUT, "/v2/my-alpine/blobs/uploads/12345")
         );
+    }
+
+    /**
+     * Authentication method.
+     *
+     * @since 0.8
+     */
+    private interface Method {
+
+        Slice slice();
+
+        Headers headers(TestAuthentication.User user);
+
+    }
+
+    /**
+     * Basic authentication method.
+     *
+     * @since 0.8
+     */
+    private static final class Basic implements Method {
+
+        @Override
+        public Slice slice() {
+            return new DockerSlice(
+                new AstoDocker(new InMemoryStorage()),
+                AuthTest.PERMISSIONS,
+                new BasicAuthScheme(new TestAuthentication())
+            );
+        }
+
+        @Override
+        public Headers headers(final TestAuthentication.User user) {
+            return user.headers();
+        }
+
+        @Override
+        public String toString() {
+            return "Basic";
+        }
+    }
+
+    /**
+     * Bearer authentication method.
+     *
+     * @since 0.8
+     */
+    private static final class Bearer implements Method {
+
+        @Override
+        public Slice slice() {
+            return new DockerSlice(
+                new AstoDocker(new InMemoryStorage()),
+                AuthTest.PERMISSIONS,
+                new BearerAuthScheme(
+                    token -> CompletableFuture.completedFuture(
+                        Stream.of(TestAuthentication.ALICE, TestAuthentication.BOB)
+                            .filter(user -> token.equals(token(user)))
+                            .map(user -> new Authentication.User(user.name()))
+                            .findFirst()
+                    ),
+                    ""
+                )
+            );
+        }
+
+        @Override
+        public Headers headers(final TestAuthentication.User user) {
+            return new Headers.From(
+                new Authorization.Bearer(token(user))
+            );
+        }
+
+        @Override
+        public String toString() {
+            return "Bearer";
+        }
+
+        private static String token(final TestAuthentication.User user) {
+            return String.format("%s:%s", user.name(), user.password());
+        }
     }
 }
