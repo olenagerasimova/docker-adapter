@@ -100,6 +100,13 @@ public final class DockerSlice extends Slice.Wrap {
                     ),
                     new RtRulePath(
                         new RtRule.All(
+                            new RtRule.ByPath(TagsEntity.PATH),
+                            ByMethodsRule.Standard.GET
+                        ),
+                        authRead(new TagsEntity.Get(docker), perms, auth)
+                    ),
+                    new RtRulePath(
+                        new RtRule.All(
                             new RtRule.ByPath(BlobEntity.PATH),
                             new ByMethodsRule(RqMethod.HEAD)
                         ),
