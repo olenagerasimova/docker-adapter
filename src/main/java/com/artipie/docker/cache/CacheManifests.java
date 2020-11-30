@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
+import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import com.jcabi.log.Logger;
@@ -39,6 +40,9 @@ import java.util.function.Function;
  * Cache implementation of {@link Repo}.
  *
  * @since 0.3
+ * @todo #354:30min Implement tags method in CacheManifests
+ *  `tags` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class CacheManifests implements Manifests {
 
@@ -86,6 +90,11 @@ public final class CacheManifests implements Manifests {
                 return result;
             }
         ).thenCompose(Function.identity());
+    }
+
+    @Override
+    public CompletionStage<Tags> tags() {
+        throw new UnsupportedOperationException();
     }
 
     /**
