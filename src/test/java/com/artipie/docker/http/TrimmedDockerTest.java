@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Layers;
 import com.artipie.docker.Manifests;
@@ -46,7 +47,17 @@ class TrimmedDockerTest {
     /**
      * Fake docker.
      */
-    private static final Docker FAKE = FakeRepo::new;
+    private static final Docker FAKE = new Docker() {
+        @Override
+        public Repo repo(final RepoName name) {
+            return new FakeRepo(name);
+        }
+
+        @Override
+        public Catalog catalog() {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     @Test
     void failsIfPrefixNotFound() {

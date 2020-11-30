@@ -25,6 +25,7 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Storage;
+import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -32,6 +33,9 @@ import com.artipie.docker.RepoName;
 /**
  * Asto {@link Docker} implementation.
  * @since 0.1
+ * @todo #354:30min Implement catalog method in AstoDocker
+ *  `catalog` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class AstoDocker implements Docker {
 
@@ -67,5 +71,10 @@ public final class AstoDocker implements Docker {
     @Override
     public Repo repo(final RepoName name) {
         return new AstoRepo(this.asto, this.layout, name);
+    }
+
+    @Override
+    public Catalog catalog() {
+        throw new UnsupportedOperationException();
     }
 }

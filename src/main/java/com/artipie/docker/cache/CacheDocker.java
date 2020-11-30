@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.cache;
 
+import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -31,6 +32,9 @@ import com.artipie.docker.RepoName;
  * Cache {@link Docker} implementation.
  *
  * @since 0.3
+ * @todo #354:30min Implement catalog method in CacheDocker
+ *  `catalog` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class CacheDocker implements Docker {
 
@@ -58,5 +62,10 @@ public final class CacheDocker implements Docker {
     @Override
     public Repo repo(final RepoName name) {
         return new CacheRepo(this.origin.repo(name), this.cache.repo(name));
+    }
+
+    @Override
+    public Catalog catalog() {
+        throw new UnsupportedOperationException();
     }
 }

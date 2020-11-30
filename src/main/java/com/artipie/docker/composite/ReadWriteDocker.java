@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.composite;
 
+import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -35,6 +36,9 @@ import com.artipie.docker.RepoName;
  * and {@link com.artipie.docker.asto.AstoDocker}.
  *
  * @since 0.3
+ * @todo #354:30min Implement catalog method in ReadWriteDocker
+ *  `catalog` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class ReadWriteDocker implements Docker {
 
@@ -62,5 +66,10 @@ public final class ReadWriteDocker implements Docker {
     @Override
     public Repo repo(final RepoName name) {
         return new ReadWriteRepo(this.read.repo(name), this.write.repo(name));
+    }
+
+    @Override
+    public Catalog catalog() {
+        throw new UnsupportedOperationException();
     }
 }
