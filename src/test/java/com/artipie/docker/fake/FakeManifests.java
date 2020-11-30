@@ -25,6 +25,7 @@ package com.artipie.docker.fake;
 
 import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
+import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
@@ -59,6 +60,11 @@ public final class FakeManifests implements Manifests {
     @Override
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
         return this.mnfs.get(ref);
+    }
+
+    @Override
+    public CompletionStage<Tags> tags() {
+        return this.mnfs.tags();
     }
 
     /**

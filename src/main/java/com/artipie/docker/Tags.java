@@ -21,36 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.fake;
+package com.artipie.docker;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.FailedCompletionStage;
-import com.artipie.docker.Manifests;
-import com.artipie.docker.Tags;
-import com.artipie.docker.manifest.Manifest;
-import com.artipie.docker.ref.ManifestRef;
-import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 /**
- * Manifests implementation that fails to get manifest.
+ * Docker repository manifest tags.
  *
- * @since 0.3
+ * @since 0.8
  */
-public final class FaultyGetManifests implements Manifests {
+public interface Tags {
 
-    @Override
-    public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-        return new FailedCompletionStage<>(new IllegalStateException());
-    }
-
-    @Override
-    public CompletionStage<Tags> tags() {
-        throw new UnsupportedOperationException();
-    }
+    /**
+     * Read tags in JSON format.
+     *
+     * @return Tags in JSON format.
+     */
+    Content json();
 }

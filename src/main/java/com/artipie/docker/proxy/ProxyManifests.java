@@ -30,6 +30,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tags;
 import com.artipie.docker.http.DigestHeader;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Manifest;
@@ -48,6 +49,9 @@ import java.util.concurrent.CompletionStage;
  * Proxy implementation of {@link Repo}.
  *
  * @since 0.3
+ * @todo #354:30min Implement tags method in ProxyManifests
+ *  `tags` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class ProxyManifests implements Manifests {
 
@@ -102,5 +106,10 @@ public final class ProxyManifests implements Manifests {
                 return result.thenAccept(promise::complete).toCompletableFuture();
             }
         ).thenCompose(nothing -> promise);
+    }
+
+    @Override
+    public CompletionStage<Tags> tags() {
+        throw new UnsupportedOperationException();
     }
 }

@@ -30,6 +30,7 @@ import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tags;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
@@ -46,6 +47,9 @@ import javax.json.JsonException;
  * Asto implementation of {@link Manifests}.
  *
  * @since 0.3
+ * @todo #354:30min Implement tags method in AstoManifests
+ *  `tags` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class AstoManifests implements Manifests {
 
@@ -126,6 +130,11 @@ public final class AstoManifests implements Manifests {
                     )
             ).orElseGet(() -> CompletableFuture.completedFuture(Optional.empty()))
         );
+    }
+
+    @Override
+    public CompletionStage<Tags> tags() {
+        throw new UnsupportedOperationException();
     }
 
     /**

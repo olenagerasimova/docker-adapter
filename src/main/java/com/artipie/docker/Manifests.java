@@ -55,6 +55,13 @@ public interface Manifests {
     CompletionStage<Optional<Manifest>> get(ManifestRef ref);
 
     /**
+     * List manifest tags.
+     *
+     * @return Tags.
+     */
+    CompletionStage<Tags> tags();
+
+    /**
      * Abstract decorator for Manifests.
      *
      * @since 0.3
@@ -83,6 +90,11 @@ public interface Manifests {
         @Override
         public final CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
             return this.manifests.get(ref);
+        }
+
+        @Override
+        public final CompletionStage<Tags> tags() {
+            return this.manifests.tags();
         }
     }
 }

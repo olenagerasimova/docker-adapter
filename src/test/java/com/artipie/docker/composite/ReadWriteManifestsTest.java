@@ -25,6 +25,7 @@ package com.artipie.docker.composite;
 
 import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
+import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
@@ -116,6 +117,11 @@ final class ReadWriteManifestsTest {
             return CompletableFuture.completedFuture(Optional.empty());
         }
 
+        @Override
+        public CompletionStage<Tags> tags() {
+            throw new UnsupportedOperationException();
+        }
+
         public ManifestRef ref() {
             return this.refcheck;
         }
@@ -147,6 +153,11 @@ final class ReadWriteManifestsTest {
 
         @Override
         public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompletionStage<Tags> tags() {
             throw new UnsupportedOperationException();
         }
 
