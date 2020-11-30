@@ -30,6 +30,7 @@ import com.artipie.docker.Layers;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tag;
 import com.artipie.docker.Uploads;
 import com.artipie.docker.fake.FullTagsManifests;
 import com.artipie.http.Headers;
@@ -41,6 +42,7 @@ import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import org.hamcrest.MatcherAssert;
@@ -81,6 +83,32 @@ class TagsEntityGetTest {
             "Gets tags for expected repository name",
             docker.capture.get().value(),
             new IsEqual<>("my-alpine")
+        );
+    }
+
+    @Test
+    void shouldSupportPagination() {
+        final String from = "1.0";
+        final int limit = 123;
+        final FullTagsManifests manifests = new FullTagsManifests(() -> Content.EMPTY);
+        final Docker docker = new FakeDocker(manifests);
+        new DockerSlice(docker).response(
+            new RequestLine(
+                RqMethod.GET,
+                String.format("/v2/my-alpine/tags/list?n=%d&last=%s", limit, from)
+            ).toString(),
+            Headers.EMPTY,
+            Content.EMPTY
+        ).send((status, headers, body) -> CompletableFuture.allOf()).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            "Parses from",
+            manifests.capturedFrom().map(Tag::value),
+            new IsEqual<>(Optional.of(from))
+        );
+        MatcherAssert.assertThat(
+            "Parses limit",
+            manifests.capturedLimit(),
+            new IsEqual<>(limit)
         );
     }
 

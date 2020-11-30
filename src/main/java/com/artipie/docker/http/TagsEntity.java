@@ -25,11 +25,14 @@ package com.artipie.docker.http;
 
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tag;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentType;
+import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rq.RqParams;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -44,6 +47,7 @@ import org.reactivestreams.Publisher;
  * See <a href="https://docs.docker.com/registry/spec/api/#tags">Tags</a>.
  *
  * @since 0.8
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class TagsEntity {
 
@@ -85,10 +89,14 @@ final class TagsEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
+            final RqParams params = new RqParams(new RequestLineFrom(line).uri().getQuery());
             return new AsyncResponse(
                 this.docker.repo(
                     new RepoName.Valid(new RqByRegex(line, TagsEntity.PATH).path().group("name"))
-                ).manifests().tags().thenApply(
+                ).manifests().tags(
+                    params.value("last").map(Tag.Valid::new),
+                    params.value("n").map(Integer::parseInt).orElse(Integer.MAX_VALUE)
+                ).thenApply(
                     tags -> new RsWithBody(
                         new RsWithHeaders(
                             new RsWithStatus(RsStatus.OK),
