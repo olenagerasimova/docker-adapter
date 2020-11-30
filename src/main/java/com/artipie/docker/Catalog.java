@@ -21,26 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.docker;
 
+import com.artipie.asto.Content;
+
 /**
- * Docker registry storage main object.
- * @see com.artipie.docker.asto.AstoDocker
- * @since 0.1
+ * Docker repositories catalog.
+ *
+ * @since 0.8
  */
-public interface Docker {
+public interface Catalog {
 
     /**
-     * Docker repo by name.
-     * @param name Repository name
-     * @return Repository object
+     * Read catalog in JSON format.
+     *
+     * @return Catalog in JSON format.
      */
-    Repo repo(RepoName name);
-
-    /**
-     * Docker repositories catalog.
-     * @return Catalog.
-     */
-    Catalog catalog();
+    Content json();
 }

@@ -23,6 +23,7 @@
  */
 package com.artipie.docker.http;
 
+import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
@@ -32,6 +33,9 @@ import java.util.regex.Pattern;
 /**
  * Implementation of {@link Docker} to remove given prefix from repository names.
  * @since 0.4
+ * @todo #354:30min Implement catalog method in TrimmedDocker
+ *  `catalog` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class TrimmedDocker implements Docker {
 
@@ -79,5 +83,10 @@ public final class TrimmedDocker implements Docker {
             );
         }
         return this.origin.repo(new RepoName.Valid(matcher.group(1)));
+    }
+
+    @Override
+    public Catalog catalog() {
+        throw new UnsupportedOperationException();
     }
 }
