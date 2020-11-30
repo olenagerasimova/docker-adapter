@@ -40,6 +40,8 @@ import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
@@ -127,7 +129,7 @@ class TagsEntityGetTest {
         }
 
         @Override
-        public Catalog catalog() {
+        public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
             throw new UnsupportedOperationException();
         }
     }

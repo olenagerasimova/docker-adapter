@@ -30,6 +30,8 @@ import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Uploads;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Assertions;
@@ -54,7 +56,7 @@ class TrimmedDockerTest {
         }
 
         @Override
-        public Catalog catalog() {
+        public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
             throw new UnsupportedOperationException();
         }
     };

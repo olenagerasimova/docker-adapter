@@ -29,6 +29,8 @@ import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Asto {@link Docker} implementation.
@@ -74,7 +76,7 @@ public final class AstoDocker implements Docker {
     }
 
     @Override
-    public Catalog catalog() {
+    public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
         throw new UnsupportedOperationException();
     }
 }
