@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import org.reactivestreams.Publisher;
@@ -121,6 +122,9 @@ final class ErrorHandlingSlice implements Slice {
             return Optional.of(
                 new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidManifestException) throwable)
             );
+        }
+        if (throwable instanceof CompletionException) {
+            return Optional.ofNullable(throwable.getCause()).flatMap(ErrorHandlingSlice::handle);
         }
         return Optional.empty();
     }

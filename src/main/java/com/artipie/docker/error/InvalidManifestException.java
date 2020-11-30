@@ -43,6 +43,16 @@ public final class InvalidManifestException extends RuntimeException implements 
         super(details);
     }
 
+    /**
+     * Ctor.
+     *
+     * @param details Error details.
+     * @param cause Original cause.
+     */
+    public InvalidManifestException(final String details, final Throwable cause) {
+        super(details, cause);
+    }
+
     @Override
     public String code() {
         return "MANIFEST_INVALID";
