@@ -146,6 +146,13 @@ public final class DockerSlice extends Slice.Wrap {
                             ByMethodsRule.Standard.GET
                         ),
                         authRead(new UploadEntity.Get(docker), perms, auth)
+                    ),
+                    new RtRulePath(
+                        new RtRule.All(
+                            new RtRule.ByPath(CatalogEntity.PATH),
+                            ByMethodsRule.Standard.GET
+                        ),
+                        authRead(new CatalogEntity.Get(docker), perms, auth)
                     )
                 )
             )
