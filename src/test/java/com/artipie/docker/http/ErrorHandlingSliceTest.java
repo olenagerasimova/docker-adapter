@@ -29,6 +29,7 @@ import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.error.InvalidTagNameException;
+import com.artipie.docker.error.UnsupportedError;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.client.auth.AuthClientSlice;
@@ -118,7 +119,9 @@ class ErrorHandlingSliceTest {
 
     @ParameterizedTest
     @MethodSource("exceptions")
-    void shouldHandleErrorInvalid(final RuntimeException exception, final String code) {
+    void shouldHandleErrorInvalid(
+        final RuntimeException exception, final RsStatus status, final String code
+    ) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
                 (line, headers, body) -> connection -> new FailedCompletionStage<>(exception)
@@ -127,13 +130,15 @@ class ErrorHandlingSliceTest {
                 Headers.EMPTY,
                 Flowable.empty()
             ),
-            new IsErrorsResponse(RsStatus.BAD_REQUEST, code)
+            new IsErrorsResponse(status, code)
         );
     }
 
     @ParameterizedTest
     @MethodSource("exceptions")
-    void shouldHandleSliceError(final RuntimeException exception, final String code) {
+    void shouldHandleSliceError(
+        final RuntimeException exception, final RsStatus status, final String code
+    ) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
                 (line, headers, body) -> {
@@ -144,13 +149,15 @@ class ErrorHandlingSliceTest {
                 Headers.EMPTY,
                 Content.EMPTY
             ),
-            new IsErrorsResponse(RsStatus.BAD_REQUEST, code)
+            new IsErrorsResponse(status, code)
         );
     }
 
     @ParameterizedTest
     @MethodSource("exceptions")
-    void shouldHandleConnectionError(final RuntimeException exception, final String code) {
+    void shouldHandleConnectionError(
+        final RuntimeException exception, final RsStatus status, final String code
+    ) {
         MatcherAssert.assertThat(
             new ErrorHandlingSlice(
                 (line, headers, body) -> connection -> {
@@ -161,7 +168,7 @@ class ErrorHandlingSliceTest {
                 Headers.EMPTY,
                 Content.EMPTY
             ),
-            new IsErrorsResponse(RsStatus.BAD_REQUEST, code)
+            new IsErrorsResponse(status, code)
         );
     }
 
@@ -222,17 +229,20 @@ class ErrorHandlingSliceTest {
         final InvalidRepoNameException repo = new InvalidRepoNameException("repo name exception");
         final InvalidTagNameException tag = new InvalidTagNameException("tag name exception");
         final InvalidManifestException mnf = new InvalidManifestException("manifest exception");
+        final UnsupportedOperationException unsupported = new UnsupportedOperationException();
         final List<Arguments> plain = Stream.of(
-            Arguments.of(repo, repo.code()),
-            Arguments.of(tag, tag.code()),
-            Arguments.of(mnf, mnf.code())
+            Arguments.of(repo, RsStatus.BAD_REQUEST, repo.code()),
+            Arguments.of(tag, RsStatus.BAD_REQUEST, tag.code()),
+            Arguments.of(mnf, RsStatus.BAD_REQUEST, mnf.code()),
+            Arguments.of(unsupported, RsStatus.METHOD_NOT_ALLOWED, new UnsupportedError().code())
         ).collect(Collectors.toList());
         return Streams.concat(
             plain.stream(),
-            plain.stream().map(
+            plain.stream().map(Arguments::get).map(
                 original -> Arguments.of(
-                    new CompletionException((Throwable) original.get()[0]),
-                    original.get()[1]
+                    new CompletionException((Throwable) original[0]),
+                    original[1],
+                    original[2]
                 )
             )
         );

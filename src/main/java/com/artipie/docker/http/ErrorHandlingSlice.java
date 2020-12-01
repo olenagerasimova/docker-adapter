@@ -27,6 +27,7 @@ import com.artipie.asto.FailedCompletionStage;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.error.InvalidTagNameException;
+import com.artipie.docker.error.UnsupportedError;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
@@ -121,6 +122,11 @@ final class ErrorHandlingSlice implements Slice {
         if (throwable instanceof InvalidManifestException) {
             return Optional.of(
                 new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidManifestException) throwable)
+            );
+        }
+        if (throwable instanceof UnsupportedOperationException) {
+            return Optional.of(
+                new ErrorsResponse(RsStatus.METHOD_NOT_ALLOWED, new UnsupportedError())
             );
         }
         if (throwable instanceof CompletionException) {
