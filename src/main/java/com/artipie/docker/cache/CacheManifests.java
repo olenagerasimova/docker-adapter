@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
+import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
@@ -93,7 +94,7 @@ public final class CacheManifests implements Manifests {
     }
 
     @Override
-    public CompletionStage<Tags> tags() {
+    public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
         throw new UnsupportedOperationException();
     }
 

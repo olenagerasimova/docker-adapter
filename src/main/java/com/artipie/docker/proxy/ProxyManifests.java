@@ -30,6 +30,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
 import com.artipie.docker.http.DigestHeader;
 import com.artipie.docker.manifest.JsonManifest;
@@ -109,7 +110,7 @@ public final class ProxyManifests implements Manifests {
     }
 
     @Override
-    public CompletionStage<Tags> tags() {
+    public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
         throw new UnsupportedOperationException();
     }
 }

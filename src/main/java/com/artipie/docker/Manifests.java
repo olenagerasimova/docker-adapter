@@ -57,9 +57,11 @@ public interface Manifests {
     /**
      * List manifest tags.
      *
+     * @param from From which tag to start, exclusive.
+     * @param limit Maximum number of tags returned.
      * @return Tags.
      */
-    CompletionStage<Tags> tags();
+    CompletionStage<Tags> tags(Optional<Tag> from, int limit);
 
     /**
      * Abstract decorator for Manifests.
@@ -93,8 +95,8 @@ public interface Manifests {
         }
 
         @Override
-        public final CompletionStage<Tags> tags() {
-            return this.manifests.tags();
+        public final CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
+            return this.manifests.tags(from, limit);
         }
     }
 }

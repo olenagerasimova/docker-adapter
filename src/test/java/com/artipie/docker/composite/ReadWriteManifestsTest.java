@@ -25,6 +25,7 @@ package com.artipie.docker.composite;
 
 import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
+import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
@@ -118,7 +119,7 @@ final class ReadWriteManifestsTest {
         }
 
         @Override
-        public CompletionStage<Tags> tags() {
+        public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
             throw new UnsupportedOperationException();
         }
 
@@ -157,7 +158,7 @@ final class ReadWriteManifestsTest {
         }
 
         @Override
-        public CompletionStage<Tags> tags() {
+        public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
             throw new UnsupportedOperationException();
         }
 
