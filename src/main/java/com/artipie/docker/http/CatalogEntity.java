@@ -24,9 +24,13 @@
 package com.artipie.docker.http;
 
 import com.artipie.docker.Docker;
+import com.artipie.docker.RepoName;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
+import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentType;
+import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rq.RqParams;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
 import com.artipie.http.rs.RsWithHeaders;
@@ -82,12 +86,20 @@ final class CatalogEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            return new RsWithBody(
-                new RsWithHeaders(
-                    new RsWithStatus(RsStatus.OK),
-                    new ContentType("application/json; charset=utf-8")
-                ),
-                this.docker.catalog().json()
+            final RqParams params = new RqParams(new RequestLineFrom(line).uri().getQuery());
+            return new AsyncResponse(
+                this.docker.catalog(
+                    params.value("last").map(RepoName.Simple::new),
+                    params.value("n").map(Integer::parseInt).orElse(Integer.MAX_VALUE)
+                ).thenApply(
+                    catalog -> new RsWithBody(
+                        new RsWithHeaders(
+                            new RsWithStatus(RsStatus.OK),
+                            new ContentType("application/json; charset=utf-8")
+                        ),
+                        catalog.json()
+                    )
+                )
             );
         }
     }

@@ -28,6 +28,8 @@ import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.http.Slice;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Proxy {@link Docker} implementation.
@@ -59,7 +61,7 @@ public final class ProxyDocker implements Docker {
     }
 
     @Override
-    public Catalog catalog() {
+    public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
         throw new UnsupportedOperationException();
     }
 }
