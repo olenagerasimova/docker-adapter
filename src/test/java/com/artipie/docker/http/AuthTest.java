@@ -145,55 +145,35 @@ public final class AuthTest {
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static Stream<Arguments> setups() {
-        return Stream.of(
-            Arguments.of(
-                new RequestLine(RqMethod.GET, "/v2/"),
-                TestAuthentication.ALICE
+        return Stream.concat(
+            readEndpoints().map(
+                line -> Arguments.of(line, TestAuthentication.ALICE)
             ),
-            Arguments.of(
-                new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123"),
-                TestAuthentication.ALICE
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:012345"),
-                TestAuthentication.ALICE
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/1"),
-                TestAuthentication.ALICE
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/2"),
-                TestAuthentication.ALICE
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
-                TestAuthentication.BOB
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list"),
-                TestAuthentication.ALICE
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.POST, "/v2/my-alpine/blobs/uploads/"),
-                TestAuthentication.BOB
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.PATCH, "/v2/my-alpine/blobs/uploads/123"),
-                TestAuthentication.BOB
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.PUT, "/v2/my-alpine/blobs/uploads/12345"),
-                TestAuthentication.BOB
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/uploads/112233"),
-                TestAuthentication.ALICE
-            ),
-            Arguments.of(
-                new RequestLine(RqMethod.GET, "/v2/_catalog"),
-                TestAuthentication.ALICE
+            writeEndpoints().map(
+                line -> Arguments.of(line, TestAuthentication.BOB)
             )
+        );
+    }
+
+    private static Stream<RequestLine> readEndpoints() {
+        return Stream.of(
+            new RequestLine(RqMethod.GET, "/v2/"),
+            new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123"),
+            new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:012345"),
+            new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/1"),
+            new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/2"),
+            new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list"),
+            new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/uploads/112233"),
+            new RequestLine(RqMethod.GET, "/v2/_catalog")
+        );
+    }
+
+    private static Stream<RequestLine> writeEndpoints() {
+        return Stream.of(
+            new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
+            new RequestLine(RqMethod.POST, "/v2/my-alpine/blobs/uploads/"),
+            new RequestLine(RqMethod.PATCH, "/v2/my-alpine/blobs/uploads/123"),
+            new RequestLine(RqMethod.PUT, "/v2/my-alpine/blobs/uploads/12345")
         );
     }
 }
