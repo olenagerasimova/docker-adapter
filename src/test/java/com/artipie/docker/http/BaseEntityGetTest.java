@@ -43,7 +43,6 @@ import org.junit.jupiter.api.Test;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (2 lines)
  */
-@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class BaseEntityGetTest {
 
     /**
