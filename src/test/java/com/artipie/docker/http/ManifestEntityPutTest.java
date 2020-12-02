@@ -30,7 +30,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
-import com.artipie.http.auth.Permissions;
+import com.artipie.http.Headers;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
@@ -38,7 +38,6 @@ import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,20 +62,10 @@ class ManifestEntityPutTest {
      */
     private Docker docker;
 
-    /**
-     * User with right permissions.
-     */
-    private TestAuthentication.User user;
-
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.user = TestAuthentication.ALICE;
-        this.slice = new DockerSlice(
-            this.docker,
-            new Permissions.Single(this.user.name(), "write"),
-            new TestAuthentication()
-        );
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
@@ -85,7 +74,7 @@ class ManifestEntityPutTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
-                this.user.headers(),
+                Headers.EMPTY,
                 this.manifest()
             ),
             new ResponseMatcher(
@@ -111,7 +100,7 @@ class ManifestEntityPutTest {
         MatcherAssert.assertThat(
             this.slice.response(
                 new RequestLine(RqMethod.PUT, String.format("%s", path)).toString(),
-                this.user.headers(),
+                Headers.EMPTY,
                 this.manifest()
             ),
             new ResponseMatcher(
@@ -120,30 +109,6 @@ class ManifestEntityPutTest {
                 new Header("Content-Length", "0"),
                 new Header("Docker-Content-Digest", digest)
             )
-        );
-    }
-
-    @Test
-    void shouldReturnUnauthorizedWhenNoAuth() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest").toString(),
-                Collections.emptyList(),
-                Flowable.empty()
-            ),
-            new IsUnauthorizedResponse()
-        );
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest").toString(),
-                TestAuthentication.BOB.headers(),
-                Content.EMPTY
-            ),
-            new IsDeniedResponse()
         );
     }
 

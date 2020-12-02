@@ -23,14 +23,13 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
@@ -38,7 +37,6 @@ import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,20 +61,10 @@ class UploadEntityPatchTest {
      */
     private DockerSlice slice;
 
-    /**
-     * User with right permissions.
-     */
-    private TestAuthentication.User user;
-
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.user = TestAuthentication.ALICE;
-        this.slice = new DockerSlice(
-            this.docker,
-            new Permissions.Single(this.user.name(), "write"),
-            new TestAuthentication()
-        );
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
@@ -90,7 +78,7 @@ class UploadEntityPatchTest {
         final byte[] data = "data".getBytes();
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PATCH, String.format("%s", path)).toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.just(ByteBuffer.wrap(data))
         );
         MatcherAssert.assertThat(
@@ -109,36 +97,12 @@ class UploadEntityPatchTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/12345").toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             response,
             new IsErrorsResponse(RsStatus.NOT_FOUND, "BLOB_UPLOAD_UNKNOWN")
-        );
-    }
-
-    @Test
-    void shouldReturnUnauthorizedWhenNoAuth() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/123").toString(),
-                Collections.emptyList(),
-                Flowable.empty()
-            ),
-            new IsUnauthorizedResponse()
-        );
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.PATCH, "/v2/test/blobs/uploads/123").toString(),
-                TestAuthentication.BOB.headers(),
-                Content.EMPTY
-            ),
-            new IsDeniedResponse()
         );
     }
 }
