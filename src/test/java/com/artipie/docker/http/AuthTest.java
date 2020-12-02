@@ -124,8 +124,14 @@ public final class AuthTest {
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static Stream<Arguments> lines() {
         return Stream.of(
-            new RequestLine(RqMethod.GET, "/v2/_catalog"),
-            new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list")
+            new RequestLine(RqMethod.GET, "/v2/"),
+            new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123"),
+            new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:012345"),
+            new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/1"),
+            new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/2"),
+            new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list"),
+            new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/uploads/112233"),
+            new RequestLine(RqMethod.GET, "/v2/_catalog")
         ).map(Arguments::of);
     }
 }

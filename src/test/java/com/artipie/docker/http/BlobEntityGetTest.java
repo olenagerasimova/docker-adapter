@@ -23,20 +23,18 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,19 +54,9 @@ class BlobEntityGetTest {
      */
     private DockerSlice slice;
 
-    /**
-     * User with right permissions.
-     */
-    private TestAuthentication.User user;
-
     @BeforeEach
     void setUp() {
-        this.user = TestAuthentication.ALICE;
-        this.slice = new DockerSlice(
-            new AstoDocker(new ExampleStorage()),
-            new Permissions.Single(this.user.name(), "read"),
-            new TestAuthentication()
-        );
+        this.slice = new DockerSlice(new AstoDocker(new ExampleStorage()));
     }
 
     @Test
@@ -83,7 +71,7 @@ class BlobEntityGetTest {
                 RqMethod.GET,
                 String.format("/v2/test/blobs/%s", digest)
             ).toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         final Key expected = new Key.From(
@@ -113,34 +101,10 @@ class BlobEntityGetTest {
                         "sha256:0123456789012345678901234567890123456789012345678901234567890123"
                     )
                 ).toString(),
-                this.user.headers(),
+                Headers.EMPTY,
                 Flowable.empty()
             ),
             new IsErrorsResponse(RsStatus.NOT_FOUND, "BLOB_UNKNOWN")
-        );
-    }
-
-    @Test
-    void shouldReturnUnauthorizedWhenNoAuth() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:123").toString(),
-                Collections.emptyList(),
-                Flowable.empty()
-            ),
-            new IsUnauthorizedResponse()
-        );
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:123").toString(),
-                TestAuthentication.BOB.headers(),
-                Content.EMPTY
-            ),
-            new IsDeniedResponse()
         );
     }
 }

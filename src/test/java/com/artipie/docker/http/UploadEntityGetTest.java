@@ -29,15 +29,14 @@ import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,20 +60,10 @@ public final class UploadEntityGetTest {
      */
     private DockerSlice slice;
 
-    /**
-     * User with right permissions.
-     */
-    private TestAuthentication.User user;
-
     @BeforeEach
     void setUp() {
         this.docker = new AstoDocker(new InMemoryStorage());
-        this.user = TestAuthentication.ALICE;
-        this.slice = new DockerSlice(
-            this.docker,
-            new Permissions.Single(this.user.name(), "read"),
-            new TestAuthentication()
-        );
+        this.slice = new DockerSlice(this.docker);
     }
 
     @Test
@@ -87,7 +76,7 @@ public final class UploadEntityGetTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -112,7 +101,7 @@ public final class UploadEntityGetTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -138,7 +127,7 @@ public final class UploadEntityGetTest {
         final String path = String.format("/v2/%s/blobs/uploads/%s", name, upload.uuid());
         final Response get = this.slice.response(
             new RequestLine(RqMethod.GET, String.format("%s", path)).toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -156,36 +145,12 @@ public final class UploadEntityGetTest {
     void shouldReturnNotFoundWhenUploadNotExists() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.GET, "/v2/test/blobs/uploads/12345").toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         MatcherAssert.assertThat(
             response,
             new IsErrorsResponse(RsStatus.NOT_FOUND, "BLOB_UPLOAD_UNKNOWN")
-        );
-    }
-
-    @Test
-    void shouldReturnUnauthorizedWhenNoAuth() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.GET, "/v2/test/blobs/uploads/123").toString(),
-                Collections.emptyList(),
-                Flowable.empty()
-            ),
-            new IsUnauthorizedResponse()
-        );
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.GET, "/v2/test/blobs/uploads/123").toString(),
-                TestAuthentication.BOB.headers(),
-                Content.EMPTY
-            ),
-            new IsDeniedResponse()
         );
     }
 }
