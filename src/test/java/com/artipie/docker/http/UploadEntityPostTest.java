@@ -23,18 +23,16 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.http.Headers;
 import com.artipie.http.Response;
-import com.artipie.http.auth.Permissions;
 import com.artipie.http.hm.IsHeader;
 import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
 import io.reactivex.Flowable;
-import java.util.Collections;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.hamcrest.core.IsNot;
@@ -57,26 +55,16 @@ class UploadEntityPostTest {
      */
     private DockerSlice slice;
 
-    /**
-     * User with right permissions.
-     */
-    private TestAuthentication.User user;
-
     @BeforeEach
     void setUp() {
-        this.user = TestAuthentication.ALICE;
-        this.slice = new DockerSlice(
-            new AstoDocker(new InMemoryStorage()),
-            new Permissions.Single(this.user.name(), "write"),
-            new TestAuthentication()
-        );
+        this.slice = new DockerSlice(new AstoDocker(new InMemoryStorage()));
     }
 
     @Test
     void shouldReturnInitialUploadStatus() {
         final Response response = this.slice.response(
             new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
-            this.user.headers(),
+            Headers.EMPTY,
             Flowable.empty()
         );
         MatcherAssert.assertThat(
@@ -91,30 +79,6 @@ class UploadEntityPostTest {
                 new IsHeader("Content-Length", "0"),
                 new IsHeader("Docker-Upload-UUID", new IsNot<>(Matchers.emptyString()))
             )
-        );
-    }
-
-    @Test
-    void shouldReturnUnauthorizedWhenNoAuth() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
-                Collections.emptyList(),
-                Flowable.empty()
-            ),
-            new IsUnauthorizedResponse()
-        );
-    }
-
-    @Test
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions() {
-        MatcherAssert.assertThat(
-            this.slice.response(
-                new RequestLine(RqMethod.POST, "/v2/test/blobs/uploads/").toString(),
-                TestAuthentication.BOB.headers(),
-                Content.EMPTY
-            ),
-            new IsDeniedResponse()
         );
     }
 }

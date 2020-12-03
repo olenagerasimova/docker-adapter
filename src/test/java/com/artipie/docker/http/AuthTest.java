@@ -28,6 +28,7 @@ import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
+import com.artipie.http.auth.JoinedPermissions;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Authorization;
 import com.artipie.http.hm.RsHasStatus;
@@ -62,13 +63,16 @@ public final class AuthTest {
     void setUp() {
         this.slice = new DockerSlice(
             new AstoDocker(new InMemoryStorage()),
-            new Permissions.Single(TestAuthentication.ALICE.name(), "read"),
+            new JoinedPermissions(
+                new Permissions.Single(TestAuthentication.ALICE.name(), "read"),
+                new Permissions.Single(TestAuthentication.BOB.name(), "write")
+            ),
             new TestAuthentication()
         );
     }
 
     @ParameterizedTest
-    @MethodSource("lines")
+    @MethodSource("setups")
     void shouldReturnUnauthorizedWhenNoAuth(final RequestLine line) {
         MatcherAssert.assertThat(
             this.slice.response(line.toString(), Headers.EMPTY, Content.EMPTY),
@@ -77,7 +81,7 @@ public final class AuthTest {
     }
 
     @ParameterizedTest
-    @MethodSource("lines")
+    @MethodSource("setups")
     void shouldReturnUnauthorizedWhenUserIsUnknown(final RequestLine line) {
         MatcherAssert.assertThat(
             this.slice.response(
@@ -90,12 +94,15 @@ public final class AuthTest {
     }
 
     @ParameterizedTest
-    @MethodSource("lines")
-    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions(final RequestLine line) {
+    @MethodSource("setups")
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissions(
+        final RequestLine line,
+        final TestAuthentication.User user
+    ) {
         MatcherAssert.assertThat(
             this.slice.response(
                 line.toString(),
-                TestAuthentication.BOB.headers(),
+                this.anotherUser(user).headers(),
                 Content.EMPTY
             ),
             new IsDeniedResponse()
@@ -103,11 +110,14 @@ public final class AuthTest {
     }
 
     @ParameterizedTest
-    @MethodSource("lines")
-    void shouldNotReturnUnauthorizedOrForbiddenWhenUserHasPermissions(final RequestLine line) {
+    @MethodSource("setups")
+    void shouldNotReturnUnauthorizedOrForbiddenWhenUserHasPermissions(
+        final RequestLine line,
+        final TestAuthentication.User user
+    ) {
         final Response response = this.slice.response(
             line.toString(),
-            TestAuthentication.ALICE.headers(),
+            user.headers(),
             Content.EMPTY
         );
         MatcherAssert.assertThat(
@@ -121,8 +131,31 @@ public final class AuthTest {
         );
     }
 
+    private TestAuthentication.User anotherUser(final TestAuthentication.User user) {
+        final TestAuthentication.User result;
+        if (user == TestAuthentication.ALICE) {
+            result = TestAuthentication.BOB;
+        } else if (user == TestAuthentication.BOB) {
+            result = TestAuthentication.ALICE;
+        } else {
+            throw new IllegalArgumentException();
+        }
+        return result;
+    }
+
     @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static Stream<Arguments> lines() {
+    private static Stream<Arguments> setups() {
+        return Stream.concat(
+            readEndpoints().map(
+                line -> Arguments.of(line, TestAuthentication.ALICE)
+            ),
+            writeEndpoints().map(
+                line -> Arguments.of(line, TestAuthentication.BOB)
+            )
+        );
+    }
+
+    private static Stream<RequestLine> readEndpoints() {
         return Stream.of(
             new RequestLine(RqMethod.GET, "/v2/"),
             new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123"),
@@ -132,6 +165,15 @@ public final class AuthTest {
             new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list"),
             new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/uploads/112233"),
             new RequestLine(RqMethod.GET, "/v2/_catalog")
-        ).map(Arguments::of);
+        );
+    }
+
+    private static Stream<RequestLine> writeEndpoints() {
+        return Stream.of(
+            new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
+            new RequestLine(RqMethod.POST, "/v2/my-alpine/blobs/uploads/"),
+            new RequestLine(RqMethod.PATCH, "/v2/my-alpine/blobs/uploads/123"),
+            new RequestLine(RqMethod.PUT, "/v2/my-alpine/blobs/uploads/12345")
+        );
     }
 }
