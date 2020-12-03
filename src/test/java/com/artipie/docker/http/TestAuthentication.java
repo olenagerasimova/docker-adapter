@@ -115,5 +115,10 @@ public final class TestAuthentication extends Authentication.Wrap {
                 new Authorization.Basic(this.name(), this.password())
             );
         }
+
+        @Override
+        public String toString() {
+            return this.username;
+        }
     }
 }

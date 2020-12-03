@@ -26,8 +26,10 @@ package com.artipie.docker.http;
 import com.artipie.docker.Docker;
 import com.artipie.http.Slice;
 import com.artipie.http.auth.Action;
+import com.artipie.http.auth.AuthScheme;
+import com.artipie.http.auth.AuthSlice;
 import com.artipie.http.auth.Authentication;
-import com.artipie.http.auth.BasicAuthSlice;
+import com.artipie.http.auth.BasicAuthScheme;
 import com.artipie.http.auth.Permission;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.rq.RqMethod;
@@ -35,7 +37,6 @@ import com.artipie.http.rt.ByMethodsRule;
 import com.artipie.http.rt.RtRule;
 import com.artipie.http.rt.RtRulePath;
 import com.artipie.http.rt.SliceRoute;
-import java.util.Optional;
 
 /**
  * Slice implementing Docker Registry HTTP API.
@@ -52,11 +53,7 @@ public final class DockerSlice extends Slice.Wrap {
      * @param docker Docker repository.
      */
     public DockerSlice(final Docker docker) {
-        this(
-            docker,
-            Permissions.FREE,
-            (username, password) -> Optional.of(new Authentication.User("anonymous"))
-        );
+        this(docker, Permissions.FREE, AuthScheme.NONE);
     }
 
     /**
@@ -64,9 +61,22 @@ public final class DockerSlice extends Slice.Wrap {
      *
      * @param docker Docker repository.
      * @param perms Access permissions.
-     * @param auth Authentication mechanism.
+     * @param auth Authentication mechanism used in BasicAuthScheme.
+     * @deprecated Use constructor accepting {@link AuthScheme}.
      */
+    @Deprecated
     public DockerSlice(final Docker docker, final Permissions perms, final Authentication auth) {
+        this(docker, perms, new BasicAuthScheme(auth));
+    }
+
+    /**
+     * Ctor.
+     *
+     * @param docker Docker repository.
+     * @param perms Access permissions.
+     * @param auth Authentication scheme.
+     */
+    public DockerSlice(final Docker docker, final Permissions perms, final AuthScheme auth) {
         super(
             new ErrorHandlingSlice(
                 new SliceRoute(
@@ -164,16 +174,16 @@ public final class DockerSlice extends Slice.Wrap {
      *
      * @param origin Origin slice.
      * @param perms Access permissions.
-     * @param auth Authentication mechanism.
+     * @param auth Authentication scheme.
      * @return Authorized slice.
      */
     private static Slice authRead(
         final Slice origin,
         final Permissions perms,
-        final Authentication auth
+        final AuthScheme auth
     ) {
         return new DockerAuthSlice(
-            new BasicAuthSlice(
+            new AuthSlice(
                 origin,
                 auth,
                 new Permission.ByName(perms, Action.Standard.READ)
@@ -186,16 +196,16 @@ public final class DockerSlice extends Slice.Wrap {
      *
      * @param origin Origin slice.
      * @param perms Access permissions.
-     * @param auth Authentication mechanism.
+     * @param auth Authentication scheme.
      * @return Authorized slice.
      */
     private static Slice authWrite(
         final Slice origin,
         final Permissions perms,
-        final Authentication auth
+        final AuthScheme auth
     ) {
         return new DockerAuthSlice(
-            new BasicAuthSlice(
+            new AuthSlice(
                 origin,
                 auth,
                 new Permission.ByName(perms, Action.Standard.WRITE)
