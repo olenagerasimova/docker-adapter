@@ -42,4 +42,12 @@ public interface ManifestsLayout {
      * @return Key for storing manifest.
      */
     Key manifest(RepoName repo, ManifestRef ref);
+
+    /**
+     * Create tags key.
+     *
+     * @param repo Repository name.
+     * @return Key for storing tags.
+     */
+    Key tags(RepoName repo);
 }

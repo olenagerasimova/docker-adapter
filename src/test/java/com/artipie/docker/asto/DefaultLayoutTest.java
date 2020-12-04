@@ -23,45 +23,23 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Key;
-import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.ref.ManifestRef;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Test;
 
 /**
- * Original storage layout that is compatible with reference Docker Registry implementation.
+ * Test case for {@link DefaultLayout}.
  *
- * @since 0.7
+ * @since 0.9
  */
-public final class DefaultLayout implements Layout {
+public final class DefaultLayoutTest {
 
-    @Override
-    public Key blob(final RepoName repo, final Digest digest) {
-        return new BlobKey(digest);
-    }
-
-    @Override
-    public Key manifest(final RepoName repo, final ManifestRef ref) {
-        return new Key.From(DefaultLayout.manifests(repo), ref.link().string());
-    }
-
-    @Override
-    public Key tags(final RepoName repo) {
-        return new Key.From(DefaultLayout.manifests(repo), "tags");
-    }
-
-    @Override
-    public Key upload(final RepoName repo, final String uuid) {
-        return new UploadKey(repo, uuid);
-    }
-
-    /**
-     * Create manifests root key.
-     *
-     * @param repo Repository name.
-     * @return Manifests key.
-     */
-    private static Key manifests(final RepoName repo) {
-        return new Key.From("repositories", repo.value(), "_manifests");
+    @Test
+    public void buildsTags() {
+        MatcherAssert.assertThat(
+            new DefaultLayout().tags(new RepoName.Simple("my-alpine")).string(),
+            new IsEqual<>("repositories/my-alpine/_manifests/tags")
+        );
     }
 }
