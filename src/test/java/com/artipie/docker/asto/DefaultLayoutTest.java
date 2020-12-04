@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Test case for {@link DefaultLayout}.
  *
- * @since 0.9
+ * @since 0.8
  */
 public final class DefaultLayoutTest {
 
