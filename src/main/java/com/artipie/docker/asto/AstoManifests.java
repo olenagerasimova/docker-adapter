@@ -48,9 +48,6 @@ import javax.json.JsonException;
  * Asto implementation of {@link Manifests}.
  *
  * @since 0.3
- * @todo #354:30min Implement tags method in AstoManifests
- *  `tags` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class AstoManifests implements Manifests {
 
@@ -137,7 +134,7 @@ public final class AstoManifests implements Manifests {
     public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
         final Key root = this.layout.tags(this.name);
         return this.asto.list(root).thenApply(
-            keys -> new AstoTags(this.name, root, keys)
+            keys -> new AstoTags(this.name, root, keys, from, limit)
         );
     }
 

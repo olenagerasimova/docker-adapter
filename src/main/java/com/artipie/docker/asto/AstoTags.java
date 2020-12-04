@@ -64,24 +64,47 @@ final class AstoTags implements Tags {
     private final Collection<Key> keys;
 
     /**
+     * From which tag to start, exclusive.
+     */
+    private final Optional<Tag> from;
+
+    /**
+     * Maximum number of tags returned.
+     */
+    private final int limit;
+
+    /**
      * Ctor.
      *
      * @param name Repository name.
      * @param root Tags root key.
      * @param keys List of keys inside tags root.
+     * @param from From which tag to start, exclusive.
+     * @param limit Maximum number of tags returned.
+     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    AstoTags(final RepoName name, final Key root, final Collection<Key> keys) {
+    AstoTags(
+        final RepoName name,
+        final Key root,
+        final Collection<Key> keys,
+        final Optional<Tag> from,
+        final int limit
+    ) {
         this.name = name;
         this.root = root;
         this.keys = keys;
+        this.from = from;
+        this.limit = limit;
     }
 
     @Override
     public Content json() {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
-        for (final Tag tag : this.tags()) {
-            builder.add(tag.value());
-        }
+        this.tags().stream()
+            .map(Tag::value)
+            .filter(tag -> this.from.map(last -> tag.compareTo(last.value()) > 0).orElse(true))
+            .limit(this.limit)
+            .forEach(builder::add);
         final JsonObject json = Json.createObjectBuilder()
             .add("name", this.name.value())
             .add("tags", builder)
