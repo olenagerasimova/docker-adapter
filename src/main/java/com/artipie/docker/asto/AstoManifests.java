@@ -135,7 +135,10 @@ public final class AstoManifests implements Manifests {
 
     @Override
     public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
-        throw new UnsupportedOperationException();
+        final Key root = this.layout.tags(this.name);
+        return this.asto.list(root).thenApply(
+            keys -> new AstoTags(this.name, root, keys)
+        );
     }
 
     /**

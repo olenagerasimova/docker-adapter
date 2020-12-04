@@ -1,0 +1,134 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2020 Artipie
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+package com.artipie.docker.asto;
+
+import com.artipie.asto.Content;
+import com.artipie.asto.Key;
+import com.artipie.docker.RepoName;
+import com.artipie.docker.Tag;
+import com.artipie.docker.Tags;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonWriter;
+
+/**
+ * Asto implementation of {@link Tags}. Tags created from list of keys.
+ *
+ * @since 0.8
+ */
+final class AstoTags implements Tags {
+
+    /**
+     * Repository name.
+     */
+    private final RepoName name;
+
+    /**
+     * Tags root key.
+     */
+    private final Key root;
+
+    /**
+     * List of keys inside tags root.
+     */
+    private final Collection<Key> keys;
+
+    /**
+     * Ctor.
+     *
+     * @param name Repository name.
+     * @param root Tags root key.
+     * @param keys List of keys inside tags root.
+     */
+    AstoTags(final RepoName name, final Key root, final Collection<Key> keys) {
+        this.name = name;
+        this.root = root;
+        this.keys = keys;
+    }
+
+    @Override
+    public Content json() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        for (final Tag tag : this.tags()) {
+            builder.add(tag.value());
+        }
+        final JsonObject json = Json.createObjectBuilder()
+            .add("name", this.name.value())
+            .add("tags", builder)
+            .build();
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+            JsonWriter writer = Json.createWriter(out)) {
+            writer.writeObject(json);
+            out.flush();
+            return new Content.From(out.toByteArray());
+        } catch (final IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    /**
+     * Convert keys to ordered set of tags.
+     *
+     * @return Ordered tags.
+     */
+    private Set<Tag> tags() {
+        final Set<Tag> set = new TreeSet<>(Comparator.comparing(Tag::value));
+        for (final Key key : this.keys) {
+            set.add(this.tag(key));
+        }
+        return set;
+    }
+
+    /**
+     * Extract tag from key.
+     *
+     * @param key Key.
+     * @return Extracted tag.
+     */
+    private Tag tag(final Key key) {
+        Key child = key;
+        while (true) {
+            final Optional<Key> parent = child.parent();
+            if (!parent.isPresent()) {
+                throw new IllegalStateException(
+                    String.format("Key %s does not belong to root %s", key, this.root)
+                );
+            }
+            if (parent.get().string().equals(this.root.string())) {
+                break;
+            }
+            child = parent.get();
+        }
+        return new Tag.Valid(child.string().substring(this.root.string().length() + 1));
+    }
+}
