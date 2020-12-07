@@ -36,18 +36,23 @@ import com.artipie.docker.ref.ManifestRef;
 public final class DefaultLayout implements Layout {
 
     @Override
+    public Key repositories() {
+        return new Key.From("repositories");
+    }
+
+    @Override
     public Key blob(final RepoName repo, final Digest digest) {
         return new BlobKey(digest);
     }
 
     @Override
     public Key manifest(final RepoName repo, final ManifestRef ref) {
-        return new Key.From(DefaultLayout.manifests(repo), ref.link().string());
+        return new Key.From(this.manifests(repo), ref.link().string());
     }
 
     @Override
     public Key tags(final RepoName repo) {
-        return new Key.From(DefaultLayout.manifests(repo), "tags");
+        return new Key.From(this.manifests(repo), "tags");
     }
 
     @Override
@@ -61,7 +66,7 @@ public final class DefaultLayout implements Layout {
      * @param repo Repository name.
      * @return Manifests key.
      */
-    private static Key manifests(final RepoName repo) {
-        return new Key.From("repositories", repo.value(), "_manifests");
+    private Key manifests(final RepoName repo) {
+        return new Key.From(this.repositories(), repo.value(), "_manifests");
     }
 }
