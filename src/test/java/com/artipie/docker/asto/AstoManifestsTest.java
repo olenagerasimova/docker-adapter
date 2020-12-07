@@ -32,6 +32,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
+import com.artipie.docker.Tags;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
@@ -146,6 +147,17 @@ final class AstoManifestsTest {
         MatcherAssert.assertThat(
             exception.getCause(),
             new IsInstanceOf(InvalidManifestException.class)
+        );
+    }
+
+    @Test
+    @Timeout(5)
+    void shouldReadTags() {
+        final Tags tags = this.manifests.tags(Optional.empty(), Integer.MAX_VALUE)
+            .toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            new PublisherAs(tags.json()).asciiString().toCompletableFuture().join(),
+            new IsEqual<>("{\"name\":\"my-alpine\",\"tags\":[\"1\",\"latest\"]}")
         );
     }
 
