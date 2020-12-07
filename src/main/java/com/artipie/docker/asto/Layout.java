@@ -23,6 +23,8 @@
  */
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Key;
+
 /**
  * Storage layout.
  * Provides location for all repository elements such as blobs, manifests and uploads.
@@ -30,4 +32,11 @@ package com.artipie.docker.asto;
  * @since 0.7
  */
 public interface Layout extends BlobsLayout, ManifestsLayout, UploadsLayout {
+
+    /**
+     * Create repositories key.
+     *
+     * @return Key for storing repositories.
+     */
+    Key repositories();
 }

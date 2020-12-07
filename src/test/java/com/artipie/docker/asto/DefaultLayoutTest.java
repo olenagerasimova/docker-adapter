@@ -36,6 +36,14 @@ import org.junit.jupiter.api.Test;
 public final class DefaultLayoutTest {
 
     @Test
+    public void buildsRepositories() {
+        MatcherAssert.assertThat(
+            new DefaultLayout().repositories().string(),
+            new IsEqual<>("repositories")
+        );
+    }
+
+    @Test
     public void buildsTags() {
         MatcherAssert.assertThat(
             new DefaultLayout().tags(new RepoName.Simple("my-alpine")).string(),
