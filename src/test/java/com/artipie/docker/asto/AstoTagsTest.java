@@ -73,7 +73,7 @@ final class AstoTagsTest {
     @CsvSource({
         ",,0.1;0.1-rc;1.0;latest",
         "0.1-rc,,1.0;latest",
-        "xyz,,",
+        "xyz,,''",
         ",2,0.1;0.1-rc",
         "0.1,2,0.1-rc;1.0"
     })
@@ -97,12 +97,10 @@ final class AstoTagsTest {
             new JsonHas(
                 "tags",
                 new JsonContains(
-                    Optional.ofNullable(result).map(
-                        res -> StreamSupport.stream(
-                            Splitter.on(";").omitEmptyStrings().split(res).spliterator(),
-                            false
-                        )
-                    ).orElse(Stream.empty()).map(JsonValueIs::new).collect(Collectors.toList())
+                    StreamSupport.stream(
+                        Splitter.on(";").omitEmptyStrings().split(result).spliterator(),
+                        false
+                    ).map(JsonValueIs::new).collect(Collectors.toList())
                 )
             )
         );
