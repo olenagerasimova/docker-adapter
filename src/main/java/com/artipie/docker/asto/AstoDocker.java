@@ -24,6 +24,7 @@
 
 package com.artipie.docker.asto;
 
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
@@ -77,6 +78,7 @@ public final class AstoDocker implements Docker {
 
     @Override
     public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
-        throw new UnsupportedOperationException();
+        final Key root = this.layout.repositories();
+        return this.asto.list(root).thenApply(keys -> new AstoCatalog(root, keys));
     }
 }
