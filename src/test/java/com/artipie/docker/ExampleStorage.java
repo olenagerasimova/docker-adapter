@@ -23,8 +23,10 @@
  */
 package com.artipie.docker;
 
+import com.artipie.asto.Copy;
 import com.artipie.asto.Storage;
 import com.artipie.asto.fs.FileStorage;
+import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.asto.test.TestResource;
 
 /**
@@ -38,6 +40,19 @@ public final class ExampleStorage extends Storage.Wrap {
      * Ctor.
      */
     public ExampleStorage() {
-        super(new FileStorage(new TestResource("example-my-alpine").asPath()));
+        super(copy());
+    }
+
+    /**
+     * Copy example data to new in-memory storage.
+     *
+     * @return Copied storage.
+     */
+    private static Storage copy() {
+        final Storage target = new InMemoryStorage();
+        new Copy(new FileStorage(new TestResource("example-my-alpine").asPath()))
+            .copy(target)
+            .toCompletableFuture().join();
+        return target;
     }
 }
