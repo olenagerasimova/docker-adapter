@@ -27,15 +27,10 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.RepoName;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonWriter;
 
 /**
  * Asto implementation of {@link Catalog}. Catalog created from list of keys.
@@ -71,17 +66,13 @@ final class AstoCatalog implements Catalog {
         for (final RepoName name : this.repos()) {
             builder.add(name.value());
         }
-        final JsonObject json = Json.createObjectBuilder()
-            .add("repositories", builder)
-            .build();
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-            JsonWriter writer = Json.createWriter(out)) {
-            writer.writeObject(json);
-            out.flush();
-            return new Content.From(out.toByteArray());
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        return new Content.From(
+            Json.createObjectBuilder()
+                .add("repositories", builder)
+                .build()
+                .toString()
+                .getBytes()
+        );
     }
 
     /**

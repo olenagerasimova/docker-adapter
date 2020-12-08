@@ -28,16 +28,11 @@ import com.artipie.asto.Key;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonWriter;
 
 /**
  * Asto implementation of {@link Tags}. Tags created from list of keys.
@@ -103,18 +98,14 @@ final class AstoTags implements Tags {
             .filter(tag -> this.from.map(last -> tag.compareTo(last.value()) > 0).orElse(true))
             .limit(this.limit)
             .forEach(builder::add);
-        final JsonObject json = Json.createObjectBuilder()
-            .add("name", this.name.value())
-            .add("tags", builder)
-            .build();
-        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-            JsonWriter writer = Json.createWriter(out)) {
-            writer.writeObject(json);
-            out.flush();
-            return new Content.From(out.toByteArray());
-        } catch (final IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        return new Content.From(
+            Json.createObjectBuilder()
+                .add("name", this.name.value())
+                .add("tags", builder)
+                .build()
+                .toString()
+                .getBytes()
+        );
     }
 
     /**
