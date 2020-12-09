@@ -27,7 +27,9 @@ import com.artipie.docker.error.DockerError;
 import com.artipie.http.Response;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
+import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,6 +43,11 @@ import javax.json.JsonObjectBuilder;
  * @since 0.5
  */
 final class ErrorsResponse extends Response.Wrap {
+
+    /**
+     * Charset used for JSON encoding.
+     */
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
     /**
      * Ctor.
@@ -60,7 +67,14 @@ final class ErrorsResponse extends Response.Wrap {
      */
     protected ErrorsResponse(final RsStatus status, final Collection<DockerError> errors) {
         super(
-            new RsWithBody(new RsWithStatus(status), json(errors), StandardCharsets.UTF_8)
+            new RsWithBody(
+                new RsWithHeaders(
+                    new RsWithStatus(status),
+                    new JsonContentType(ErrorsResponse.CHARSET)
+                ),
+                json(errors),
+                ErrorsResponse.CHARSET
+            )
         );
     }
 

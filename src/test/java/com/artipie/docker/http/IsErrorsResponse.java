@@ -24,7 +24,9 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.Response;
+import com.artipie.http.headers.Header;
 import com.artipie.http.hm.RsHasBody;
+import com.artipie.http.hm.RsHasHeaders;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rs.RsStatus;
 import java.io.ByteArrayInputStream;
@@ -36,6 +38,7 @@ import javax.json.JsonValue;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsNot;
@@ -48,6 +51,7 @@ import wtf.g4s8.hamcrest.json.JsonValueIs;
  * Matcher for errors response.
  *
  * @since 0.5
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class IsErrorsResponse extends BaseMatcher<Response> {
 
@@ -66,6 +70,11 @@ public final class IsErrorsResponse extends BaseMatcher<Response> {
         this.delegate = new AllOf<>(
             Arrays.asList(
                 new RsHasStatus(status),
+                new RsHasHeaders(
+                    Matchers.containsInRelativeOrder(
+                        new Header("Content-Type", "application/json; charset=utf-8")
+                    )
+                ),
                 new RsHasBody(
                     new IsJson(
                         new JsonHas(
