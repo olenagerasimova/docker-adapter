@@ -74,7 +74,9 @@ public final class DockerAuthSliceTest {
             new AllOf<>(
                 Arrays.asList(
                     new IsUnauthorizedResponse(),
-                    new RsHasHeaders(new Headers.From(headers, new ContentLength("72")))
+                    new RsHasHeaders(
+                        new Headers.From(headers, new JsonContentType(), new ContentLength("72"))
+                    )
                 )
             )
         );
@@ -100,7 +102,9 @@ public final class DockerAuthSliceTest {
             new AllOf<>(
                 Arrays.asList(
                     new IsDeniedResponse(),
-                    new RsHasHeaders(new Headers.From(headers, new ContentLength("85")))
+                    new RsHasHeaders(
+                        new Headers.From(headers, new JsonContentType(), new ContentLength("85"))
+                    )
                 )
             )
         );

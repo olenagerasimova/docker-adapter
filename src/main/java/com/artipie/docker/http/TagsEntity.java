@@ -30,7 +30,6 @@ import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
-import com.artipie.http.headers.ContentType;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqParams;
 import com.artipie.http.rs.RsStatus;
@@ -100,7 +99,7 @@ final class TagsEntity {
                     tags -> new RsWithBody(
                         new RsWithHeaders(
                             new RsWithStatus(RsStatus.OK),
-                            new ContentType("application/json; charset=utf-8")
+                            new JsonContentType()
                         ),
                         tags.json()
                     )
