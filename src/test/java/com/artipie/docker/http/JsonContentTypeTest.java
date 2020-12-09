@@ -23,39 +23,22 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.http.headers.ContentType;
-import com.artipie.http.headers.Header;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Test;
 
 /**
- * Content-Type header with "application/json; charset=..." value.
+ * Test case for {@link JsonContentType}.
  *
  * @since 0.9
  */
-final class JsonContentType extends Header.Wrap {
+public final class JsonContentTypeTest {
 
-    /**
-     * Ctor.
-     */
-    protected JsonContentType() {
-        this(StandardCharsets.UTF_8);
-    }
-
-    /**
-     * Ctor.
-     *
-     * @param charset Charset.
-     */
-    protected JsonContentType(final Charset charset) {
-        super(
-            new ContentType(
-                String.format(
-                    "application/json; charset=%s",
-                    charset.displayName().toLowerCase(Locale.getDefault())
-                )
-            )
+    @Test
+    void shouldHaveExpectedValue() {
+        MatcherAssert.assertThat(
+            new JsonContentType().getValue(),
+            new IsEqual<>("application/json; charset=utf-8")
         );
     }
 }
