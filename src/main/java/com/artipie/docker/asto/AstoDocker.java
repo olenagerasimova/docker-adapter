@@ -79,6 +79,6 @@ public final class AstoDocker implements Docker {
     @Override
     public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
         final Key root = this.layout.repositories();
-        return this.asto.list(root).thenApply(keys -> new AstoCatalog(root, keys));
+        return this.asto.list(root).thenApply(keys -> new AstoCatalog(root, keys, from, limit));
     }
 }
