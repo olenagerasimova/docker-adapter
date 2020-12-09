@@ -28,6 +28,7 @@ import com.artipie.asto.Key;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.RepoName;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
@@ -50,22 +51,44 @@ final class AstoCatalog implements Catalog {
     private final Collection<Key> keys;
 
     /**
+     * From which name to start, exclusive.
+     */
+    private final Optional<RepoName> from;
+
+    /**
+     * Maximum number of names returned.
+     */
+    private final int limit;
+
+    /**
      * Ctor.
      *
      * @param root Repositories root key.
      * @param keys List of keys inside repositories root.
+     * @param from From which tag to start, exclusive.
+     * @param limit Maximum number of tags returned.
+     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    AstoCatalog(final Key root, final Collection<Key> keys) {
+    AstoCatalog(
+        final Key root,
+        final Collection<Key> keys,
+        final Optional<RepoName> from,
+        final int limit
+    ) {
         this.root = root;
         this.keys = keys;
+        this.from = from;
+        this.limit = limit;
     }
 
     @Override
     public Content json() {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
-        for (final RepoName name : this.repos()) {
-            builder.add(name.value());
-        }
+        this.repos().stream()
+            .map(RepoName::value)
+            .filter(name -> this.from.map(last -> name.compareTo(last.value()) > 0).orElse(true))
+            .limit(this.limit)
+            .forEach(builder::add);
         return new Content.From(
             Json.createObjectBuilder()
                 .add("repositories", builder)
