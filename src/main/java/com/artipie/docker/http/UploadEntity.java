@@ -37,16 +37,16 @@ import com.artipie.http.headers.ContentLength;
 import com.artipie.http.headers.Header;
 import com.artipie.http.headers.Location;
 import com.artipie.http.rq.RequestLineFrom;
+import com.artipie.http.rq.RqParams;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -298,11 +298,6 @@ public final class UploadEntity {
     static final class Request {
 
         /**
-         * RegEx pattern for path.
-         */
-        public static final Pattern QUERY = Pattern.compile("digest=(?<digest>[^=]*)");
-
-        /**
          * HTTP request line.
          */
         private final String line;
@@ -337,20 +332,41 @@ public final class UploadEntity {
         }
 
         /**
-         * Get digest.
+         * Get "digest" query parameter.
          *
          * @return Digest.
          */
         Digest digest() {
-            final String query = Objects.requireNonNull(
-                new RequestLineFrom(this.line).uri().getQuery(),
-                String.format("No query in request: %s", this.line)
+            return this.params().value("digest").map(Digest.FromString::new).orElseThrow(
+                () -> new IllegalStateException(String.format("Unexpected query: %s", this.line))
             );
-            final Matcher matcher = QUERY.matcher(query);
-            if (!matcher.matches()) {
-                throw new IllegalStateException(String.format("Unexpected query: %s", query));
-            }
-            return new Digest.FromString(matcher.group("digest"));
+        }
+
+        /**
+         * Get "mount" query parameter.
+         *
+         * @return Digest, empty if parameter does not present in query.
+         */
+        Optional<Digest> mount() {
+            return this.params().value("mount").map(Digest.FromString::new);
+        }
+
+        /**
+         * Get "from" query parameter.
+         *
+         * @return Repository name, empty if parameter does not present in the query.
+         */
+        Optional<RepoName> from() {
+            return this.params().value("from").map(RepoName.Valid::new);
+        }
+
+        /**
+         * Extract request query parameters.
+         *
+         * @return Request query parameters.
+         */
+        private RqParams params() {
+            return new RqParams(new RequestLineFrom(this.line).uri().getQuery());
         }
     }
 
