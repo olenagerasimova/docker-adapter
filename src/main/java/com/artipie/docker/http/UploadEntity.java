@@ -101,7 +101,53 @@ public final class UploadEntity {
             final Iterable<Map.Entry<String, String>> headers,
             final Publisher<ByteBuffer> body
         ) {
-            final RepoName name = new Request(line).name();
+            final Request request = new Request(line);
+            final RepoName target = request.name();
+            final Optional<Digest> mount = request.mount();
+            final Optional<RepoName> from = request.from();
+            final Response response;
+            if (mount.isPresent() && from.isPresent()) {
+                response = this.mount(mount.get(), from.get(), target);
+            } else {
+                response = this.startUpload(target);
+            }
+            return response;
+        }
+
+        /**
+         * Mounts specified blob from source repository to target repository.
+         *
+         * @param digest Blob digest.
+         * @param source Source repository name.
+         * @param target Target repository name.
+         * @return HTTP response.
+         */
+        private Response mount(
+            final Digest digest,
+            final RepoName source,
+            final RepoName target
+        ) {
+            return new AsyncResponse(
+                this.docker.repo(source).layers().get(digest).thenCompose(
+                    opt -> opt.map(
+                        src -> this.docker.repo(target).layers().mount(src)
+                            .<Response>thenApply(
+                                blob -> new BlobCreatedResponse(target, blob.digest())
+                            )
+                    ).orElseGet(
+                        () -> CompletableFuture.completedFuture(this.startUpload(target))
+                    )
+                )
+            );
+        }
+
+        /**
+         * Starts new upload in specified repository.
+         *
+         * @param name Repository name.
+         * @return HTTP response.
+         */
+        private Response startUpload(final RepoName name) {
             return new AsyncResponse(
                 this.docker.repo(name).uploads().start().thenApply(
                     upload -> new StatusResponse(name, upload.uuid(), 0)
@@ -202,7 +248,9 @@ public final class UploadEntity {
                                             final CompletionStage<Response> res;
                                             if (throwable == null) {
                                                 res = upload.delete().thenApply(
-                                                    any -> Put.getResponse(name, request.digest())
+                                                    any -> new BlobCreatedResponse(
+                                                        name, request.digest()
+                                                    )
                                                 );
                                             } else {
                                                 res = CompletableFuture.completedFuture(
@@ -218,23 +266,6 @@ public final class UploadEntity {
                         () -> new ErrorsResponse(RsStatus.NOT_FOUND, new UploadUnknownError(uuid))
                     )
                 )
-            );
-        }
-
-        /**
-         * Returns response.
-         * @param name Repo name
-         * @param digest Digest
-         * @return Response as CompletionStage
-         */
-        private static Response getResponse(
-            final RepoName name, final Digest digest
-        ) {
-            return new RsWithHeaders(
-                new RsWithStatus(RsStatus.CREATED),
-                new Location(String.format("/v2/%s/blobs/%s", name.value(), digest.string())),
-                new ContentLength("0"),
-                new DigestHeader(digest)
             );
         }
     }
@@ -416,6 +447,31 @@ public final class UploadEntity {
                 new ContentLength("0"),
                 new Header("Docker-Upload-UUID", this.uuid)
             ).send(connection);
+        }
+    }
+
+    /**
+     * Blob created response.
+     *
+     * @since 0.9
+     */
+    private static final class BlobCreatedResponse extends Response.Wrap {
+
+        /**
+         * Ctor.
+         *
+         * @param name Repository name.
+         * @param digest Blob digest.
+         */
+        private BlobCreatedResponse(final RepoName name, final Digest digest) {
+            super(
+                new RsWithHeaders(
+                    new RsWithStatus(RsStatus.CREATED),
+                    new Location(String.format("/v2/%s/blobs/%s", name.value(), digest.string())),
+                    new ContentLength("0"),
+                    new DigestHeader(digest)
+                )
+            );
         }
     }
 }
