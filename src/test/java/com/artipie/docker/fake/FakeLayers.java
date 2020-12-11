@@ -56,6 +56,11 @@ public final class FakeLayers implements Layers {
     }
 
     @Override
+    public CompletionStage<Blob> mount(final Blob blob) {
+        return this.layers.mount(blob);
+    }
+
+    @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
         return this.layers.get(digest);
     }

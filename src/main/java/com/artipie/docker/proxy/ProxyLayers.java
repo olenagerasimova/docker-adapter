@@ -74,6 +74,11 @@ public final class ProxyLayers implements Layers {
     }
 
     @Override
+    public CompletionStage<Blob> mount(final Blob blob) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
         final CompletableFuture<Optional<Blob>> promise = new CompletableFuture<>();
         return this.remote.response(

@@ -47,6 +47,11 @@ public final class FullGetLayers implements Layers {
     }
 
     @Override
+    public CompletionStage<Blob> mount(final Blob blob) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
         return CompletableFuture.completedFuture(
             Optional.of(new AstoBlob(new InMemoryStorage(), new Key.From("test"), digest))
