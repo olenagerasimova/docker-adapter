@@ -66,6 +66,11 @@ public final class CacheLayers implements Layers {
     }
 
     @Override
+    public CompletionStage<Blob> mount(final Blob blob) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
         return this.cache.get(digest).handle(
             (cached, throwable) -> {

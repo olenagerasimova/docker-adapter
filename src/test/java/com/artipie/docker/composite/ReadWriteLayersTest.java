@@ -112,6 +112,11 @@ final class ReadWriteLayersTest {
         }
 
         @Override
+        public CompletionStage<Blob> mount(final Blob blob) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public CompletionStage<Optional<Blob>> get(final Digest digest) {
             this.digestcheck = digest;
             return CompletableFuture.completedFuture(Optional.empty());
@@ -144,6 +149,11 @@ final class ReadWriteLayersTest {
             this.digestcheck = digest;
             this.contentcheck = content;
             return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletionStage<Blob> mount(final Blob blob) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

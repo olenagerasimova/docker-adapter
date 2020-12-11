@@ -35,6 +35,9 @@ import java.util.concurrent.CompletionStage;
  * Asto implementation of {@link Layers}.
  *
  * @since 0.3
+ * @todo #390:30min Implement tags method in AstoLayers
+ *  `mount` method was added without proper implementation as placeholder.
+ *  Method should be implemented and covered with unit tests.
  */
 public final class AstoLayers implements Layers {
 
@@ -55,6 +58,11 @@ public final class AstoLayers implements Layers {
     @Override
     public CompletionStage<Blob> put(final Content content, final Digest digest) {
         return this.blobs.put(content, digest);
+    }
+
+    @Override
+    public CompletionStage<Blob> mount(final Blob blob) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

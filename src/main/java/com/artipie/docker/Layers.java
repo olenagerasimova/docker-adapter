@@ -45,6 +45,14 @@ public interface Layers {
     CompletionStage<Blob> put(Content content, Digest digest);
 
     /**
+     * Mount blob to repository.
+     *
+     * @param blob Blob.
+     * @return Mounted blob.
+     */
+    CompletionStage<Blob> mount(Blob blob);
+
+    /**
      * Find layer by digest.
      *
      * @param digest Layer digest.
