@@ -32,6 +32,7 @@ import com.artipie.asto.ext.Digests;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.error.InvalidDigestException;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
@@ -99,11 +100,14 @@ public final class AstoBlobs implements BlobStore {
                 sha.update(new Remaining(buf, true).bytes());
                 return buf;
             }
-        ).doOnTerminate(
+        ).doOnComplete(
             () -> {
                 final String calculated = new HexOf(new BytesOf(sha.digest())).asString();
-                if (!digest.hex().equals(calculated)) {
-                    throw new IllegalArgumentException("Digests differ");
+                final String expected = digest.hex();
+                if (!expected.equals(calculated)) {
+                    throw new InvalidDigestException(
+                        String.format("calculated: %s expected: %s", calculated, expected)
+                    );
                 }
             }
         );

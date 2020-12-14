@@ -30,6 +30,7 @@ import com.artipie.asto.blocking.BlockingStorage;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.error.InvalidDigestException;
 import com.google.common.base.Throwables;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
@@ -87,8 +88,9 @@ final class AstoBlobsITCase {
             storage, new DefaultLayout(), new RepoName.Simple("any")
         );
         final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
+        final String digest = "123";
         blobs.put(
-            new Content.From(Flowable.fromArray(buf)), new Digest.Sha256("sha256:123")
+            new Content.From(Flowable.fromArray(buf)), new Digest.Sha256(digest)
         ).toCompletableFuture().handle(
             (blob, throwable) -> {
                 MatcherAssert.assertThat(
@@ -97,14 +99,22 @@ final class AstoBlobsITCase {
                     new IsNot<>(new IsNull<>())
                 );
                 MatcherAssert.assertThat(
-                    "Not an IllegalArgumentException exception",
+                    "Not an InvalidDigestException exception",
                     Throwables.getRootCause(throwable),
-                    new IsInstanceOf(IllegalArgumentException.class)
+                    new IsInstanceOf(InvalidDigestException.class)
                 );
                 MatcherAssert.assertThat(
-                    "Exception message is not correct",
+                    "Exception message contains calculated digest",
                     Throwables.getRootCause(throwable).getMessage(),
-                    new StringContains(true, "Digests differ")
+                    new StringContains(
+                        true,
+                        "054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8"
+                    )
+                );
+                MatcherAssert.assertThat(
+                    "Exception message contains expected digest",
+                    Throwables.getRootCause(throwable).getMessage(),
+                    new StringContains(true, digest)
                 );
                 return CompletableFuture.allOf();
             }

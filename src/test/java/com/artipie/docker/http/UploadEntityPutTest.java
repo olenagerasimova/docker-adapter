@@ -34,7 +34,7 @@ import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
-import com.artipie.http.hm.RsHasStatus;
+import com.artipie.http.hm.SliceHasResponse;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
@@ -87,7 +87,7 @@ class UploadEntityPutTest {
             "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
         );
         final Response response = this.slice.response(
-            UploadEntityPutTest.requestLine(name, upload.uuid(), digest),
+            UploadEntityPutTest.requestLine(name, upload.uuid(), digest).toString(),
             Headers.EMPTY,
             Flowable.empty()
         );
@@ -120,12 +120,11 @@ class UploadEntityPutTest {
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
             "Returns 400 status",
-            this.slice.response(
-                UploadEntityPutTest.requestLine(name, upload.uuid(), "sha256:0000"),
-                Headers.EMPTY,
-                Flowable.empty()
-            ),
-            new RsHasStatus(RsStatus.BAD_REQUEST)
+            this.slice,
+            new SliceHasResponse(
+                new IsErrorsResponse(RsStatus.BAD_REQUEST, "DIGEST_INVALID"),
+                UploadEntityPutTest.requestLine(name, upload.uuid(), "sha256:0000")
+            )
         );
         MatcherAssert.assertThat(
             "Does not put blob into storage",
@@ -156,11 +155,15 @@ class UploadEntityPutTest {
      * @param digest Digest
      * @return RequestLine instance
      */
-    private static String requestLine(final String name, final String uuid, final String digest) {
+    private static RequestLine requestLine(
+        final String name,
+        final String uuid,
+        final String digest
+    ) {
         return new RequestLine(
             RqMethod.PUT,
             String.format("/v2/%s/blobs/uploads/%s?digest=%s", name, uuid, digest)
-        ).toString();
+        );
     }
 
 }

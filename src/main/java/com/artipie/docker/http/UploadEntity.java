@@ -46,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.reactivestreams.Publisher;
 
@@ -243,23 +242,11 @@ public final class UploadEntity {
                             upload.content().thenCompose(
                                 content -> repo.layers()
                                     .put(content, request.digest())
-                                    .handle(
-                                        (blob, throwable) -> {
-                                            final CompletionStage<Response> res;
-                                            if (throwable == null) {
-                                                res = upload.delete().thenApply(
-                                                    any -> new BlobCreatedResponse(
-                                                        name, request.digest()
-                                                    )
-                                                );
-                                            } else {
-                                                res = CompletableFuture.completedFuture(
-                                                    new RsWithStatus(RsStatus.BAD_REQUEST)
-                                                );
-                                            }
-                                            return res;
-                                        }
-                                    ).thenCompose(Function.identity())
+                                    .thenCompose(
+                                        blob -> upload.delete().thenApply(
+                                            any -> new BlobCreatedResponse(name, request.digest())
+                                        )
+                                    )
                             )
                         )
                     ).orElseGet(
