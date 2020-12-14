@@ -24,9 +24,7 @@
 package com.artipie.docker.http;
 
 import com.artipie.asto.FailedCompletionStage;
-import com.artipie.docker.error.InvalidManifestException;
-import com.artipie.docker.error.InvalidRepoNameException;
-import com.artipie.docker.error.InvalidTagNameException;
+import com.artipie.docker.error.DockerError;
 import com.artipie.docker.error.UnsupportedError;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -109,19 +107,9 @@ final class ErrorHandlingSlice implements Slice {
      */
     @SuppressWarnings("PMD.OnlyOneReturn")
     private static Optional<Response> handle(final Throwable throwable) {
-        if (throwable instanceof InvalidRepoNameException) {
+        if (throwable instanceof DockerError) {
             return Optional.of(
-                new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidRepoNameException) throwable)
-            );
-        }
-        if (throwable instanceof InvalidTagNameException) {
-            return Optional.of(
-                new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidTagNameException) throwable)
-            );
-        }
-        if (throwable instanceof InvalidManifestException) {
-            return Optional.of(
-                new ErrorsResponse(RsStatus.BAD_REQUEST, (InvalidManifestException) throwable)
+                new ErrorsResponse(RsStatus.BAD_REQUEST, (DockerError) throwable)
             );
         }
         if (throwable instanceof UnsupportedOperationException) {

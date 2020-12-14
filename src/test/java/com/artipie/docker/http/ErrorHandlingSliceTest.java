@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
 import com.artipie.asto.ext.PublisherAs;
+import com.artipie.docker.error.InvalidDigestException;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
 import com.artipie.docker.error.InvalidTagNameException;
@@ -41,7 +42,6 @@ import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsFull;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.StandardRs;
-import com.google.common.collect.Streams;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -226,17 +226,22 @@ class ErrorHandlingSliceTest {
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static Stream<Arguments> exceptions() {
-        final InvalidRepoNameException repo = new InvalidRepoNameException("repo name exception");
-        final InvalidTagNameException tag = new InvalidTagNameException("tag name exception");
-        final InvalidManifestException mnf = new InvalidManifestException("manifest exception");
-        final UnsupportedOperationException unsupported = new UnsupportedOperationException();
-        final List<Arguments> plain = Stream.of(
-            Arguments.of(repo, RsStatus.BAD_REQUEST, repo.code()),
-            Arguments.of(tag, RsStatus.BAD_REQUEST, tag.code()),
-            Arguments.of(mnf, RsStatus.BAD_REQUEST, mnf.code()),
-            Arguments.of(unsupported, RsStatus.METHOD_NOT_ALLOWED, new UnsupportedError().code())
+        final List<Arguments> plain = Stream.concat(
+            Stream.of(
+                new InvalidRepoNameException("repo name exception"),
+                new InvalidTagNameException("tag name exception"),
+                new InvalidManifestException("manifest exception"),
+                new InvalidDigestException("digest exception")
+            ).map(err -> Arguments.of(err, RsStatus.BAD_REQUEST, err.code())),
+            Stream.of(
+                Arguments.of(
+                    new UnsupportedOperationException(),
+                    RsStatus.METHOD_NOT_ALLOWED,
+                    new UnsupportedError().code()
+                )
+            )
         ).collect(Collectors.toList());
-        return Streams.concat(
+        return Stream.concat(
             plain.stream(),
             plain.stream().map(Arguments::get).map(
                 original -> Arguments.of(
