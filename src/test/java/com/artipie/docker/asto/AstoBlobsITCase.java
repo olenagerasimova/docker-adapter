@@ -87,19 +87,19 @@ final class AstoBlobsITCase {
         final AstoBlobs blobs = new AstoBlobs(
             storage, new DefaultLayout(), new RepoName.Simple("any")
         );
-        final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
+        final ByteBuffer buf = ByteBuffer.wrap("data".getBytes());
         final String digest = "123";
         blobs.put(
             new Content.From(Flowable.fromArray(buf)), new Digest.Sha256(digest)
         ).toCompletableFuture().handle(
             (blob, throwable) -> {
                 MatcherAssert.assertThat(
-                    "Exception not thrown",
+                    "Exception thrown",
                     throwable,
                     new IsNot<>(new IsNull<>())
                 );
                 MatcherAssert.assertThat(
-                    "Not an InvalidDigestException exception",
+                    "Exception is InvalidDigestException",
                     Throwables.getRootCause(throwable),
                     new IsInstanceOf(InvalidDigestException.class)
                 );
@@ -108,7 +108,7 @@ final class AstoBlobsITCase {
                     Throwables.getRootCause(throwable).getMessage(),
                     new StringContains(
                         true,
-                        "054edec1d0211f624fed0cbca9d4f9400b0e491c43742af2c5b0abebf0c990d8"
+                        "3a6eb0790f39ac87c94f3856b2dd2c5d110e6811602261a9a923d3bb23adc8b7"
                     )
                 );
                 MatcherAssert.assertThat(
