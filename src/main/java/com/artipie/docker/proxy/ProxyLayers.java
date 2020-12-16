@@ -35,7 +35,6 @@ import com.artipie.http.headers.ContentLength;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
-import io.reactivex.Flowable;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -80,12 +79,12 @@ public final class ProxyLayers implements Layers {
 
     @Override
     public CompletionStage<Optional<Blob>> get(final Digest digest) {
-        final CompletableFuture<Optional<Blob>> promise = new CompletableFuture<>();
-        return this.remote.response(
-            new RequestLine(RqMethod.HEAD, new BlobPath(this.name, digest).string()).toString(),
-            Headers.EMPTY,
-            Flowable.empty()
-        ).send(
+        return new ResponseSink<>(
+            this.remote.response(
+                new RequestLine(RqMethod.HEAD, new BlobPath(this.name, digest).string()).toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ),
             (status, headers, body) -> {
                 final CompletionStage<Optional<Blob>> result;
                 if (status == RsStatus.OK) {
@@ -106,8 +105,8 @@ public final class ProxyLayers implements Layers {
                         new IllegalArgumentException(String.format("Unexpected status: %s", status))
                     );
                 }
-                return result.thenAccept(promise::complete).toCompletableFuture();
+                return result;
             }
-        ).thenCompose(nothing -> promise);
+        ).result();
     }
 }
