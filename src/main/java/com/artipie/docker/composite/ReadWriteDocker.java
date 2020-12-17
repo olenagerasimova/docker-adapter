@@ -38,9 +38,6 @@ import java.util.concurrent.CompletionStage;
  * and {@link com.artipie.docker.asto.AstoDocker}.
  *
  * @since 0.3
- * @todo #354:30min Implement catalog method in ReadWriteDocker
- *  `catalog` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class ReadWriteDocker implements Docker {
 
@@ -72,6 +69,6 @@ public final class ReadWriteDocker implements Docker {
 
     @Override
     public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
-        throw new UnsupportedOperationException();
+        return this.read.catalog(from, limit);
     }
 }
