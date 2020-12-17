@@ -21,33 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.artipie.docker.asto;
+package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.Key;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.misc.CatalogPage;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 
 /**
- * Asto implementation of {@link Catalog}. Catalog created from list of keys.
+ * {@link Catalog} that is a page of given repository names list.
  *
- * @since 0.9
+ * @since 0.10
  */
-final class AstoCatalog implements Catalog {
+public final class CatalogPage implements Catalog {
 
     /**
-     * Repositories root key.
+     * Repository names.
      */
-    private final Key root;
-
-    /**
-     * List of keys inside repositories root.
-     */
-    private final Collection<Key> keys;
+    private final Collection<RepoName> names;
 
     /**
      * From which name to start, exclusive.
@@ -62,37 +56,36 @@ final class AstoCatalog implements Catalog {
     /**
      * Ctor.
      *
-     * @param root Repositories root key.
-     * @param keys List of keys inside repositories root.
+     * @param names Repository names.
      * @param from From which tag to start, exclusive.
      * @param limit Maximum number of tags returned.
-     * @checkstyle ParameterNumberCheck (2 lines)
      */
-    AstoCatalog(
-        final Key root,
-        final Collection<Key> keys,
+    public CatalogPage(
+        final Collection<RepoName> names,
         final Optional<RepoName> from,
         final int limit
     ) {
-        this.root = root;
-        this.keys = keys;
+        this.names = names;
         this.from = from;
         this.limit = limit;
     }
 
     @Override
     public Content json() {
-        return new CatalogPage(this.repos(), this.from, this.limit).json();
-    }
-
-    /**
-     * Convert keys to ordered set of repository names.
-     *
-     * @return Ordered repository names.
-     */
-    private Collection<RepoName> repos() {
-        return new Children(this.root, this.keys).names().stream()
-            .map(RepoName.Simple::new)
-            .collect(Collectors.toList());
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        this.names.stream()
+            .map(RepoName::value)
+            .filter(name -> this.from.map(last -> name.compareTo(last.value()) > 0).orElse(true))
+            .sorted()
+            .distinct()
+            .limit(this.limit)
+            .forEach(builder::add);
+        return new Content.From(
+            Json.createObjectBuilder()
+                .add("repositories", builder)
+                .build()
+                .toString()
+                .getBytes()
+        );
     }
 }
