@@ -41,7 +41,6 @@ import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
-import io.reactivex.Flowable;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -84,12 +83,12 @@ public final class ProxyManifests implements Manifests {
 
     @Override
     public CompletionStage<Optional<Manifest>> get(final ManifestRef ref) {
-        final CompletableFuture<Optional<Manifest>> promise = new CompletableFuture<>();
-        return this.remote.response(
-            new RequestLine(RqMethod.GET, new ManifestPath(this.name, ref).string()).toString(),
-            Headers.EMPTY,
-            Flowable.empty()
-        ).send(
+        return new ResponseSink<>(
+            this.remote.response(
+                new RequestLine(RqMethod.GET, new ManifestPath(this.name, ref).string()).toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ),
             (status, headers, body) -> {
                 final CompletionStage<Optional<Manifest>> result;
                 if (status == RsStatus.OK) {
@@ -104,9 +103,9 @@ public final class ProxyManifests implements Manifests {
                         new IllegalArgumentException(String.format("Unexpected status: %s", status))
                     );
                 }
-                return result.thenAccept(promise::complete).toCompletableFuture();
+                return result;
             }
-        ).thenCompose(nothing -> promise);
+        ).result();
     }
 
     @Override
