@@ -26,17 +26,12 @@ package com.artipie.docker.composite;
 import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Catalog;
-import com.artipie.docker.Docker;
-import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.fake.FakeCatalogDocker;
 import com.artipie.docker.proxy.ProxyDocker;
 import com.artipie.http.rs.StandardRs;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
@@ -67,7 +62,7 @@ final class ReadWriteDockerTest {
         final Optional<RepoName> from = Optional.of(new RepoName.Simple("foo"));
         final int limit = 123;
         final Catalog catalog = () -> new Content.From("{...}".getBytes());
-        final FakeDocker fake = new FakeDocker(catalog);
+        final FakeCatalogDocker fake = new FakeCatalogDocker(catalog);
         final ReadWriteDocker docker = new ReadWriteDocker(
             fake,
             new AstoDocker(new InMemoryStorage())
@@ -75,12 +70,12 @@ final class ReadWriteDockerTest {
         final Catalog result = docker.catalog(from, limit).toCompletableFuture().join();
         MatcherAssert.assertThat(
             "Forwards from",
-            fake.from.get(),
+            fake.from(),
             new IsEqual<>(from)
         );
         MatcherAssert.assertThat(
             "Forwards limit",
-            fake.limit.get(),
+            fake.limit(),
             new IsEqual<>(limit)
         );
         MatcherAssert.assertThat(
@@ -90,45 +85,4 @@ final class ReadWriteDockerTest {
         );
     }
 
-    /**
-     * Docker implementation with specified catalog.
-     * Values of parameters `from` and `limit` from last call of `catalog` method are captured.
-     *
-     * @since 0.8
-     */
-    private static class FakeDocker implements Docker {
-
-        /**
-         * Catalog.
-         */
-        private final Catalog ctlg;
-
-        /**
-         * From parameter captured.
-         */
-        private final AtomicReference<Optional<RepoName>> from;
-
-        /**
-         * Limit parameter captured.
-         */
-        private final AtomicInteger limit;
-
-        FakeDocker(final Catalog ctlg) {
-            this.ctlg = ctlg;
-            this.from = new AtomicReference<>();
-            this.limit = new AtomicInteger();
-        }
-
-        @Override
-        public Repo repo(final RepoName name) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CompletionStage<Catalog> catalog(final Optional<RepoName> pfrom, final int plimit) {
-            this.from.set(pfrom);
-            this.limit.set(plimit);
-            return CompletableFuture.completedFuture(this.ctlg);
-        }
-    }
 }
