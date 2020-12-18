@@ -75,11 +75,13 @@ public final class JsonManifest implements Manifest {
 
     @Override
     public Manifest convert(final Collection<String> options) {
-        final String type = this.mediaType();
-        if (!options.contains(type)) {
-            throw new IllegalArgumentException(
-                String.format("Cannot convert from '%s' to any of '%s'", type, options)
-            );
+        if (!options.contains("*/*")) {
+            final String type = this.mediaType();
+            if (!options.contains(type)) {
+                throw new IllegalArgumentException(
+                    String.format("Cannot convert from '%s' to any of '%s'", type, options)
+                );
+            }
         }
         return this;
     }

@@ -72,6 +72,17 @@ class JsonManifestTest {
     }
 
     @Test
+    void shouldConvertToWildcardType() {
+        final JsonManifest manifest = new JsonManifest(
+            new Digest.Sha256("123"), "{\"mediaType\":\"my-type\"}".getBytes()
+        );
+        MatcherAssert.assertThat(
+            manifest.convert(Collections.singletonList("*/*")),
+            new IsEqual<>(manifest)
+        );
+    }
+
+    @Test
     void shouldFailConvertToUnknownType() {
         final JsonManifest manifest = new JsonManifest(
             new Digest.Sha256("123"),
