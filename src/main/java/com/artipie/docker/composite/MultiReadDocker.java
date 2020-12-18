@@ -27,9 +27,13 @@ import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.misc.CatalogPage;
+import com.artipie.docker.misc.ParsedCatalog;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
@@ -43,9 +47,6 @@ import java.util.stream.Collectors;
  * Might be used to join multiple proxy Dockers into single repository.
  *
  * @since 0.3
- * @todo #354:30min Implement catalog method in MultiReadDocker
- *  `catalog` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class MultiReadDocker implements Docker {
 
@@ -81,6 +82,16 @@ public final class MultiReadDocker implements Docker {
 
     @Override
     public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
-        throw new UnsupportedOperationException();
+        final List<CompletionStage<List<RepoName>>> all = this.dockers.stream().map(
+            docker -> docker.catalog(from, limit)
+                .thenApply(ParsedCatalog::new)
+                .thenCompose(ParsedCatalog::repos)
+                .exceptionally(err -> Collections.emptyList())
+        ).collect(Collectors.toList());
+        return CompletableFuture.allOf(all.toArray(new CompletableFuture<?>[0])).thenApply(
+            nothing -> all.stream().flatMap(
+                stage -> stage.toCompletableFuture().join().stream()
+            ).collect(Collectors.toList())
+        ).thenApply(names -> new CatalogPage(names, from, limit));
     }
 }
