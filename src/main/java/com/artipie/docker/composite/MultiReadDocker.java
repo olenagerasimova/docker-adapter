@@ -27,13 +27,10 @@ import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.misc.CatalogPage;
-import com.artipie.docker.misc.ParsedCatalog;
+import com.artipie.docker.misc.JoinedCatalogSource;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
@@ -82,16 +79,6 @@ public final class MultiReadDocker implements Docker {
 
     @Override
     public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
-        final List<CompletionStage<List<RepoName>>> all = this.dockers.stream().map(
-            docker -> docker.catalog(from, limit)
-                .thenApply(ParsedCatalog::new)
-                .thenCompose(ParsedCatalog::repos)
-                .exceptionally(err -> Collections.emptyList())
-        ).collect(Collectors.toList());
-        return CompletableFuture.allOf(all.toArray(new CompletableFuture<?>[0])).thenApply(
-            nothing -> all.stream().flatMap(
-                stage -> stage.toCompletableFuture().join().stream()
-            ).collect(Collectors.toList())
-        ).thenApply(names -> new CatalogPage(names, from, limit));
+        return new JoinedCatalogSource(this.dockers, from, limit).catalog();
     }
 }
