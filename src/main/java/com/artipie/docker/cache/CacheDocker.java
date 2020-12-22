@@ -27,6 +27,7 @@ import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.misc.JoinedCatalogSource;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -34,9 +35,6 @@ import java.util.concurrent.CompletionStage;
  * Cache {@link Docker} implementation.
  *
  * @since 0.3
- * @todo #354:30min Implement catalog method in CacheDocker
- *  `catalog` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class CacheDocker implements Docker {
 
@@ -68,6 +66,6 @@ public final class CacheDocker implements Docker {
 
     @Override
     public CompletionStage<Catalog> catalog(final Optional<RepoName> from, final int limit) {
-        throw new UnsupportedOperationException();
+        return new JoinedCatalogSource(from, limit, this.origin, this.cache).catalog();
     }
 }
