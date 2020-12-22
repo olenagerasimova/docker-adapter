@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.core.IsEqual;
 import org.junit.jupiter.api.Test;
 import wtf.g4s8.hamcrest.json.JsonContains;
 import wtf.g4s8.hamcrest.json.JsonHas;
@@ -69,6 +70,26 @@ final class JoinedCatalogSourceTest {
                     )
                 )
             )
+        );
+    }
+
+    @Test
+    void treatsFailingCatalogAsEmpty() {
+        final String json = "{\"repositories\":[\"library/busybox\"]}";
+        MatcherAssert.assertThat(
+            new JoinedCatalogSource(
+                Optional.empty(),
+                Integer.MAX_VALUE,
+                new FakeCatalogDocker(
+                    () -> {
+                        throw new IllegalStateException();
+                    }
+                ),
+                new FakeCatalogDocker(() -> new Content.From(json.getBytes()))
+            ).catalog().thenCompose(
+                catalog -> new PublisherAs(catalog.json()).asciiString()
+            ).toCompletableFuture().join(),
+            new IsEqual<>(json)
         );
     }
 }
