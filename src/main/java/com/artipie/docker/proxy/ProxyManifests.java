@@ -49,9 +49,7 @@ import java.util.concurrent.CompletionStage;
  * Proxy implementation of {@link Repo}.
  *
  * @since 0.3
- * @todo #354:30min Implement tags method in ProxyManifests
- *  `tags` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 public final class ProxyManifests implements Manifests {
 
@@ -99,9 +97,7 @@ public final class ProxyManifests implements Manifests {
                 } else if (status == RsStatus.NOT_FOUND) {
                     result = CompletableFuture.completedFuture(Optional.empty());
                 } else {
-                    result = new FailedCompletionStage<>(
-                        new IllegalArgumentException(String.format("Unexpected status: %s", status))
-                    );
+                    result = unexpected(status);
                 }
                 return result;
             }
@@ -110,6 +106,39 @@ public final class ProxyManifests implements Manifests {
 
     @Override
     public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
-        throw new UnsupportedOperationException();
+        return new ResponseSink<>(
+            this.remote.response(
+                new RequestLine(
+                    RqMethod.GET,
+                    new TagsListUri(this.name, from, limit).string()
+                ).toString(),
+                Headers.EMPTY,
+                Content.EMPTY
+            ),
+            (status, headers, body) -> {
+                final CompletionStage<Tags> result;
+                if (status == RsStatus.OK) {
+                    result = new PublisherAs(body).bytes().thenApply(
+                        bytes -> () -> new Content.From(bytes)
+                    );
+                } else {
+                    result = unexpected(status);
+                }
+                return result;
+            }
+        ).result();
+    }
+
+    /**
+     * Creates completion stage failed with unexpected status exception.
+     *
+     * @param status Status to be reported in error.
+     * @param <T> Completion stage result type.
+     * @return Failed completion stage.
+     */
+    private static <T> CompletionStage<T> unexpected(final RsStatus status) {
+        return new FailedCompletionStage<>(
+            new IllegalArgumentException(String.format("Unexpected status: %s", status))
+        );
     }
 }
