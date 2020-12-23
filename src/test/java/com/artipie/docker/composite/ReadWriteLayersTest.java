@@ -32,44 +32,24 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link ReadWriteLayers}.
  *
  * @since 0.5
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 final class ReadWriteLayersTest {
-    /**
-     * Layers that implement only get method.
-     */
-    private CaptureGetLayers getlayers;
-
-    /**
-     * Layers that implement only put method.
-     */
-    private CapturePutLayers putlayers;
-
-    /**
-     * ReadWriteLayers.
-     */
-    private ReadWriteLayers layers;
-
-    @BeforeEach
-    void init() {
-        this.getlayers = new CaptureGetLayers();
-        this.putlayers = new CapturePutLayers();
-        this.layers = new ReadWriteLayers(this.getlayers, this.putlayers);
-    }
 
     @Test
     void shouldCallGetWithCorrectRef() {
         final Digest digest = new Digest.FromString("sha256:123");
-        this.layers.get(digest).toCompletableFuture().join();
+        final CaptureGetLayers fake = new CaptureGetLayers();
+        new ReadWriteLayers(fake, new CapturePutLayers()).get(digest).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.getlayers.digest(),
+            fake.digest(),
             new IsEqual<>(digest)
         );
     }
@@ -78,19 +58,39 @@ final class ReadWriteLayersTest {
     void shouldCallPutPassingCorrectData() {
         final byte[] data = "data".getBytes();
         final Digest digest = new Digest.FromString("sha256:123");
-        this.layers.put(
+        final CapturePutLayers fake = new CapturePutLayers();
+        new ReadWriteLayers(new CaptureGetLayers(), fake).put(
             new Content.From(data),
             digest
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
             "Digest from put method is wrong.",
-            this.putlayers.digest(),
+            fake.digest(),
             new IsEqual<>(digest)
         );
         MatcherAssert.assertThat(
             "Size of content from put method is wrong.",
-            this.putlayers.content().size().get(),
+            fake.content().size().get(),
             new IsEqual<>((long) data.length)
+        );
+    }
+
+    @Test
+    void shouldCallMountPassingCorrectData() {
+        final Blob original = new FakeBlob();
+        final Blob mounted = new FakeBlob();
+        final CaptureMountLayers fake = new CaptureMountLayers(mounted);
+        final Blob result = new ReadWriteLayers(new CaptureGetLayers(), fake).mount(original)
+            .toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            "Original blob is captured",
+            fake.capturedBlob(),
+            new IsEqual<>(original)
+        );
+        MatcherAssert.assertThat(
+            "Mounted blob is returned",
+            result,
+            new IsEqual<>(mounted)
         );
     }
 
@@ -167,6 +167,72 @@ final class ReadWriteLayersTest {
 
         public Content content() {
             return this.contentcheck;
+        }
+    }
+
+    /**
+     * Layers implementation that captures mount method and returns specified blob.
+     * Other methods are not supported.
+     *
+     * @since 0.10
+     */
+    private static final class CaptureMountLayers implements Layers {
+
+        /**
+         * Blob that is returned by mount method.
+         */
+        private final Blob rblob;
+
+        /**
+         * Captured blob.
+         */
+        private volatile Blob cblob;
+
+        private CaptureMountLayers(final Blob rblob) {
+            this.rblob = rblob;
+        }
+
+        @Override
+        public CompletionStage<Blob> put(final Content content, final Digest digest) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompletionStage<Blob> mount(final Blob pblob) {
+            this.cblob = pblob;
+            return CompletableFuture.completedFuture(this.rblob);
+        }
+
+        @Override
+        public CompletionStage<Optional<Blob>> get(final Digest digest) {
+            throw new UnsupportedOperationException();
+        }
+
+        public Blob capturedBlob() {
+            return this.cblob;
+        }
+    }
+
+    /**
+     * Blob without any implementation.
+     *
+     * @since 0.10
+     */
+    private static final class FakeBlob implements Blob {
+
+        @Override
+        public Digest digest() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompletionStage<Long> size() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompletionStage<Content> content() {
+            throw new UnsupportedOperationException();
         }
     }
 }
