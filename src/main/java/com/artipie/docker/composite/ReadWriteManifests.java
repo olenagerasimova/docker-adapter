@@ -36,9 +36,6 @@ import java.util.concurrent.CompletionStage;
  * Read-write {@link Manifests} implementation.
  *
  * @since 0.3
- * @todo #354:30min Implement tags method in ReadWriteManifests
- *  `tags` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class ReadWriteManifests implements Manifests {
 
@@ -75,6 +72,6 @@ public final class ReadWriteManifests implements Manifests {
 
     @Override
     public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
-        throw new UnsupportedOperationException();
+        return this.read.tags(from, limit);
     }
 }
