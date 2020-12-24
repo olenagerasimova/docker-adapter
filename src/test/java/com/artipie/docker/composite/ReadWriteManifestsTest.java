@@ -27,6 +27,7 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
+import com.artipie.docker.fake.FullTagsManifests;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
 import java.util.Optional;
@@ -34,43 +35,24 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link ReadWriteManifests}.
  *
  * @since 0.5
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class ReadWriteManifestsTest {
-    /**
-     * Manifests that implement only get method.
-     */
-    private CaptureGetManifests getmnf;
-
-    /**
-     * Manifests that implement only put method.
-     */
-    private CapturePutManifests putmnf;
-
-    /**
-     * ReadWriteManifests.
-     */
-    private ReadWriteManifests mnfs;
-
-    @BeforeEach
-    void init() {
-        this.getmnf = new CaptureGetManifests();
-        this.putmnf = new CapturePutManifests();
-        this.mnfs = new ReadWriteManifests(this.getmnf, this.putmnf);
-    }
 
     @Test
     void shouldCallGetWithCorrectRef() {
         final ManifestRef ref = new ManifestRef.FromString("get");
-        this.mnfs.get(ref).toCompletableFuture().join();
+        final CaptureGetManifests fake = new CaptureGetManifests();
+        new ReadWriteManifests(fake, new CapturePutManifests()).get(ref)
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            this.getmnf.ref(),
+            fake.ref(),
             new IsEqual<>(ref)
         );
     }
@@ -79,19 +61,47 @@ final class ReadWriteManifestsTest {
     void shouldCallPutPassingCorrectData() {
         final byte[] data = "data".getBytes();
         final ManifestRef ref = new ManifestRef.FromString("ref");
-        this.mnfs.put(
+        final CapturePutManifests fake = new CapturePutManifests();
+        new ReadWriteManifests(new CaptureGetManifests(), fake).put(
             ref,
             new Content.From(data)
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
             "ManifestRef from put method is wrong.",
-            this.putmnf.ref(),
+            fake.ref(),
             new IsEqual<>(ref)
         );
         MatcherAssert.assertThat(
             "Size of content from put method is wrong.",
-            this.putmnf.content().size().get(),
+            fake.content().size().get(),
             new IsEqual<>((long) data.length)
+        );
+    }
+
+    @Test
+    void shouldDelegateTags() {
+        final Optional<Tag> from = Optional.of(new Tag.Valid("foo"));
+        final int limit = 123;
+        final Tags tags = () -> new Content.From("{...}".getBytes());
+        final FullTagsManifests fake = new FullTagsManifests(tags);
+        final Tags result = new ReadWriteManifests(
+            fake,
+            new CapturePutManifests()
+        ).tags(from, limit).toCompletableFuture().join();
+        MatcherAssert.assertThat(
+            "Forwards from",
+            fake.capturedFrom(),
+            new IsEqual<>(from)
+        );
+        MatcherAssert.assertThat(
+            "Forwards limit",
+            fake.capturedLimit(),
+            new IsEqual<>(limit)
+        );
+        MatcherAssert.assertThat(
+            "Returns tags",
+            result,
+            new IsEqual<>(tags)
         );
     }
 
