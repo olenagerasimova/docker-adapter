@@ -50,4 +50,24 @@ class ScopeTest {
             new IsEqual<>("repository:busybox:push")
         );
     }
+
+    @Test
+    void scopeFromString() {
+        final Scope scope = new Scope.FromString("repository:my-alpine:pull");
+        MatcherAssert.assertThat(
+            "Has expected type",
+            scope.type(),
+            new IsEqual<>("repository")
+        );
+        MatcherAssert.assertThat(
+            "Has expected name",
+            scope.name(),
+            new IsEqual<>("my-alpine")
+        );
+        MatcherAssert.assertThat(
+            "Has expected action",
+            scope.action(),
+            new IsEqual<>("pull")
+        );
+    }
 }

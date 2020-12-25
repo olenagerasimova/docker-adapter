@@ -103,6 +103,59 @@ public interface Scope {
     }
 
     /**
+     * Scope created from string.
+     *
+     * @since 0.10
+     */
+    final class FromString implements Scope {
+
+        /**
+         * Source string.
+         */
+        private final String source;
+
+        /**
+         * Ctor.
+         *
+         * @param source Source string.
+         */
+        public FromString(final String source) {
+            this.source = source;
+        }
+
+        @Override
+        public String type() {
+            return this.part(0);
+        }
+
+        @Override
+        public String name() {
+            return this.part(1);
+        }
+
+        @Override
+        public String action() {
+            return this.part(2);
+        }
+
+        /**
+         * Extract part with specified index from source string.
+         *
+         * @param index Zero based index.
+         * @return Part string.
+         */
+        private String part(final int index) {
+            final String[] tokens = this.source.split(":");
+            if (tokens.length <= index) {
+                throw new IllegalStateException(
+                    String.format("Source does not have part %d: %s", index, this.source)
+                );
+            }
+            return tokens[index];
+        }
+    }
+
+    /**
      * Scope for action on repository type resource.
      *
      * @since 0.10
