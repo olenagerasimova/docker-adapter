@@ -26,6 +26,7 @@ package com.artipie.docker.http;
 import com.artipie.docker.RepoName;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.IsEqual;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -68,6 +69,21 @@ class ScopeTest {
             "Has expected action",
             scope.action(),
             new IsEqual<>("pull")
+        );
+    }
+
+    @Test
+    void scopeFromInvalidString() {
+        final Scope scope = new Scope.FromString("something");
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            scope::name,
+            "Name cannot be parsed"
+        );
+        Assertions.assertThrows(
+            IllegalStateException.class,
+            scope::action,
+            "Action cannot be parsed"
         );
     }
 }
