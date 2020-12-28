@@ -48,6 +48,7 @@ final class CacheRepoTest {
     @BeforeEach
     void setUp() {
         this.repo = new CacheRepo(
+            new RepoName.Simple("test"),
             new ProxyRepo(
                 (line, headers, body) -> StandardRs.EMPTY,
                 new RepoName.Simple("test-origin")
