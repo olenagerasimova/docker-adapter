@@ -27,9 +27,11 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
+import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.misc.JoinedTagsSource;
 import com.artipie.docker.ref.ManifestRef;
 import com.jcabi.log.Logger;
 import java.util.Optional;
@@ -41,11 +43,13 @@ import java.util.function.Function;
  * Cache implementation of {@link Repo}.
  *
  * @since 0.3
- * @todo #354:30min Implement tags method in CacheManifests
- *  `tags` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class CacheManifests implements Manifests {
+
+    /**
+     * Repository name.
+     */
+    private final RepoName name;
 
     /**
      * Origin repository.
@@ -60,10 +64,12 @@ public final class CacheManifests implements Manifests {
     /**
      * Ctor.
      *
+     * @param name Repository name.
      * @param origin Origin repository.
      * @param cache Cache repository.
      */
-    public CacheManifests(final Repo origin, final Repo cache) {
+    public CacheManifests(final RepoName name, final Repo origin, final Repo cache) {
+        this.name = name;
         this.origin = origin;
         this.cache = cache;
     }
@@ -95,7 +101,9 @@ public final class CacheManifests implements Manifests {
 
     @Override
     public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
-        throw new UnsupportedOperationException();
+        return new JoinedTagsSource(
+            this.name, from, limit, this.origin.manifests(), this.cache.manifests()
+        ).tags();
     }
 
     /**

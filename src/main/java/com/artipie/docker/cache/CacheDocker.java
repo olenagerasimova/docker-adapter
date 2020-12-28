@@ -61,7 +61,7 @@ public final class CacheDocker implements Docker {
 
     @Override
     public Repo repo(final RepoName name) {
-        return new CacheRepo(this.origin.repo(name), this.cache.repo(name));
+        return new CacheRepo(name, this.origin.repo(name), this.cache.repo(name));
     }
 
     @Override
