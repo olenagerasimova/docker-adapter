@@ -26,7 +26,6 @@ package com.artipie.docker.http;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.http.Response;
-import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqParams;
@@ -44,6 +43,7 @@ import org.reactivestreams.Publisher;
  * See <a href="https://docs.docker.com/registry/spec/api/#catalog">Catalog</a>.
  *
  * @since 0.8
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class CatalogEntity {
 
@@ -63,7 +63,7 @@ final class CatalogEntity {
      *
      * @since 0.8
      */
-    public static class Get implements Slice {
+    public static class Get implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -77,6 +77,11 @@ final class CatalogEntity {
          */
         Get(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Registry("catalog", "*");
         }
 
         @Override

@@ -24,7 +24,6 @@
 package com.artipie.docker.http;
 
 import com.artipie.http.Response;
-import com.artipie.http.Slice;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithHeaders;
 import com.artipie.http.rs.RsWithStatus;
@@ -40,12 +39,17 @@ import org.reactivestreams.Publisher;
  * @since 0.1
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
-public final class BaseEntity implements Slice {
+public final class BaseEntity implements ScopeSlice {
 
     /**
      * RegEx pattern for path.
      */
     public static final Pattern PATH = Pattern.compile("^/v2/$");
+
+    @Override
+    public Scope scope(final String line) {
+        return new Scope.Registry("base", "*");
+    }
 
     @Override
     public Response response(

@@ -31,7 +31,6 @@ import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Response;
-import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.headers.ContentType;
@@ -74,7 +73,7 @@ final class ManifestEntity {
      *
      * @since 0.2
      */
-    public static class Head implements Slice {
+    public static class Head implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -88,6 +87,11 @@ final class ManifestEntity {
          */
         Head(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(new Request(line).name());
         }
 
         @Override
@@ -123,7 +127,7 @@ final class ManifestEntity {
      *
      * @since 0.2
      */
-    public static class Get implements Slice {
+    public static class Get implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -137,6 +141,11 @@ final class ManifestEntity {
          */
         Get(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(new Request(line).name());
         }
 
         @Override
@@ -169,7 +178,7 @@ final class ManifestEntity {
      *
      * @since 0.2
      */
-    public static class Put implements Slice {
+    public static class Put implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -183,6 +192,11 @@ final class ManifestEntity {
          */
         Put(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Push(new Request(line).name());
         }
 
         @Override

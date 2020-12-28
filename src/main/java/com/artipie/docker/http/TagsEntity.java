@@ -28,7 +28,6 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Response;
-import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rq.RequestLineFrom;
 import com.artipie.http.rq.RqParams;
@@ -66,7 +65,7 @@ final class TagsEntity {
      *
      * @since 0.8
      */
-    public static class Get implements Slice {
+    public static class Get implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -83,6 +82,11 @@ final class TagsEntity {
         }
 
         @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(name(line));
+        }
+
+        @Override
         public Response response(
             final String line,
             final Iterable<Map.Entry<String, String>> headers,
@@ -90,9 +94,7 @@ final class TagsEntity {
         ) {
             final RqParams params = new RqParams(new RequestLineFrom(line).uri().getQuery());
             return new AsyncResponse(
-                this.docker.repo(
-                    new RepoName.Valid(new RqByRegex(line, TagsEntity.PATH).path().group("name"))
-                ).manifests().tags(
+                this.docker.repo(name(line)).manifests().tags(
                     params.value("last").map(Tag.Valid::new),
                     params.value("n").map(Integer::parseInt).orElse(Integer.MAX_VALUE)
                 ).thenApply(
@@ -105,6 +107,16 @@ final class TagsEntity {
                     )
                 )
             );
+        }
+
+        /**
+         * Extract repository name from HTTP request line.
+         *
+         * @param line Request line.
+         * @return Repository name.
+         */
+        private static RepoName.Valid name(final String line) {
+            return new RepoName.Valid(new RqByRegex(line, TagsEntity.PATH).path().group("name"));
         }
     }
 }
