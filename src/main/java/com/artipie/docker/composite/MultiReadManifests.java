@@ -25,9 +25,11 @@ package com.artipie.docker.composite;
 
 import com.artipie.asto.Content;
 import com.artipie.docker.Manifests;
+import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
 import com.artipie.docker.manifest.Manifest;
+import com.artipie.docker.misc.JoinedTagsSource;
 import com.artipie.docker.ref.ManifestRef;
 import com.jcabi.log.Logger;
 import java.util.List;
@@ -41,11 +43,13 @@ import java.util.stream.Collectors;
  * Multi-read {@link Manifests} implementation.
  *
  * @since 0.3
- * @todo #354:30min Implement tags method in MultiReadManifests
- *  `tags` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class MultiReadManifests implements Manifests {
+
+    /**
+     * Repository name.
+     */
+    private final RepoName name;
 
     /**
      * Manifests for reading.
@@ -55,9 +59,11 @@ public final class MultiReadManifests implements Manifests {
     /**
      * Ctor.
      *
+     * @param name Repository name.
      * @param manifests Manifests for reading.
      */
-    public MultiReadManifests(final List<Manifests> manifests) {
+    public MultiReadManifests(final RepoName name, final List<Manifests> manifests) {
+        this.name = name;
         this.manifests = manifests;
     }
 
@@ -92,7 +98,7 @@ public final class MultiReadManifests implements Manifests {
 
     @Override
     public CompletionStage<Tags> tags(final Optional<Tag> from, final int limit) {
-        throw new UnsupportedOperationException();
+        return new JoinedTagsSource(this.name, this.manifests, from, limit).tags();
     }
 
     /**
