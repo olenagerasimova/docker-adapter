@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.5
  */
+@SuppressWarnings("PMD.TooManyMethods")
 final class AstoUploadsTest {
     /**
      * Slice being tested.
@@ -101,6 +102,16 @@ final class AstoUploadsTest {
                 .toCompletableFuture().join()
                 .get().uuid(),
             new IsEqual<>(uuid)
+        );
+    }
+
+    @Test
+    void shouldNotFindUploadByEmptyUuid() {
+        MatcherAssert.assertThat(
+            this.uploads.get("")
+                .toCompletableFuture().join()
+                .isPresent(),
+            new IsEqual<>(false)
         );
     }
 

@@ -29,6 +29,7 @@ import com.artipie.docker.Upload;
 import com.artipie.docker.Uploads;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -75,16 +76,24 @@ public final class AstoUploads implements Uploads {
 
     @Override
     public CompletionStage<Optional<Upload>> get(final String uuid) {
-        return this.asto.list(this.layout.upload(this.name, uuid)).thenApply(
-            list -> {
-                final Optional<Upload> upload;
-                if (list.isEmpty()) {
-                    upload = Optional.empty();
-                } else {
-                    upload = Optional.of(new AstoUpload(this.asto, this.layout, this.name, uuid));
+        final CompletableFuture<Optional<Upload>> result;
+        if (uuid.isEmpty()) {
+            result = CompletableFuture.completedFuture(Optional.empty());
+        } else {
+            result = this.asto.list(this.layout.upload(this.name, uuid)).thenApply(
+                list -> {
+                    final Optional<Upload> upload;
+                    if (list.isEmpty()) {
+                        upload = Optional.empty();
+                    } else {
+                        upload = Optional.of(
+                            new AstoUpload(this.asto, this.layout, this.name, uuid)
+                        );
+                    }
+                    return upload;
                 }
-                return upload;
-            }
-        );
+            );
+        }
+        return result;
     }
 }

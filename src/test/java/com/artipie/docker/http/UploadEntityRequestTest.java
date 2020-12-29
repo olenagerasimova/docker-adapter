@@ -79,6 +79,17 @@ class UploadEntityRequestTest {
     }
 
     @Test
+    void shouldReadEmptyUuid() {
+        final UploadEntity.Request request = new UploadEntity.Request(
+            new RequestLine(RqMethod.PATCH, "/v2/my-repo/blobs/uploads//123").toString()
+        );
+        MatcherAssert.assertThat(
+            request.uuid(),
+            new IsEqual<>("")
+        );
+    }
+
+    @Test
     void shouldReadDigest() {
         final UploadEntity.Request request = new UploadEntity.Request(
             new RequestLine(
