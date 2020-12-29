@@ -73,6 +73,7 @@ public final class MultiReadDocker implements Docker {
     @Override
     public Repo repo(final RepoName name) {
         return new MultiReadRepo(
+            name,
             this.dockers.stream().map(docker -> docker.repo(name)).collect(Collectors.toList())
         );
     }
