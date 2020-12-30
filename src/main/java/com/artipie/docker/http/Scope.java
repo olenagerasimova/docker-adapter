@@ -232,4 +232,48 @@ public interface Scope {
             }
         }
     }
+
+    /**
+     * Scope for action on registry type resource, such as reading repositories catalog.
+     *
+     * @since 0.11
+     */
+    final class Registry implements Scope {
+
+        /**
+         * Resource name.
+         */
+        private final String name;
+
+        /**
+         * Resource action.
+         */
+        private final String action;
+
+        /**
+         * Ctor.
+         *
+         * @param name Resource name.
+         * @param action Resource action.
+         */
+        public Registry(final String name, final String action) {
+            this.name = name;
+            this.action = action;
+        }
+
+        @Override
+        public String type() {
+            return "registry";
+        }
+
+        @Override
+        public String name() {
+            return this.name;
+        }
+
+        @Override
+        public String action() {
+            return this.action;
+        }
+    }
 }

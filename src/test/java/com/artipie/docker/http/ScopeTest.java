@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 class ScopeTest {
 
     @Test
-    void pullScope() {
+    void repositoryPullScope() {
         MatcherAssert.assertThat(
             new Scope.Repository.Pull(new RepoName.Valid("samalba/my-app")).string(),
             new IsEqual<>("repository:samalba/my-app:pull")
@@ -45,10 +45,18 @@ class ScopeTest {
     }
 
     @Test
-    void pushScope() {
+    void repositoryPushScope() {
         MatcherAssert.assertThat(
             new Scope.Repository.Push(new RepoName.Valid("busybox")).string(),
             new IsEqual<>("repository:busybox:push")
+        );
+    }
+
+    @Test
+    void registryScope() {
+        MatcherAssert.assertThat(
+            new Scope.Registry("catalog", "*").string(),
+            new IsEqual<>("registry:catalog:*")
         );
     }
 
