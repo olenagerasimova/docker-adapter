@@ -33,16 +33,16 @@ import java.util.Map;
 import org.reactivestreams.Publisher;
 
 /**
- * Slice that implements authorization for {@link SecureSlice}.
+ * Slice that implements authorization for {@link ScopeSlice}.
  *
  * @since 0.11
  */
-final class AuthSecureSlice implements Slice {
+final class AuthScopeSlice implements Slice {
 
     /**
      * Origin.
      */
-    private final SecureSlice origin;
+    private final ScopeSlice origin;
 
     /**
      * Authentication scheme.
@@ -61,8 +61,8 @@ final class AuthSecureSlice implements Slice {
      * @param auth Authentication scheme.
      * @param perms Access permissions.
      */
-    AuthSecureSlice(
-        final SecureSlice origin,
+    AuthScopeSlice(
+        final ScopeSlice origin,
         final AuthScheme auth,
         final Permissions perms
     ) {

@@ -30,7 +30,7 @@ import com.artipie.http.Slice;
  *
  * @since 0.11
  */
-public interface SecureSlice extends Slice {
+public interface ScopeSlice extends Slice {
 
     /**
      * Evaluate authentication scope from HTTP request line.

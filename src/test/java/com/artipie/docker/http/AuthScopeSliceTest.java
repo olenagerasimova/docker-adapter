@@ -40,11 +40,11 @@ import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
 
 /**
- * Tests for {@link AuthSecureSlice}.
+ * Tests for {@link AuthScopeSlice}.
  *
  * @since 0.11
  */
-class AuthSecureSliceTest {
+class AuthScopeSliceTest {
 
     @Test
     void testScope() {
@@ -52,8 +52,8 @@ class AuthSecureSliceTest {
         final String action = "foo:bar:baz";
         final AtomicReference<String> caction = new AtomicReference<>();
         final AtomicReference<String> cline = new AtomicReference<>();
-        new AuthSecureSlice(
-            new SecureSlice() {
+        new AuthScopeSlice(
+            new ScopeSlice() {
                 @Override
                 public Scope scope(final String rqline) {
                     cline.set(rqline);
@@ -90,7 +90,7 @@ class AuthSecureSliceTest {
             (status, headers, body) -> CompletableFuture.allOf()
         ).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            "Request line passed to secure slice",
+            "Request line passed to slice",
             cline.get(),
             new IsEqual<>(line)
         );
