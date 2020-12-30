@@ -36,9 +36,6 @@ import java.util.concurrent.CompletionStage;
 /**
  * Asto {@link Docker} implementation.
  * @since 0.1
- * @todo #354:30min Implement catalog method in AstoDocker
- *  `catalog` method was added without proper implementation as placeholder.
- *  Method should be implemented and covered with unit tests.
  */
 public final class AstoDocker implements Docker {
 
