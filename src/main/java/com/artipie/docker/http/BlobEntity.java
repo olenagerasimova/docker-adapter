@@ -30,7 +30,6 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.error.BlobUnknownError;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Response;
-import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.headers.ContentType;
@@ -50,6 +49,7 @@ import org.reactivestreams.Publisher;
  * See <a href="https://docs.docker.com/registry/spec/api/#blob">Blob</a>.
  *
  * @since 0.2
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class BlobEntity {
 
@@ -71,7 +71,7 @@ final class BlobEntity {
      *
      * @since 0.2
      */
-    static final class Get implements Slice {
+    static final class Get implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -85,6 +85,11 @@ final class BlobEntity {
          */
         Get(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(new Request(line).name());
         }
 
         @Override
@@ -124,7 +129,7 @@ final class BlobEntity {
      *
      * @since 0.2
      */
-    static final class Head implements Slice {
+    static final class Head implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -138,6 +143,11 @@ final class BlobEntity {
          */
         Head(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(new Request(line).name());
         }
 
         @Override

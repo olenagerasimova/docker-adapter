@@ -31,7 +31,6 @@ import com.artipie.docker.error.UploadUnknownError;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Connection;
 import com.artipie.http.Response;
-import com.artipie.http.Slice;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.headers.Header;
@@ -78,7 +77,7 @@ public final class UploadEntity {
      *
      * @since 0.2
      */
-    public static final class Post implements Slice {
+    public static final class Post implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -92,6 +91,11 @@ public final class UploadEntity {
          */
         Post(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Push(new Request(line).name());
         }
 
         @Override
@@ -160,7 +164,7 @@ public final class UploadEntity {
      *
      * @since 0.2
      */
-    public static final class Patch implements Slice {
+    public static final class Patch implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -174,6 +178,11 @@ public final class UploadEntity {
          */
         Patch(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Push(new Request(line).name());
         }
 
         @Override
@@ -209,7 +218,7 @@ public final class UploadEntity {
      *  match. There is no direct answer in docs, so this should be check experimentally with real
      *  docker registry.
      */
-    public static final class Put implements Slice {
+    public static final class Put implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -223,6 +232,11 @@ public final class UploadEntity {
          */
         Put(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Push(new Request(line).name());
         }
 
         @Override
@@ -262,7 +276,7 @@ public final class UploadEntity {
      *
      * @since 0.3
      */
-    public static final class Get implements Slice {
+    public static final class Get implements ScopeSlice {
 
         /**
          * Docker repository.
@@ -276,6 +290,11 @@ public final class UploadEntity {
          */
         Get(final Docker docker) {
             this.docker = docker;
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.Pull(new Request(line).name());
         }
 
         @Override

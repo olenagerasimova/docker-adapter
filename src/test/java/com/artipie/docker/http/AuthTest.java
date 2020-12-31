@@ -32,7 +32,6 @@ import com.artipie.http.Slice;
 import com.artipie.http.auth.Authentication;
 import com.artipie.http.auth.BasicAuthScheme;
 import com.artipie.http.auth.BearerAuthScheme;
-import com.artipie.http.auth.JoinedPermissions;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Authorization;
 import com.artipie.http.hm.RsHasStatus;
@@ -56,21 +55,14 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @since 0.8
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class AuthTest {
-
-    /**
-     * Permissions used in tests.
-     */
-    private static final JoinedPermissions PERMISSIONS = new JoinedPermissions(
-        new Permissions.Single(TestAuthentication.ALICE.name(), "read"),
-        new Permissions.Single(TestAuthentication.BOB.name(), "write")
-    );
 
     @ParameterizedTest
     @MethodSource("setups")
     void shouldReturnUnauthorizedWhenNoAuth(final Method method, final RequestLine line) {
         MatcherAssert.assertThat(
-            method.slice().response(line.toString(), Headers.EMPTY, Content.EMPTY),
+            method.slice("whatever").response(line.toString(), Headers.EMPTY, Content.EMPTY),
             new IsUnauthorizedResponse()
         );
     }
@@ -79,7 +71,7 @@ public final class AuthTest {
     @MethodSource("setups")
     void shouldReturnUnauthorizedWhenUserIsUnknown(final Method method, final RequestLine line) {
         MatcherAssert.assertThat(
-            method.slice().response(
+            method.slice("whatever").response(
                 line.toString(),
                 method.headers(new TestAuthentication.User("chuck", "letmein")),
                 Content.EMPTY
@@ -93,12 +85,12 @@ public final class AuthTest {
     void shouldReturnForbiddenWhenUserHasNoRequiredPermissions(
         final Method method,
         final RequestLine line,
-        final TestAuthentication.User user
+        final String action
     ) {
         MatcherAssert.assertThat(
-            method.slice().response(
+            method.slice(action).response(
                 line.toString(),
-                method.headers(this.anotherUser(user)),
+                method.headers(TestAuthentication.BOB),
                 Content.EMPTY
             ),
             new IsDeniedResponse()
@@ -110,11 +102,11 @@ public final class AuthTest {
     void shouldNotReturnUnauthorizedOrForbiddenWhenUserHasPermissions(
         final Method method,
         final RequestLine line,
-        final TestAuthentication.User user
+        final String action
     ) {
-        final Response response = method.slice().response(
+        final Response response = method.slice(action).response(
             line.toString(),
-            method.headers(user),
+            method.headers(TestAuthentication.ALICE),
             Content.EMPTY
         );
         MatcherAssert.assertThat(
@@ -128,53 +120,73 @@ public final class AuthTest {
         );
     }
 
-    private TestAuthentication.User anotherUser(final TestAuthentication.User user) {
-        final TestAuthentication.User result;
-        if (user == TestAuthentication.ALICE) {
-            result = TestAuthentication.BOB;
-        } else if (user == TestAuthentication.BOB) {
-            result = TestAuthentication.ALICE;
-        } else {
-            throw new IllegalArgumentException();
-        }
-        return result;
-    }
-
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static Stream<Arguments> setups() {
         return Stream.of(new Basic(), new Bearer()).flatMap(AuthTest::setups);
     }
 
     private static Stream<Arguments> setups(final Method method) {
-        return Stream.concat(
-            readEndpoints().map(
-                line -> Arguments.of(method, line, TestAuthentication.ALICE)
+        return Stream.of(
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.GET, "/v2/"),
+                "registry:base:*"
             ),
-            writeEndpoints().map(
-                line -> Arguments.of(method, line, TestAuthentication.BOB)
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/1"),
+                "repository:my-alpine:pull"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/2"),
+                "repository:my-alpine:pull"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
+                "repository:my-alpine:push"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list"),
+                "repository:my-alpine:pull"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.HEAD, "/v2/my-alpine/blobs/sha256:123"),
+                "repository:my-alpine:pull"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/sha256:012345"),
+                "repository:my-alpine:pull"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.POST, "/v2/my-alpine/blobs/uploads/"),
+                "repository:my-alpine:push"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.PATCH, "/v2/my-alpine/blobs/uploads/123"),
+                "repository:my-alpine:push"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.PUT, "/v2/my-alpine/blobs/uploads/12345"),
+                "repository:my-alpine:push"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/uploads/112233"),
+                "repository:my-alpine:pull"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.GET, "/v2/_catalog"),
+                "registry:catalog:*"
             )
-        );
-    }
-
-    private static Stream<RequestLine> readEndpoints() {
-        return Stream.of(
-            new RequestLine(RqMethod.GET, "/v2/"),
-            new RequestLine(RqMethod.HEAD, "/v2/test/blobs/sha256:123"),
-            new RequestLine(RqMethod.GET, "/v2/test/blobs/sha256:012345"),
-            new RequestLine(RqMethod.HEAD, "/v2/my-alpine/manifests/1"),
-            new RequestLine(RqMethod.GET, "/v2/my-alpine/manifests/2"),
-            new RequestLine(RqMethod.GET, "/v2/my-alpine/tags/list"),
-            new RequestLine(RqMethod.GET, "/v2/my-alpine/blobs/uploads/112233"),
-            new RequestLine(RqMethod.GET, "/v2/_catalog")
-        );
-    }
-
-    private static Stream<RequestLine> writeEndpoints() {
-        return Stream.of(
-            new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
-            new RequestLine(RqMethod.POST, "/v2/my-alpine/blobs/uploads/"),
-            new RequestLine(RqMethod.PATCH, "/v2/my-alpine/blobs/uploads/123"),
-            new RequestLine(RqMethod.PUT, "/v2/my-alpine/blobs/uploads/12345")
         );
     }
 
@@ -185,7 +197,7 @@ public final class AuthTest {
      */
     private interface Method {
 
-        Slice slice();
+        Slice slice(String action);
 
         Headers headers(TestAuthentication.User user);
 
@@ -199,10 +211,10 @@ public final class AuthTest {
     private static final class Basic implements Method {
 
         @Override
-        public Slice slice() {
+        public Slice slice(final String action) {
             return new DockerSlice(
                 new AstoDocker(new InMemoryStorage()),
-                AuthTest.PERMISSIONS,
+                new Permissions.Single(TestAuthentication.ALICE.name(), action),
                 new BasicAuthScheme(new TestAuthentication())
             );
         }
@@ -226,10 +238,10 @@ public final class AuthTest {
     private static final class Bearer implements Method {
 
         @Override
-        public Slice slice() {
+        public Slice slice(final String action) {
             return new DockerSlice(
                 new AstoDocker(new InMemoryStorage()),
-                AuthTest.PERMISSIONS,
+                new Permissions.Single(TestAuthentication.ALICE.name(), action),
                 new BearerAuthScheme(
                     token -> CompletableFuture.completedFuture(
                         Stream.of(TestAuthentication.ALICE, TestAuthentication.BOB)
