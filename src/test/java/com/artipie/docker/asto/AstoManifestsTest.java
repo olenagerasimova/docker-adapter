@@ -28,7 +28,6 @@ import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Blob;
-import com.artipie.docker.Digest;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
@@ -99,11 +98,9 @@ final class AstoManifestsTest {
     @Test
     @Timeout(5)
     void shouldReadAddedManifest() {
-        final byte[] conf = "config".getBytes();
-        final Blob config = this.blobs.put(new Content.From(conf), new Digest.Sha256(conf))
+        final Blob config = this.blobs.put(new TrustedBlobSource("config".getBytes()))
             .toCompletableFuture().join();
-        final byte[] lyr = "layer".getBytes();
-        final Blob layer = this.blobs.put(new Content.From(lyr), new Digest.Sha256(lyr))
+        final Blob layer = this.blobs.put(new TrustedBlobSource("layer".getBytes()))
             .toCompletableFuture().join();
         final byte[] data = Json.createObjectBuilder()
             .add(

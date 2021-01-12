@@ -21,43 +21,58 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
-import com.artipie.docker.Blob;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.docker.Digest;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker registry blob store.
- * @since 0.1
+ * BlobSource which content is trusted and does not require digest validation.
+ *
+ * @since 0.12
  */
-public interface BlobStore {
+public final class TrustedBlobSource implements BlobSource {
 
     /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
+     * Blob digest.
      */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
+    private final Digest dig;
 
     /**
-     * Put data into blob store and calculate its digest.
-     * This method is obsolete, use {@link BlobStore#put(BlobSource)} instead.
-     * @param blob Data flow
-     * @param digest Digest of the data
-     * @return Future with digest
+     * Blob content.
      */
-    CompletionStage<Blob> put(Content blob, Digest digest);
+    private final Content content;
 
     /**
-     * Put blob into the store from source.
+     * Ctor.
      *
-     * @param source Blob source.
-     * @return Added blob.
+     * @param bytes Blob bytes.
      */
-    CompletionStage<Blob> put(BlobSource source);
-}
+    public TrustedBlobSource(final byte[] bytes) {
+        this(new Content.From(bytes), new Digest.Sha256(bytes));
+    }
 
+    /**
+     * Ctor.
+     *
+     * @param content Blob content.
+     * @param dig Blob digest.
+     */
+    public TrustedBlobSource(final Content content, final Digest dig) {
+        this.dig = dig;
+        this.content = content;
+    }
+
+    @Override
+    public Digest digest() {
+        return this.dig;
+    }
+
+    @Override
+    public CompletionStage<Void> saveTo(final Storage storage, final Key key) {
+        return storage.save(key, this.content);
+    }
+}
