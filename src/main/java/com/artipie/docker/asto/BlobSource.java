@@ -21,43 +21,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Content;
-import com.artipie.docker.Blob;
+import com.artipie.asto.Key;
+import com.artipie.asto.Storage;
 import com.artipie.docker.Digest;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Docker registry blob store.
- * @since 0.1
+ * Source of blob that could be saved to {@link Storage} at desired location.
+ *
+ * @since 0.12
  */
-public interface BlobStore {
+public interface BlobSource {
 
     /**
-     * Load blob by digest.
-     * @param digest Blob digest
-     * @return Async publisher output
-     */
-    CompletionStage<Optional<Blob>> blob(Digest digest);
-
-    /**
-     * Put data into blob store and calculate its digest.
-     * This method is obsolete, use {@link BlobStore#put(BlobSource)} instead.
-     * @param blob Data flow
-     * @param digest Digest of the data
-     * @return Future with digest
-     */
-    CompletionStage<Blob> put(Content blob, Digest digest);
-
-    /**
-     * Put blob into the store from source.
+     * Blob digest.
      *
-     * @param source Blob source.
-     * @return Added blob.
+     * @return Digest.
      */
-    CompletionStage<Blob> put(BlobSource source);
-}
+    Digest digest();
 
+    /**
+     * Save blob to storage.
+     *
+     * @param storage Storage.
+     * @param key Destination for blob content.
+     * @return Completion of save operation.
+     */
+    CompletionStage<Void> saveTo(Storage storage, Key key);
+}

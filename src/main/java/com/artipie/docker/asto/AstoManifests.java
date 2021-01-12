@@ -95,16 +95,13 @@ public final class AstoManifests implements Manifests {
     @Override
     public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
         return new PublisherAs(content).bytes().thenCompose(
-            bytes -> {
-                final Digest digest = new Digest.Sha256(bytes);
-                return this.blobs.put(new Content.From(bytes), digest)
-                    .thenApply(blob -> new JsonManifest(digest, bytes))
-                    .thenCompose(
-                        manifest -> this.validate(manifest)
-                            .thenCompose(nothing -> this.addManifestLinks(ref, digest))
-                            .thenApply(nothing -> manifest)
-                    );
-            }
+            bytes -> this.blobs.put(new TrustedBlobSource(bytes))
+                .thenApply(blob -> new JsonManifest(blob.digest(), bytes))
+                .thenCompose(
+                    manifest -> this.validate(manifest)
+                        .thenCompose(nothing -> this.addManifestLinks(ref, manifest.digest()))
+                        .thenApply(nothing -> manifest)
+                )
         );
     }
 

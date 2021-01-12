@@ -124,4 +124,13 @@ public final class AstoBlobs implements BlobStore {
             }
         ).thenApply(nothing -> new AstoBlob(this.asto, key, digest));
     }
+
+    @Override
+    public CompletionStage<Blob> put(final BlobSource source) {
+        final Digest digest = source.digest();
+        final Key key = this.layout.blob(this.name, digest);
+        return source.saveTo(this.asto, key).thenApply(
+            nothing -> new AstoBlob(this.asto, key, digest)
+        );
+    }
 }
