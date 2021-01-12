@@ -26,22 +26,12 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.Digests;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
-import com.artipie.docker.error.InvalidDigestException;
-import io.reactivex.Flowable;
-import java.nio.ByteBuffer;
-import java.security.MessageDigest;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.cactoos.io.BytesOf;
-import org.cactoos.text.HexOf;
-import org.reactivestreams.Publisher;
 
 /**
  * Asto {@link BlobStore} implementation.
@@ -94,35 +84,7 @@ public final class AstoBlobs implements BlobStore {
 
     @Override
     public CompletionStage<Blob> put(final Content blob, final Digest digest) {
-        final MessageDigest sha = Digests.SHA256.get();
-        final Publisher<ByteBuffer> checked = Flowable.fromPublisher(blob).map(
-            buf -> {
-                sha.update(new Remaining(buf, true).bytes());
-                return buf;
-            }
-        ).doOnComplete(
-            () -> {
-                final String calculated = new HexOf(new BytesOf(sha.digest())).asString();
-                final String expected = digest.hex();
-                if (!expected.equals(calculated)) {
-                    throw new InvalidDigestException(
-                        String.format("calculated: %s expected: %s", calculated, expected)
-                    );
-                }
-            }
-        );
-        final Key key = this.layout.blob(this.name, digest);
-        return this.asto.exists(key).thenCompose(
-            exists -> {
-                final CompletionStage<Void> result;
-                if (exists) {
-                    result = CompletableFuture.allOf();
-                } else {
-                    result = this.asto.save(key, new Content.From(blob.size(), checked));
-                }
-                return result;
-            }
-        ).thenApply(nothing -> new AstoBlob(this.asto, key, digest));
+        return this.put(new CheckedBlobSource(blob, digest));
     }
 
     @Override
