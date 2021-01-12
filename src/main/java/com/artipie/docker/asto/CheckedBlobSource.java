@@ -25,22 +25,23 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
+import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
+import com.artipie.asto.ext.Digests;
 import com.artipie.docker.Digest;
-import java.util.concurrent.CompletableFuture;
+import com.artipie.docker.error.InvalidDigestException;
+import io.reactivex.Flowable;
+import java.security.MessageDigest;
 import java.util.concurrent.CompletionStage;
+import org.cactoos.io.BytesOf;
+import org.cactoos.text.HexOf;
 
 /**
- * BlobSource which content is trusted and does not require digest validation.
+ * BlobSource which content is checked against digest on saving.
  *
  * @since 0.12
  */
-public final class TrustedBlobSource implements BlobSource {
-
-    /**
-     * Blob digest.
-     */
-    private final Digest dig;
+public final class CheckedBlobSource implements BlobSource {
 
     /**
      * Blob content.
@@ -48,13 +49,9 @@ public final class TrustedBlobSource implements BlobSource {
     private final Content content;
 
     /**
-     * Ctor.
-     *
-     * @param bytes Blob bytes.
+     * Blob digest.
      */
-    public TrustedBlobSource(final byte[] bytes) {
-        this(new Content.From(bytes), new Digest.Sha256(bytes));
-    }
+    private final Digest dig;
 
     /**
      * Ctor.
@@ -62,9 +59,9 @@ public final class TrustedBlobSource implements BlobSource {
      * @param content Blob content.
      * @param dig Blob digest.
      */
-    public TrustedBlobSource(final Content content, final Digest dig) {
-        this.dig = dig;
+    public CheckedBlobSource(final Content content, final Digest dig) {
         this.content = content;
+        this.dig = dig;
     }
 
     @Override
@@ -74,16 +71,26 @@ public final class TrustedBlobSource implements BlobSource {
 
     @Override
     public CompletionStage<Void> saveTo(final Storage storage, final Key key) {
-        return storage.exists(key).thenCompose(
-            exists -> {
-                final CompletionStage<Void> result;
-                if (exists) {
-                    result = CompletableFuture.allOf();
-                } else {
-                    result = storage.save(key, this.content);
+        final MessageDigest sha = Digests.SHA256.get();
+        final Content checked = new Content.From(
+            this.content.size(),
+            Flowable.fromPublisher(this.content).map(
+                buf -> {
+                    sha.update(new Remaining(buf, true).bytes());
+                    return buf;
                 }
-                return result;
-            }
+            ).doOnComplete(
+                () -> {
+                    final String calculated = new HexOf(new BytesOf(sha.digest())).asString();
+                    final String expected = this.dig.hex();
+                    if (!expected.equals(calculated)) {
+                        throw new InvalidDigestException(
+                            String.format("calculated: %s expected: %s", calculated, expected)
+                        );
+                    }
+                }
+            )
         );
+        return new TrustedBlobSource(checked, this.dig).saveTo(storage, key);
     }
 }
