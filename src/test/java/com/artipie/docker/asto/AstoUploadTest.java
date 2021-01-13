@@ -23,17 +23,27 @@
  */
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Content;
+import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Layers;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.Upload;
 import io.reactivex.Flowable;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import org.hamcrest.Description;
 import org.hamcrest.MatcherAssert;
+import org.hamcrest.TypeSafeMatcher;
 import org.hamcrest.collection.IsEmptyCollection;
 import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsInstanceOf;
@@ -94,8 +104,8 @@ class AstoUploadTest {
         this.upload.start().toCompletableFuture().join();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new PublisherAs(this.contentFromUpload()).bytes().toCompletableFuture().join(),
-            new IsEqual<>(chunk)
+            this.upload,
+            new IsUploadWithContent(chunk)
         );
     }
 
@@ -128,8 +138,8 @@ class AstoUploadTest {
         final byte[] chunk = "content".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new PublisherAs(this.contentFromUpload()).bytes().toCompletableFuture().join(),
-            new IsEqual<>(chunk)
+            this.upload,
+            new IsUploadWithContent(chunk)
         );
     }
 
@@ -138,7 +148,8 @@ class AstoUploadTest {
         this.upload.start().toCompletableFuture().join();
         final byte[] chunk = "some bytes".getBytes();
         this.upload.append(Flowable.just(ByteBuffer.wrap(chunk))).toCompletableFuture().get();
-        this.upload.delete().toCompletableFuture().get();
+        this.upload.putTo(new CapturePutLayers(), new Digest.Sha256(chunk))
+            .toCompletableFuture().get();
         MatcherAssert.assertThat(
             this.storage.list(this.upload.root()).get(),
             new IsEmptyCollection<>()
@@ -146,10 +157,71 @@ class AstoUploadTest {
     }
 
     /**
-     * Gets content from upload.
-     * @return Content
+     * Matcher for {@link Upload} content.
+     *
+     * @since 0.12
      */
-    private Content contentFromUpload() {
-        return this.upload.content().toCompletableFuture().join();
+    private static final class IsUploadWithContent extends TypeSafeMatcher<Upload> {
+
+        /**
+         * Expected content.
+         */
+        private final byte[] content;
+
+        private IsUploadWithContent(final byte[] content) {
+            this.content = Arrays.copyOf(content, content.length);
+        }
+
+        @Override
+        public void describeTo(final Description description) {
+            new IsEqual<>(this.content).describeTo(description);
+        }
+
+        @Override
+        public boolean matchesSafely(final Upload upload) {
+            final Digest digest = new Digest.Sha256(this.content);
+            final CapturePutLayers fake = new CapturePutLayers();
+            upload.putTo(fake, digest).toCompletableFuture().join();
+            return new IsEqual<>(this.content).matches(fake.content());
+        }
+    }
+
+    /**
+     * Layers implementation that captures put method content.
+     *
+     * @since 0.12
+     */
+    private static class CapturePutLayers implements Layers {
+
+        /**
+         * Captured put content.
+         */
+        private volatile byte[] ccontent;
+
+        @Override
+        public CompletionStage<Blob> put(final BlobSource source) {
+            final Storage storage = new InMemoryStorage();
+            final Key key = new Key.From("sink");
+            source.saveTo(storage, key).toCompletableFuture().join();
+            this.ccontent = storage.value(key)
+                .thenApply(PublisherAs::new)
+                .thenCompose(PublisherAs::bytes)
+                .toCompletableFuture().join();
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public CompletionStage<Blob> mount(final Blob blob) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompletionStage<Optional<Blob>> get(final Digest digest) {
+            throw new UnsupportedOperationException();
+        }
+
+        public byte[] content() {
+            return this.ccontent;
+        }
     }
 }

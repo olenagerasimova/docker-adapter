@@ -23,7 +23,6 @@
  */
 package com.artipie.docker;
 
-import com.artipie.asto.Content;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
 import org.reactivestreams.Publisher;
@@ -59,13 +58,6 @@ public interface Upload {
     CompletionStage<Long> append(Publisher<ByteBuffer> chunk);
 
     /**
-     * Get uploaded content.
-     *
-     * @return Content.
-     */
-    CompletionStage<Content> content();
-
-    /**
      * Get offset for the uploaded content.
      *
      * @return Offset.
@@ -73,9 +65,12 @@ public interface Upload {
     CompletionStage<Long> offset();
 
     /**
-     * Deletes upload blob data.
+     * Puts uploaded data to {@link Layers} creating a {@link Blob} with specified {@link Digest}.
+     * If upload data mismatch provided digest then error occurs and operation does not complete.
      *
-     * @return Completion or error signal.
+     * @param layers Target layers.
+     * @param digest Expected blob digest.
+     * @return Created blob.
      */
-    CompletionStage<Void> delete();
+    CompletionStage<Blob> putTo(Layers layers, Digest digest);
 }
