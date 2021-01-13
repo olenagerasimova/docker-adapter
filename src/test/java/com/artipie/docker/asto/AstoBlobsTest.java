@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
  * Tests for {@link AstoBlobs}.
  *
  * @since 0.6
+ * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
  */
 final class AstoBlobsTest {
 
@@ -54,8 +55,10 @@ final class AstoBlobsTest {
         final AstoBlobs blobs = new AstoBlobs(
             storage, new DefaultLayout(), new RepoName.Simple("any")
         );
-        blobs.put(new Content.From(bytes), digest).toCompletableFuture().join();
-        blobs.put(new Content.From(bytes), digest).toCompletableFuture().join();
+        blobs.put(new TrustedBlobSource(new Content.From(bytes), digest))
+            .toCompletableFuture().join();
+        blobs.put(new TrustedBlobSource(new Content.From(bytes), digest))
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(storage.saves, new IsEqual<>(1));
     }
 

@@ -27,6 +27,8 @@ import com.artipie.asto.Content;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
+import com.artipie.docker.asto.BlobSource;
+import com.artipie.docker.asto.TrustedBlobSource;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -56,22 +58,13 @@ final class ReadWriteLayersTest {
 
     @Test
     void shouldCallPutPassingCorrectData() {
-        final byte[] data = "data".getBytes();
-        final Digest digest = new Digest.FromString("sha256:123");
         final CapturePutLayers fake = new CapturePutLayers();
-        new ReadWriteLayers(new CaptureGetLayers(), fake).put(
-            new Content.From(data),
-            digest
-        ).toCompletableFuture().join();
+        final TrustedBlobSource source = new TrustedBlobSource("data".getBytes());
+        new ReadWriteLayers(new CaptureGetLayers(), fake).put(source)
+            .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            "Digest from put method is wrong.",
-            fake.digest(),
-            new IsEqual<>(digest)
-        );
-        MatcherAssert.assertThat(
-            "Size of content from put method is wrong.",
-            fake.content().size().get(),
-            new IsEqual<>((long) data.length)
+            fake.source(),
+            new IsEqual<>(source)
         );
     }
 
@@ -107,7 +100,7 @@ final class ReadWriteLayersTest {
         private volatile Digest digestcheck;
 
         @Override
-        public CompletionStage<Blob> put(final Content content, final Digest digest) {
+        public CompletionStage<Blob> put(final BlobSource source) {
             throw new UnsupportedOperationException();
         }
 
@@ -135,19 +128,13 @@ final class ReadWriteLayersTest {
      */
     private static class CapturePutLayers implements Layers {
         /**
-         * Layer digest.
+         * Captured source.
          */
-        private volatile Digest digestcheck;
-
-        /**
-         * Layer content.
-         */
-        private volatile Content contentcheck;
+        private volatile BlobSource csource;
 
         @Override
-        public CompletionStage<Blob> put(final Content content, final Digest digest) {
-            this.digestcheck = digest;
-            this.contentcheck = content;
+        public CompletionStage<Blob> put(final BlobSource source) {
+            this.csource = source;
             return CompletableFuture.completedFuture(null);
         }
 
@@ -161,12 +148,8 @@ final class ReadWriteLayersTest {
             throw new UnsupportedOperationException();
         }
 
-        public Digest digest() {
-            return this.digestcheck;
-        }
-
-        public Content content() {
-            return this.contentcheck;
+        public BlobSource source() {
+            return this.csource;
         }
     }
 
@@ -193,7 +176,7 @@ final class ReadWriteLayersTest {
         }
 
         @Override
-        public CompletionStage<Blob> put(final Content content, final Digest digest) {
+        public CompletionStage<Blob> put(final BlobSource source) {
             throw new UnsupportedOperationException();
         }
 

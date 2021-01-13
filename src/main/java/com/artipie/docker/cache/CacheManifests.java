@@ -30,6 +30,7 @@ import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
+import com.artipie.docker.asto.CheckedBlobSource;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.misc.JoinedTagsSource;
 import com.artipie.docker.ref.ManifestRef;
@@ -154,7 +155,7 @@ public final class CacheManifests implements Manifests {
                 return blob.get().content();
             }
         ).thenCompose(
-            content -> this.cache.layers().put(content, digest)
+            content -> this.cache.layers().put(new CheckedBlobSource(content, digest))
         ).thenCompose(
             blob -> CompletableFuture.allOf()
         );

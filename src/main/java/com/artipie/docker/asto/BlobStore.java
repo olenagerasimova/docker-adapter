@@ -24,7 +24,6 @@
 
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Content;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import java.util.Optional;
@@ -42,15 +41,6 @@ public interface BlobStore {
      * @return Async publisher output
      */
     CompletionStage<Optional<Blob>> blob(Digest digest);
-
-    /**
-     * Put data into blob store and calculate its digest.
-     * This method is obsolete, use {@link BlobStore#put(BlobSource)} instead.
-     * @param blob Data flow
-     * @param digest Digest of the data
-     * @return Future with digest
-     */
-    CompletionStage<Blob> put(Content blob, Digest digest);
 
     /**
      * Put blob into the store from source.

@@ -24,7 +24,6 @@
 
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
 import com.artipie.docker.Blob;
@@ -80,11 +79,6 @@ public final class AstoBlobs implements BlobStore {
                 return blob;
             }
         );
-    }
-
-    @Override
-    public CompletionStage<Blob> put(final Content blob, final Digest digest) {
-        return this.put(new CheckedBlobSource(blob, digest));
     }
 
     @Override

@@ -23,13 +23,12 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
-import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.asto.TrustedBlobSource;
 import com.artipie.http.Headers;
 import com.artipie.http.headers.Header;
 import com.artipie.http.hm.ResponseMatcher;
@@ -120,7 +119,7 @@ class ManifestEntityPutTest {
     private Flowable<ByteBuffer> manifest() {
         final byte[] content = "config".getBytes();
         final Blob config = this.docker.repo(new RepoName.Valid("my-alpine")).layers()
-            .put(new Content.From(content), new Digest.Sha256(content))
+            .put(new TrustedBlobSource(content))
             .toCompletableFuture().join();
         final byte[] data = String.format(
             "{\"config\":{\"digest\":\"%s\"},\"layers\":[]}",
