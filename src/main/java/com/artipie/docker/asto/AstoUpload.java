@@ -26,6 +26,9 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Digest;
+import com.artipie.docker.Layers;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Upload;
 import java.nio.ByteBuffer;
@@ -107,24 +110,16 @@ public final class AstoUpload implements Upload {
     }
 
     @Override
-    public CompletionStage<Content> content() {
-        return this.storage.value(this.data());
-    }
-
-    @Override
     public CompletionStage<Long> offset() {
         return this.storage.size(this.data()).thenApply(size -> Math.max(size - 1, 0));
     }
 
     @Override
-    public CompletionStage<Void> delete() {
-        return this.storage.list(this.root())
-            .thenCompose(
-                list -> CompletableFuture.allOf(
-                    list.stream().map(file -> this.storage.delete(file).toCompletableFuture())
-                        .toArray(CompletableFuture[]::new)
-                )
-            );
+    public CompletionStage<Blob> putTo(final Layers layers, final Digest digest) {
+        return this.storage.value(this.data()).thenCompose(
+            content -> layers.put(new CheckedBlobSource(content, digest))
+                .thenCompose(blob -> this.delete().thenApply(nothing -> blob))
+        );
     }
 
     /**
@@ -143,5 +138,20 @@ public final class AstoUpload implements Upload {
      */
     private Key data() {
         return new Key.From(this.root(), "data");
+    }
+
+    /**
+     * Deletes upload blob data.
+     *
+     * @return Completion or error signal.
+     */
+    private CompletionStage<Void> delete() {
+        return this.storage.list(this.root())
+            .thenCompose(
+                list -> CompletableFuture.allOf(
+                    list.stream().map(file -> this.storage.delete(file).toCompletableFuture())
+                        .toArray(CompletableFuture[]::new)
+                )
+            );
     }
 }
