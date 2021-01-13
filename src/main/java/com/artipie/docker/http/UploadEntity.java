@@ -27,6 +27,7 @@ import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.asto.CheckedBlobSource;
 import com.artipie.docker.error.UploadUnknownError;
 import com.artipie.docker.misc.RqByRegex;
 import com.artipie.http.Connection;
@@ -255,7 +256,7 @@ public final class UploadEntity {
                         upload -> new AsyncResponse(
                             upload.content().thenCompose(
                                 content -> repo.layers()
-                                    .put(content, request.digest())
+                                    .put(new CheckedBlobSource(content, request.digest()))
                                     .thenCompose(
                                         blob -> upload.delete().thenApply(
                                             any -> new BlobCreatedResponse(name, request.digest())

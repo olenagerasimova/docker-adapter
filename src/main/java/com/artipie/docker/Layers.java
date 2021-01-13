@@ -24,7 +24,7 @@
 
 package com.artipie.docker;
 
-import com.artipie.asto.Content;
+import com.artipie.docker.asto.BlobSource;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -38,11 +38,10 @@ public interface Layers {
     /**
      * Add layer to repository.
      *
-     * @param content Layer content.
-     * @param digest Layer digest.
+     * @param source Blob source.
      * @return Added layer blob.
      */
-    CompletionStage<Blob> put(Content content, Digest digest);
+    CompletionStage<Blob> put(BlobSource source);
 
     /**
      * Mount blob to repository.
@@ -82,8 +81,8 @@ public interface Layers {
         }
 
         @Override
-        public final CompletionStage<Blob> put(final Content content, final Digest digest) {
-            return this.layers.put(content, digest);
+        public final CompletionStage<Blob> put(final BlobSource source) {
+            return this.layers.put(source);
         }
 
         @Override

@@ -33,7 +33,6 @@ import com.artipie.docker.RepoName;
 import com.artipie.docker.error.InvalidDigestException;
 import com.google.common.base.Throwables;
 import io.reactivex.Flowable;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -58,10 +57,9 @@ final class AstoBlobsITCase {
             new DefaultLayout(),
             new RepoName.Simple("does not matter")
         );
-        final ByteBuffer buf = ByteBuffer.wrap(new byte[]{0x00, 0x01, 0x02, 0x03});
-        final Digest digest = blobs.put(
-            new Content.From(Flowable.fromArray(buf)), new Digest.Sha256(buf.array())
-        ).toCompletableFuture().get().digest();
+        final byte[] bytes = new byte[]{0x00, 0x01, 0x02, 0x03};
+        final Digest digest = blobs.put(new TrustedBlobSource(bytes))
+            .toCompletableFuture().get().digest();
         MatcherAssert.assertThat(
             "Digest alg is not correct",
             digest.alg(), Matchers.equalTo("sha256")
@@ -77,7 +75,7 @@ final class AstoBlobsITCase {
             new BlockingStorage(storage).value(
                 new Key.From(String.format("docker/registry/v2/blobs/sha256/05/%s/data", hash))
             ),
-            Matchers.equalTo(buf.array())
+            Matchers.equalTo(bytes)
         );
     }
 
@@ -87,10 +85,9 @@ final class AstoBlobsITCase {
         final AstoBlobs blobs = new AstoBlobs(
             storage, new DefaultLayout(), new RepoName.Simple("any")
         );
-        final ByteBuffer buf = ByteBuffer.wrap("data".getBytes());
         final String digest = "123";
         blobs.put(
-            new Content.From(Flowable.fromArray(buf)), new Digest.Sha256(digest)
+            new CheckedBlobSource(new Content.From("data".getBytes()), new Digest.Sha256(digest))
         ).toCompletableFuture().handle(
             (blob, throwable) -> {
                 MatcherAssert.assertThat(
@@ -126,17 +123,16 @@ final class AstoBlobsITCase {
         final AstoBlobs blobs = new AstoBlobs(
             new InMemoryStorage(), new DefaultLayout(), new RepoName.Simple("test")
         );
-        final ByteBuffer buf = ByteBuffer.wrap(new byte[] {0x05, 0x06, 0x07, 0x08});
-        final Digest digest = blobs.put(
-            new Content.From(Flowable.fromArray(buf)), new Digest.Sha256(buf.array())
-        ).toCompletableFuture().get().digest();
+        final byte[] bytes = {0x05, 0x06, 0x07, 0x08};
+        final Digest digest = blobs.put(new TrustedBlobSource(bytes))
+            .toCompletableFuture().get().digest();
         final byte[] read = Flowable.fromPublisher(
             blobs.blob(digest)
                 .toCompletableFuture().get()
                 .get().content()
                 .toCompletableFuture().get()
         ).toList().blockingGet().get(0).array();
-        MatcherAssert.assertThat(read, Matchers.equalTo(buf.array()));
+        MatcherAssert.assertThat(read, Matchers.equalTo(bytes));
     }
 
     @Test

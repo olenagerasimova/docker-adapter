@@ -23,10 +23,10 @@
  */
 package com.artipie.docker.composite;
 
-import com.artipie.asto.Content;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
+import com.artipie.docker.asto.BlobSource;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -54,7 +54,7 @@ public final class MultiReadLayers implements Layers {
     }
 
     @Override
-    public CompletionStage<Blob> put(final Content content, final Digest digest) {
+    public CompletionStage<Blob> put(final BlobSource source) {
         throw new UnsupportedOperationException();
     }
 

@@ -23,12 +23,11 @@
  */
 package com.artipie.docker.http;
 
-import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
-import com.artipie.docker.Digest;
 import com.artipie.docker.Docker;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.asto.TrustedBlobSource;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.headers.Header;
@@ -105,8 +104,7 @@ class UploadEntityPostTest {
         );
         final String from = "my-alpine";
         this.docker.repo(new RepoName.Simple(from)).layers().put(
-            new Content.From("data".getBytes()),
-            new Digest.FromString(digest)
+            new TrustedBlobSource("data".getBytes())
         ).toCompletableFuture().join();
         final String name = "test";
         MatcherAssert.assertThat(

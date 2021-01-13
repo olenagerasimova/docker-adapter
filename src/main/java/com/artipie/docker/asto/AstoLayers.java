@@ -24,7 +24,6 @@
 
 package com.artipie.docker.asto;
 
-import com.artipie.asto.Content;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
@@ -53,14 +52,14 @@ public final class AstoLayers implements Layers {
     }
 
     @Override
-    public CompletionStage<Blob> put(final Content content, final Digest digest) {
-        return this.blobs.put(content, digest);
+    public CompletionStage<Blob> put(final BlobSource source) {
+        return this.blobs.put(source);
     }
 
     @Override
     public CompletionStage<Blob> mount(final Blob blob) {
         return blob.content().thenCompose(
-            content -> this.blobs.put(content, blob.digest())
+            content -> this.blobs.put(new TrustedBlobSource(content, blob.digest()))
         );
     }
 
