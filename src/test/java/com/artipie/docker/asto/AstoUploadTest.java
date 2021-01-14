@@ -161,7 +161,7 @@ class AstoUploadTest {
      *
      * @since 0.12
      */
-    private static final class IsUploadWithContent extends TypeSafeMatcher<Upload> {
+    private final class IsUploadWithContent extends TypeSafeMatcher<Upload> {
 
         /**
          * Expected content.
@@ -178,10 +178,10 @@ class AstoUploadTest {
         }
 
         @Override
-        public boolean matchesSafely(final Upload upload) {
+        public boolean matchesSafely(final Upload upl) {
             final Digest digest = new Digest.Sha256(this.content);
             final CapturePutLayers fake = new CapturePutLayers();
-            upload.putTo(fake, digest).toCompletableFuture().join();
+            upl.putTo(fake, digest).toCompletableFuture().join();
             return new IsEqual<>(this.content).matches(fake.content());
         }
     }
@@ -191,7 +191,7 @@ class AstoUploadTest {
      *
      * @since 0.12
      */
-    private static class CapturePutLayers implements Layers {
+    private final class CapturePutLayers implements Layers {
 
         /**
          * Captured put content.
@@ -200,10 +200,9 @@ class AstoUploadTest {
 
         @Override
         public CompletionStage<Blob> put(final BlobSource source) {
-            final Storage storage = new InMemoryStorage();
-            final Key key = new Key.From("sink");
-            source.saveTo(storage, key).toCompletableFuture().join();
-            this.ccontent = storage.value(key)
+            final Key key = new Key.From(UUID.randomUUID().toString());
+            source.saveTo(AstoUploadTest.this.storage, key).toCompletableFuture().join();
+            this.ccontent = AstoUploadTest.this.storage.value(key)
                 .thenApply(PublisherAs::new)
                 .thenCompose(PublisherAs::bytes)
                 .toCompletableFuture().join();

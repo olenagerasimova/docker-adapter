@@ -25,16 +25,11 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
-import com.artipie.asto.Remaining;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.Digests;
 import com.artipie.docker.Digest;
 import com.artipie.docker.error.InvalidDigestException;
-import io.reactivex.Flowable;
-import java.security.MessageDigest;
+import com.artipie.docker.misc.DigestedFlowable;
 import java.util.concurrent.CompletionStage;
-import org.cactoos.io.BytesOf;
-import org.cactoos.text.HexOf;
 
 /**
  * BlobSource which content is checked against digest on saving.
@@ -71,17 +66,12 @@ public final class CheckedBlobSource implements BlobSource {
 
     @Override
     public CompletionStage<Void> saveTo(final Storage storage, final Key key) {
-        final MessageDigest sha = Digests.SHA256.get();
+        final DigestedFlowable digested = new DigestedFlowable(this.content);
         final Content checked = new Content.From(
             this.content.size(),
-            Flowable.fromPublisher(this.content).map(
-                buf -> {
-                    sha.update(new Remaining(buf, true).bytes());
-                    return buf;
-                }
-            ).doOnComplete(
+            digested.doOnComplete(
                 () -> {
-                    final String calculated = new HexOf(new BytesOf(sha.digest())).asString();
+                    final String calculated = digested.digest().hex();
                     final String expected = this.dig.hex();
                     if (!expected.equals(calculated)) {
                         throw new InvalidDigestException(
