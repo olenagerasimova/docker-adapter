@@ -103,9 +103,7 @@ public final class DockerSlice extends Slice.Wrap {
                             new RtRule.ByPath(ManifestEntity.PATH),
                             ByMethodsRule.Standard.PUT
                         ),
-                        new ManifestEntity.PutAuth(
-                            docker, new ManifestEntity.Put(docker), auth, perms
-                        )
+                        auth(new ManifestEntity.Put(docker), perms, auth)
                     ),
                     new RtRulePath(
                         new RtRule.All(
