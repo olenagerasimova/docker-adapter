@@ -32,6 +32,10 @@ import com.artipie.docker.misc.RqByRegex;
 import com.artipie.docker.ref.ManifestRef;
 import com.artipie.http.Response;
 import com.artipie.http.async.AsyncResponse;
+import com.artipie.http.auth.AuthScheme;
+import com.artipie.http.auth.AuthSlice;
+import com.artipie.http.auth.Permission;
+import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.ContentLength;
 import com.artipie.http.headers.ContentType;
 import com.artipie.http.headers.Location;
@@ -220,6 +224,86 @@ final class ManifestEntity {
                     )
                 )
             );
+        }
+    }
+
+    /**
+     * Auth slice for PUT method, checks whether overwrite is allowed.
+     *
+     * @since 0.12
+     */
+    public static class PutAuth implements ScopeSlice {
+
+        /**
+         * Docker repository.
+         */
+        private final Docker docker;
+
+        /**
+         * Origin.
+         */
+        private final ScopeSlice origin;
+
+        /**
+         * Access permissions.
+         */
+        private final Permissions perms;
+
+        /**
+         * Authentication scheme.
+         */
+        private final AuthScheme auth;
+
+        /**
+         * Ctor.
+         * @param docker Docker
+         * @param origin Origin slice
+         * @param auth Authentication
+         * @param perms Permission
+         * @checkstyle ParameterNumberCheck (4 lines)
+         */
+        PutAuth(final Docker docker, final ScopeSlice origin,
+            final AuthScheme auth, final Permissions perms) {
+            this.docker = docker;
+            this.origin = origin;
+            this.perms = perms;
+            this.auth = auth;
+        }
+
+        @Override
+        public Response response(
+            final String line, final Iterable<Map.Entry<String, String>> headers,
+            final Publisher<ByteBuffer> body
+        ) {
+            final Request request = new Request(line);
+            final RepoName name = request.name();
+            final ManifestRef ref = request.reference();
+            return new AsyncResponse(
+                this.docker.repo(name).manifests().get(ref).thenApply(
+                    manifest -> {
+                        final Permission perm;
+                        if (manifest.isPresent()) {
+                            perm = user -> this.perms.allowed(user, this.scope(line).string());
+                        } else {
+                            perm = user -> this.perms.allowed(
+                                user, this.origin.scope(line).string()
+                            );
+                        }
+                        return new DockerAuthSlice(
+                            new AuthSlice(
+                                this.origin,
+                                this.auth,
+                                perm
+                            )
+                        ).response(line, headers, body);
+                    }
+                )
+            );
+        }
+
+        @Override
+        public Scope scope(final String line) {
+            return new Scope.Repository.OverwriteTags(new Request(line).name());
         }
     }
 
