@@ -134,7 +134,7 @@ public final class AuthTest {
                 basic.headers(TestAuthentication.ALICE),
                 Content.EMPTY
             ),
-            new IsDeniedResponse()
+            new RsHasStatus(RsStatus.FORBIDDEN)
         );
     }
 
