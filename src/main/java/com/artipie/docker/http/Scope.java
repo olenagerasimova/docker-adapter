@@ -231,6 +231,23 @@ public interface Scope {
                 super(new Repository(name, "push"));
             }
         }
+
+        /**
+         * Scope for push action on repository resource.
+         *
+         * @since 0.10
+         */
+        static final class OverwriteTags extends Scope.Wrap {
+
+            /**
+             * Ctor.
+             *
+             * @param name Resource name.
+             */
+            OverwriteTags(final RepoName name) {
+                super(new Repository(name, "overwrite"));
+            }
+        }
     }
 
     /**

@@ -25,7 +25,11 @@ package com.artipie.docker.http;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.memory.InMemoryStorage;
+import com.artipie.docker.Blob;
+import com.artipie.docker.Docker;
+import com.artipie.docker.RepoName;
 import com.artipie.docker.asto.AstoDocker;
+import com.artipie.docker.asto.TrustedBlobSource;
 import com.artipie.http.Headers;
 import com.artipie.http.Response;
 import com.artipie.http.Slice;
@@ -34,16 +38,22 @@ import com.artipie.http.auth.BasicAuthScheme;
 import com.artipie.http.auth.BearerAuthScheme;
 import com.artipie.http.auth.Permissions;
 import com.artipie.http.headers.Authorization;
+import com.artipie.http.headers.Header;
+import com.artipie.http.hm.ResponseMatcher;
 import com.artipie.http.hm.RsHasStatus;
 import com.artipie.http.rq.RequestLine;
 import com.artipie.http.rq.RqMethod;
 import com.artipie.http.rs.RsStatus;
+import io.reactivex.Flowable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.core.AllOf;
 import org.hamcrest.core.IsNot;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -57,6 +67,16 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public final class AuthTest {
+
+    /**
+     * Docker used in tests.
+     */
+    private Docker docker;
+
+    @BeforeEach
+    void setUp() {
+        this.docker = new AstoDocker(new InMemoryStorage());
+    }
 
     @ParameterizedTest
     @MethodSource("setups")
@@ -97,6 +117,70 @@ public final class AuthTest {
         );
     }
 
+    @Test
+    void shouldReturnForbiddenWhenUserHasNoRequiredPermissionOnSecondManifestPut() {
+        final Basic basic = new Basic(this.docker);
+        final String line = new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest")
+            .toString();
+        final String action = "repository:my-alpine:push";
+        basic.slice(action).response(
+            line,
+            basic.headers(TestAuthentication.ALICE),
+            this.manifest()
+        );
+        MatcherAssert.assertThat(
+            basic.slice(action).response(
+                line,
+                basic.headers(TestAuthentication.ALICE),
+                Content.EMPTY
+            ),
+            new IsDeniedResponse()
+        );
+    }
+
+    @Test
+    void shouldOverwriteManifestIfAllowed() {
+        final Basic basic = new Basic(this.docker);
+        final String path = "/v2/my-alpine/manifests/abc";
+        final String line = new RequestLine(RqMethod.PUT, path).toString();
+        final String action = "repository:my-alpine:overwrite";
+        final Flowable<ByteBuffer> manifest = this.manifest();
+        MatcherAssert.assertThat(
+            "Manifest was created for the first time",
+            basic.slice(action).response(
+                line,
+                basic.headers(TestAuthentication.ALICE),
+                manifest
+            ),
+            new ResponseMatcher(
+                RsStatus.CREATED,
+                new Header("Location", path),
+                new Header("Content-Length", "0"),
+                new Header(
+                    "Docker-Content-Digest",
+                    "sha256:02b9f91901050f814adfb19b1a8f5d599b07504998c2d665baa82e364322b566"
+                )
+            )
+        );
+        MatcherAssert.assertThat(
+            "Manifest was overwritten",
+            basic.slice(action).response(
+                line,
+                basic.headers(TestAuthentication.ALICE),
+                manifest
+            ),
+            new ResponseMatcher(
+                RsStatus.CREATED,
+                new Header("Location", path),
+                new Header("Content-Length", "0"),
+                new Header(
+                    "Docker-Content-Digest",
+                    "sha256:02b9f91901050f814adfb19b1a8f5d599b07504998c2d665baa82e364322b566"
+                )
+            )
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("setups")
     void shouldNotReturnUnauthorizedOrForbiddenWhenUserHasPermissions(
@@ -125,6 +209,23 @@ public final class AuthTest {
         return Stream.of(new Basic(), new Bearer()).flatMap(AuthTest::setups);
     }
 
+    /**
+     * Create manifest content.
+     *
+     * @return Manifest content.
+     */
+    private Flowable<ByteBuffer> manifest() {
+        final byte[] content = "config".getBytes();
+        final Blob config = this.docker.repo(new RepoName.Valid("my-alpine")).layers()
+            .put(new TrustedBlobSource(content))
+            .toCompletableFuture().join();
+        final byte[] data = String.format(
+            "{\"config\":{\"digest\":\"%s\"},\"layers\":[]}",
+            config.digest().string()
+        ).getBytes();
+        return Flowable.just(ByteBuffer.wrap(data));
+    }
+
     private static Stream<Arguments> setups(final Method method) {
         return Stream.of(
             Arguments.of(
@@ -146,6 +247,11 @@ public final class AuthTest {
                 method,
                 new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
                 "repository:my-alpine:push"
+            ),
+            Arguments.of(
+                method,
+                new RequestLine(RqMethod.PUT, "/v2/my-alpine/manifests/latest"),
+                "repository:my-alpine:overwrite"
             ),
             Arguments.of(
                 method,
@@ -210,10 +316,23 @@ public final class AuthTest {
      */
     private static final class Basic implements Method {
 
+        /**
+         * Docker repo.
+         */
+        private final Docker docker;
+
+        private Basic(final Docker docker) {
+            this.docker = docker;
+        }
+
+        private Basic() {
+            this(new AstoDocker(new InMemoryStorage()));
+        }
+
         @Override
         public Slice slice(final String action) {
             return new DockerSlice(
-                new AstoDocker(new InMemoryStorage()),
+                this.docker,
                 new Permissions.Single(TestAuthentication.ALICE.name(), action),
                 new BasicAuthScheme(new TestAuthentication())
             );
