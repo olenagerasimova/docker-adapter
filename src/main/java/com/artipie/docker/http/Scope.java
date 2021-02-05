@@ -235,7 +235,7 @@ public interface Scope {
         /**
          * Scope for push action on repository resource.
          *
-         * @since 0.10
+         * @since 0.12
          */
         static final class OverwriteTags extends Scope.Wrap {
 
