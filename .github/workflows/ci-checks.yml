@@ -31,7 +31,7 @@ jobs:
       - name: Install Latest Docker
         run: |
          sudo apt-get update
-         sudo apt-get install docker-ce docker-ce-cli containerd.io
+         sudo apt-get install docker
       - name: Check Docker Version
         run: docker --version
       - name: check docker
