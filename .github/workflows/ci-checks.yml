@@ -39,7 +39,7 @@ jobs:
       - name: check docker
         run: docker pull alpine:3.11
       - name: Build it with Maven
-        run: mvn -B verify -Pqulice
+        run: mvn verify -Pqulice
   xcop-lint:
     runs-on: ubuntu-latest
     steps:
