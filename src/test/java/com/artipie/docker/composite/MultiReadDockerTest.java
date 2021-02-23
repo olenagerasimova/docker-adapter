@@ -24,9 +24,9 @@
 package com.artipie.docker.composite;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.fake.FakeCatalogDocker;
 import com.artipie.docker.proxy.ProxyDocker;
@@ -77,7 +77,7 @@ final class MultiReadDockerTest {
                     json -> new FakeCatalogDocker(() -> new Content.From(json.getBytes()))
                 ).collect(Collectors.toList())
             ).catalog(Optional.of(new RepoName.Simple("four")), limit).thenCompose(
-                catalog -> new PublisherAs(catalog.json()).asciiString()
+                catalog -> new TestPublisherAs(catalog.json()).asciiString()
             ).toCompletableFuture().join(),
             new StringIsJson.Object(
                 new JsonHas(

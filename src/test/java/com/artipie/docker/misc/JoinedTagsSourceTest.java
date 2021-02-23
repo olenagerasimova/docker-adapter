@@ -24,9 +24,9 @@
 package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.fake.FullTagsManifests;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -63,7 +63,7 @@ final class JoinedTagsSourceTest {
                 Optional.of(new Tag.Valid("four")),
                 limit
             ).tags().thenCompose(
-                tags -> new PublisherAs(tags.json()).asciiString()
+                tags -> new TestPublisherAs(tags.json()).asciiString()
             ).toCompletableFuture().join(),
             new StringIsJson.Object(
                 Matchers.allOf(

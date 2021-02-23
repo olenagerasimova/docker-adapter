@@ -24,13 +24,13 @@
 package com.artipie.docker.http;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Layers;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.Uploads;
 import com.artipie.docker.fake.FakeCatalogDocker;
 import java.util.Optional;
@@ -116,7 +116,7 @@ class TrimmedDockerTest {
         );
         MatcherAssert.assertThat(
             "Returns catalog with prefixes",
-            new PublisherAs(result.json()).asciiString().toCompletableFuture().join(),
+            new TestPublisherAs(result.json()).asciiString().toCompletableFuture().join(),
             new StringIsJson.Object(
                 new JsonHas(
                     "repositories",

@@ -23,9 +23,9 @@
  */
 package com.artipie.docker.proxy;
 
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tags;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.http.client.Settings;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import java.util.Optional;
@@ -72,8 +72,8 @@ final class ProxyManifestsIT {
                 new RepoName.Simple(repo)
             ).tags(Optional.empty(), Integer.MAX_VALUE)
                 .thenApply(Tags::json)
-                .thenApply(PublisherAs::new)
-                .thenCompose(PublisherAs::asciiString)
+                .thenApply(TestPublisherAs::new)
+                .thenCompose(TestPublisherAs::asciiString)
                 .toCompletableFuture().join(),
             new StringIsJson.Object(
                 Matchers.allOf(

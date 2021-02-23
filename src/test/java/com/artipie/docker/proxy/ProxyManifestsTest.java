@@ -24,10 +24,10 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.http.DigestHeader;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
@@ -79,7 +79,7 @@ class ProxyManifestsTest {
         MatcherAssert.assertThat(manifest.digest().string(), new IsEqual<>(digest));
         final Content content = manifest.content();
         MatcherAssert.assertThat(
-            new PublisherAs(content).bytes().toCompletableFuture().join(),
+            new TestPublisherAs(content).bytes().toCompletableFuture().join(),
             new IsEqual<>(data)
         );
         MatcherAssert.assertThat(
@@ -115,7 +115,7 @@ class ProxyManifestsTest {
                 cline.set(line);
                 cheaders.set(headers);
                 return new AsyncResponse(
-                    new PublisherAs(body).bytes().thenApply(
+                    new TestPublisherAs(body).bytes().thenApply(
                         bytes -> {
                             cbody.set(bytes);
                             return StandardRs.EMPTY;
@@ -148,7 +148,7 @@ class ProxyManifestsTest {
             new ProxyDocker(
                 (line, headers, body) -> new RsWithBody(new Content.From(bytes))
             ).catalog(Optional.empty(), Integer.MAX_VALUE).thenCompose(
-                catalog -> new PublisherAs(catalog.json()).bytes()
+                catalog -> new TestPublisherAs(catalog.json()).bytes()
             ).toCompletableFuture().join(),
             new IsEqual<>(bytes)
         );

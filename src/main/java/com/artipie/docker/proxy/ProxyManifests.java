@@ -25,13 +25,13 @@ package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.http.DigestHeader;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Manifest;
@@ -91,7 +91,7 @@ public final class ProxyManifests implements Manifests {
                 final CompletionStage<Optional<Manifest>> result;
                 if (status == RsStatus.OK) {
                     final Digest digest = new DigestHeader(headers).value();
-                    result = new PublisherAs(body).bytes().thenApply(
+                    result = new TestPublisherAs(body).bytes().thenApply(
                         bytes -> Optional.of(new JsonManifest(digest, bytes))
                     );
                 } else if (status == RsStatus.NOT_FOUND) {
@@ -118,7 +118,7 @@ public final class ProxyManifests implements Manifests {
             (status, headers, body) -> {
                 final CompletionStage<Tags> result;
                 if (status == RsStatus.OK) {
-                    result = new PublisherAs(body).bytes().thenApply(
+                    result = new TestPublisherAs(body).bytes().thenApply(
                         bytes -> () -> new Content.From(bytes)
                     );
                 } else {

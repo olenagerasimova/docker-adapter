@@ -24,10 +24,10 @@
 package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
+import com.artipie.docker.TestPublisherAs;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -93,7 +93,7 @@ public final class ParsedTags implements Tags {
      * @return JSON root.
      */
     private CompletionStage<JsonObject> root() {
-        return new PublisherAs(this.origin.json()).bytes().thenApply(
+        return new TestPublisherAs(this.origin.json()).bytes().thenApply(
             bytes -> Json.createReader(new ByteArrayInputStream(bytes)).readObject()
         );
     }

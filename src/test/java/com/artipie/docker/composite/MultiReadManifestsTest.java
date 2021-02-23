@@ -24,10 +24,10 @@
 package com.artipie.docker.composite;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.fake.FakeManifests;
 import com.artipie.docker.fake.FullTagsManifests;
 import com.artipie.docker.manifest.Manifest;
@@ -102,7 +102,7 @@ final class MultiReadManifestsTest {
                     )
                 )
             ).tags(Optional.of(new Tag.Valid("four")), limit).thenCompose(
-                tags -> new PublisherAs(tags.json()).asciiString()
+                tags -> new TestPublisherAs(tags.json()).asciiString()
             ).toCompletableFuture().join(),
             new StringIsJson.Object(
                 Matchers.allOf(

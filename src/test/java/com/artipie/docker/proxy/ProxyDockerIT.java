@@ -23,8 +23,8 @@
  */
 package com.artipie.docker.proxy;
 
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Catalog;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.http.client.Settings;
 import com.artipie.http.client.jetty.JettyClientSlices;
 import java.util.Optional;
@@ -70,8 +70,8 @@ final class ProxyDockerIT {
         MatcherAssert.assertThat(
             this.docker.catalog(Optional.empty(), Integer.MAX_VALUE)
                 .thenApply(Catalog::json)
-                .thenApply(PublisherAs::new)
-                .thenCompose(PublisherAs::asciiString)
+                .thenApply(TestPublisherAs::new)
+                .thenCompose(TestPublisherAs::asciiString)
                 .toCompletableFuture().join(),
             new StringIsJson.Object(new JsonHas("repositories", new IsAnything<>()))
         );

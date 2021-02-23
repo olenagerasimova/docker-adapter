@@ -24,8 +24,8 @@
 package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.fake.FakeCatalogDocker;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -60,7 +60,7 @@ final class JoinedCatalogSourceTest {
                 Optional.of(new RepoName.Simple("four")),
                 limit
             ).catalog().thenCompose(
-                catalog -> new PublisherAs(catalog.json()).asciiString()
+                catalog -> new TestPublisherAs(catalog.json()).asciiString()
             ).toCompletableFuture().join(),
             new StringIsJson.Object(
                 new JsonHas(
@@ -87,7 +87,7 @@ final class JoinedCatalogSourceTest {
                 ),
                 new FakeCatalogDocker(() -> new Content.From(json.getBytes()))
             ).catalog().thenCompose(
-                catalog -> new PublisherAs(catalog.json()).asciiString()
+                catalog -> new TestPublisherAs(catalog.json()).asciiString()
             ).toCompletableFuture().join(),
             new IsEqual<>(json)
         );

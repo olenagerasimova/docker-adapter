@@ -24,9 +24,9 @@
 package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.http.async.AsyncResponse;
 import com.artipie.http.rs.RsStatus;
 import com.artipie.http.rs.RsWithBody;
@@ -74,7 +74,7 @@ final class ProxyDockerTest {
                 cline.set(line);
                 cheaders.set(headers);
                 return new AsyncResponse(
-                    new PublisherAs(body).bytes().thenApply(
+                    new TestPublisherAs(body).bytes().thenApply(
                         bytes -> {
                             cbody.set(bytes);
                             return StandardRs.EMPTY;
@@ -107,7 +107,7 @@ final class ProxyDockerTest {
             new ProxyDocker(
                 (line, headers, body) -> new RsWithBody(new Content.From(bytes))
             ).catalog(Optional.empty(), Integer.MAX_VALUE).thenCompose(
-                catalog -> new PublisherAs(catalog.json()).bytes()
+                catalog -> new TestPublisherAs(catalog.json()).bytes()
             ).toCompletableFuture().join(),
             new IsEqual<>(bytes)
         );

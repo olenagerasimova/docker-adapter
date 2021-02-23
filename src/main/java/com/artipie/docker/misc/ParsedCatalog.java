@@ -24,9 +24,9 @@
 package com.artipie.docker.misc;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -67,7 +67,7 @@ public final class ParsedCatalog implements Catalog {
      * @return Repository names list.
      */
     public CompletionStage<List<RepoName>> repos() {
-        return new PublisherAs(this.origin.json()).bytes().thenApply(
+        return new TestPublisherAs(this.origin.json()).bytes().thenApply(
             bytes -> Json.createReader(new ByteArrayInputStream(bytes)).readObject()
         ).thenApply(root -> root.getJsonArray("repositories")).thenApply(
             repos -> repos.getValuesAs(JsonString.class).stream()

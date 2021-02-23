@@ -27,10 +27,10 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import java.util.Optional;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -65,7 +65,7 @@ final class AstoDockerTest {
             .catalog(Optional.empty(), Integer.MAX_VALUE)
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new PublisherAs(catalog.json()).asciiString().toCompletableFuture().join(),
+            new TestPublisherAs(catalog.json()).asciiString().toCompletableFuture().join(),
             new IsEqual<>("{\"repositories\":[\"my-alpine\",\"test\"]}")
         );
     }

@@ -24,9 +24,9 @@
 package com.artipie.docker.cache;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.fake.FakeCatalogDocker;
 import com.artipie.docker.proxy.ProxyDocker;
@@ -68,7 +68,7 @@ final class CacheDockerTest {
                 fake("{\"repositories\":[\"one\",\"three\",\"four\"]}"),
                 fake("{\"repositories\":[\"one\",\"two\"]}")
             ).catalog(Optional.of(new RepoName.Simple("four")), limit).thenCompose(
-                catalog -> new PublisherAs(catalog.json()).asciiString()
+                catalog -> new TestPublisherAs(catalog.json()).asciiString()
             ).toCompletableFuture().join(),
             new StringIsJson.Object(
                 new JsonHas(

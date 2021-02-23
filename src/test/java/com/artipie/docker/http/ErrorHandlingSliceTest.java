@@ -25,7 +25,7 @@ package com.artipie.docker.http;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
-import com.artipie.asto.ext.PublisherAs;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.error.InvalidDigestException;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.error.InvalidRepoNameException;
@@ -86,7 +86,7 @@ class ErrorHandlingSliceTest {
                 );
                 MatcherAssert.assertThat(
                     "Body unmodified",
-                    new PublisherAs(rqbody).bytes().toCompletableFuture().join(),
+                    new TestPublisherAs(rqbody).bytes().toCompletableFuture().join(),
                     new IsEqual<>(body)
                 );
                 return StandardRs.OK;

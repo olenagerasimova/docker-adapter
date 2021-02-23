@@ -26,12 +26,12 @@ package com.artipie.docker.asto;
 import com.artipie.asto.Content;
 import com.artipie.asto.Key;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Manifests;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.manifest.JsonManifest;
 import com.artipie.docker.manifest.Layer;
@@ -94,7 +94,7 @@ public final class AstoManifests implements Manifests {
 
     @Override
     public CompletionStage<Manifest> put(final ManifestRef ref, final Content content) {
-        return new PublisherAs(content).bytes().thenCompose(
+        return new TestPublisherAs(content).bytes().thenCompose(
             bytes -> this.blobs.put(new TrustedBlobSource(bytes))
                 .thenApply(blob -> new JsonManifest(blob.digest(), bytes))
                 .thenCompose(
@@ -114,8 +114,8 @@ public final class AstoManifests implements Manifests {
                         blobOpt -> blobOpt
                             .map(
                                 blob -> blob.content()
-                                    .thenApply(PublisherAs::new)
-                                    .thenCompose(PublisherAs::bytes)
+                                    .thenApply(TestPublisherAs::new)
+                                    .thenCompose(TestPublisherAs::bytes)
                                     .<Manifest>thenApply(
                                         bytes -> new JsonManifest(blob.digest(), bytes)
                                     )
@@ -214,7 +214,7 @@ public final class AstoManifests implements Manifests {
                 if (exists) {
                     stage = this.asto.value(key)
                         .thenCompose(
-                            pub -> new PublisherAs(pub).asciiString()
+                            pub -> new TestPublisherAs(pub).asciiString()
                         )
                         .<Digest>thenApply(Digest.FromString::new)
                         .thenApply(Optional::of);

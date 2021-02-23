@@ -24,12 +24,12 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Blob;
 import com.artipie.docker.Digest;
 import com.artipie.docker.Layers;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -134,7 +134,7 @@ final class AstoLayersTest {
     }
 
     private static byte[] bytes(final Blob blob) {
-        return new PublisherAs(blob.content().toCompletableFuture().join())
+        return new TestPublisherAs(blob.content().toCompletableFuture().join())
             .bytes()
             .toCompletableFuture().join();
     }

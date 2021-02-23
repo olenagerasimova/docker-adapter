@@ -23,8 +23,8 @@
  */
 package com.artipie.docker.manifest;
 
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Digest;
+import com.artipie.docker.TestPublisherAs;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -179,7 +179,7 @@ class JsonManifestTest {
             data
         );
         MatcherAssert.assertThat(
-            new PublisherAs(manifest.content()).bytes().toCompletableFuture().join(),
+            new TestPublisherAs(manifest.content()).bytes().toCompletableFuture().join(),
             new IsEqual<>(data)
         );
     }

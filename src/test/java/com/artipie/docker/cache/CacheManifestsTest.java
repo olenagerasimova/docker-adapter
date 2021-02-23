@@ -25,7 +25,6 @@ package com.artipie.docker.cache;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.LoggingStorage;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.asto.memory.InMemoryStorage;
 import com.artipie.docker.Digest;
 import com.artipie.docker.ExampleStorage;
@@ -34,6 +33,7 @@ import com.artipie.docker.Manifests;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.Uploads;
 import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.fake.FakeManifests;
@@ -138,7 +138,7 @@ final class CacheManifestsTest {
                     )
                 )
             ).tags(Optional.of(new Tag.Valid("four")), limit).thenCompose(
-                tags -> new PublisherAs(tags.json()).asciiString()
+                tags -> new TestPublisherAs(tags.json()).asciiString()
             ).toCompletableFuture().join(),
             new StringIsJson.Object(
                 Matchers.allOf(

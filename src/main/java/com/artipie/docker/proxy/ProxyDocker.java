@@ -25,11 +25,11 @@ package com.artipie.docker.proxy;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.FailedCompletionStage;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Catalog;
 import com.artipie.docker.Docker;
 import com.artipie.docker.Repo;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.http.Headers;
 import com.artipie.http.Slice;
 import com.artipie.http.rq.RequestLine;
@@ -75,7 +75,7 @@ public final class ProxyDocker implements Docker {
             (status, headers, body) -> {
                 final CompletionStage<Catalog> result;
                 if (status == RsStatus.OK) {
-                    result = new PublisherAs(body).bytes().thenApply(
+                    result = new TestPublisherAs(body).bytes().thenApply(
                         bytes -> () -> new Content.From(bytes)
                     );
                 } else {

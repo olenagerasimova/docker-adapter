@@ -24,8 +24,8 @@
 package com.artipie.docker.asto;
 
 import com.artipie.asto.Key;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.RepoName;
+import com.artipie.docker.TestPublisherAs;
 import com.google.common.base.Splitter;
 import java.io.StringReader;
 import java.util.Collection;
@@ -72,7 +72,7 @@ final class AstoCatalogTest {
     })
     void shouldSupportPaging(final String from, final Integer limit, final String result) {
         MatcherAssert.assertThat(
-            new PublisherAs(
+            new TestPublisherAs(
                 new AstoCatalog(
                     new Key.From("foo"),
                     this.keys,

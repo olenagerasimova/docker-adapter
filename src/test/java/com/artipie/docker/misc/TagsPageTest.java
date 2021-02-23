@@ -23,9 +23,9 @@
  */
 package com.artipie.docker.misc;
 
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
+import com.artipie.docker.TestPublisherAs;
 import com.google.common.base.Splitter;
 import java.util.Collection;
 import java.util.Optional;
@@ -72,7 +72,7 @@ final class TagsPageTest {
     void shouldSupportPaging(final String from, final Integer limit, final String result) {
         final String repo = "my-alpine";
         MatcherAssert.assertThat(
-            new PublisherAs(
+            new TestPublisherAs(
                 new TagsPage(
                     new RepoName.Simple(repo),
                     this.tags,

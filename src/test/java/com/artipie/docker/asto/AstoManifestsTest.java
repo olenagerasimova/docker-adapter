@@ -26,12 +26,12 @@ package com.artipie.docker.asto;
 
 import com.artipie.asto.Content;
 import com.artipie.asto.Storage;
-import com.artipie.asto.ext.PublisherAs;
 import com.artipie.docker.Blob;
 import com.artipie.docker.ExampleStorage;
 import com.artipie.docker.RepoName;
 import com.artipie.docker.Tag;
 import com.artipie.docker.Tags;
+import com.artipie.docker.TestPublisherAs;
 import com.artipie.docker.error.InvalidManifestException;
 import com.artipie.docker.manifest.Manifest;
 import com.artipie.docker.ref.ManifestRef;
@@ -153,7 +153,7 @@ final class AstoManifestsTest {
         final Tags tags = this.manifests.tags(Optional.empty(), Integer.MAX_VALUE)
             .toCompletableFuture().join();
         MatcherAssert.assertThat(
-            new PublisherAs(tags.json()).asciiString().toCompletableFuture().join(),
+            new TestPublisherAs(tags.json()).asciiString().toCompletableFuture().join(),
             new IsEqual<>("{\"name\":\"my-alpine\",\"tags\":[\"1\",\"latest\"]}")
         );
     }
@@ -161,7 +161,7 @@ final class AstoManifestsTest {
     private byte[] manifest(final ManifestRef ref) {
         return this.manifests.get(ref)
             .thenApply(Optional::get)
-            .thenCompose(mnf -> new PublisherAs(mnf.content()).bytes())
+            .thenCompose(mnf -> new TestPublisherAs(mnf.content()).bytes())
             .toCompletableFuture().join();
     }
 }
