@@ -108,7 +108,10 @@ final class ManifestEntity {
             return new AsyncResponse(
                 this.docker.repo(request.name()).manifests().get(ref).thenApply(
                     manifest -> manifest.<Response>map(
-                        found -> new BaseResponse(found.convert(Head.acceptHeader(headers)))
+                        found -> new RsWithHeaders(
+                            new BaseResponse(found.convert(Head.acceptHeader(headers))),
+                            new ContentLength(found.size())
+                        )
                     ).orElseGet(
                         () -> new ErrorsResponse(RsStatus.NOT_FOUND, new ManifestError(ref))
                     )
