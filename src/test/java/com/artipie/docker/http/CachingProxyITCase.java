@@ -49,6 +49,8 @@ import org.hamcrest.core.StringContains;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 /**
  * Integration test for {@link ProxyDocker}.
@@ -148,6 +150,7 @@ final class CachingProxyITCase {
     }
 
     @Test
+    @DisabledOnOs(OS.LINUX)
     void shouldPullWhenRemoteIsDown() throws Exception {
         final String image = new Image.From(
             this.repo.url(), this.img.name(), this.img.digest(), this.img.layer()
