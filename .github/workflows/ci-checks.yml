@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         java: [1.8, 11, 13]
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
       - name: Build it with Maven
         env:
           NO_PROXY: localhost,127.0.0.1
-        run: mvn -B verify -Pqulice
+        run: mvn verify -Pqulice
   xcop-lint:
     runs-on: ubuntu-latest
     steps:
