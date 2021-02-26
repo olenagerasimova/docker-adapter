@@ -76,7 +76,9 @@ public final class DockerClient {
         Logger.debug(this, "Full stdout/stderr:\n%s", log);
         if (code != 0) {
             Logger.error(this, "Code not ok:\n%s", log);
-            throw new IllegalStateException(String.format("Not OK exit code: %d\nFull log:\n%s", code, log));
+            throw new IllegalStateException(
+                String.format("Not OK exit code: %d\nFull log:\n%s", code, log)
+            );
         }
         return log;
     }
