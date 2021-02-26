@@ -108,11 +108,6 @@ public final class JsonManifest implements Manifest {
         return new Content.From(this.source);
     }
 
-    @Override
-    public long size() {
-        return this.source.length;
-    }
-
     /**
      * Read manifest content as JSON object.
      *

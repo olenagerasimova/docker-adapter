@@ -46,7 +46,6 @@ import org.junit.jupiter.api.Test;
  *
  * @since 0.2
  * @checkstyle ClassDataAbstractionCouplingCheck (500 lines)
- * @checkstyle MagicNumberCheck (500 lines)
  */
 @SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class ManifestEntityHeadTest {
@@ -70,8 +69,7 @@ class ManifestEntityHeadTest {
                 Flowable.empty()
             ),
             new ResponseMatcher(
-                "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221",
-                528
+                "sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221"
             )
         );
     }
@@ -92,7 +90,7 @@ class ManifestEntityHeadTest {
                 new Headers(),
                 Flowable.empty()
             ),
-            new ResponseMatcher(digest, 528)
+            new ResponseMatcher(digest)
         );
     }
 
@@ -151,9 +149,8 @@ class ManifestEntityHeadTest {
          * Ctor.
          *
          * @param digest Expected `Docker-Content-Digest` header value.
-         * @param size Expected `Content-Length` header value.
          */
-        ResponseMatcher(final String digest, final long size) {
+        ResponseMatcher(final String digest) {
             super(
                 new ListOf<Matcher<? super Response>>(
                     new RsHasStatus(RsStatus.OK),
@@ -161,8 +158,7 @@ class ManifestEntityHeadTest {
                         new Header(
                             "Content-type", "application/vnd.docker.distribution.manifest.v2+json"
                         ),
-                        new Header("Docker-Content-Digest", digest),
-                        new Header("Content-Length", String.valueOf(size))
+                        new Header("Docker-Content-Digest", digest)
                     )
                 )
             );

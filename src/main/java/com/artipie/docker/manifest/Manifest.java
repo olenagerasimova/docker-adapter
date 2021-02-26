@@ -77,11 +77,4 @@ public interface Manifest {
      * @return Manifest binary content.
      */
     Content content();
-
-    /**
-     * Manifest size.
-     *
-     * @return Size of the manifest.
-     */
-    long size();
 }
