@@ -28,6 +28,7 @@ import com.artipie.docker.asto.AstoDocker;
 import com.artipie.docker.junit.DockerClient;
 import com.artipie.docker.junit.DockerClientSupport;
 import com.artipie.docker.junit.DockerRepository;
+import com.jcabi.log.Logger;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -97,7 +98,9 @@ final class DockerSliceITCase {
         this.client.run("push", this.image.remote());
         this.client.run("image", "rm", this.image.name());
         this.client.run("image", "rm", this.image.remote());
+        Logger.debug(this, "====== start pull ======");
         final String output = this.client.run("pull", this.image.remote());
+        Logger.debug(this, "====== end pull ======");
         MatcherAssert.assertThat(
             output,
             new StringContains(
