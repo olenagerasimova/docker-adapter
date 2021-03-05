@@ -48,16 +48,10 @@ final class ProxyDockerIT {
      */
     private JettyClientSlices client;
 
-    /**
-     * Proxy docker.
-     */
-    private ProxyDocker docker;
-
     @BeforeEach
     void setUp() throws Exception {
         this.client = new JettyClientSlices(new Settings.WithFollowRedirects(true));
         this.client.start();
-        this.docker = new ProxyDocker(this.client.https("mcr.microsoft.com"));
     }
 
     @AfterEach
@@ -68,7 +62,8 @@ final class ProxyDockerIT {
     @Test
     void readsCatalog() {
         MatcherAssert.assertThat(
-            this.docker.catalog(Optional.empty(), Integer.MAX_VALUE)
+            new ProxyDocker(this.client.https("mcr.microsoft.com"))
+                .catalog(Optional.empty(), Integer.MAX_VALUE)
                 .thenApply(Catalog::json)
                 .thenApply(PublisherAs::new)
                 .thenCompose(PublisherAs::asciiString)
