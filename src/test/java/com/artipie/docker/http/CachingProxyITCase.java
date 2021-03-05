@@ -169,7 +169,7 @@ final class CachingProxyITCase {
         );
         final Stopwatch stopwatch = Stopwatch.createStarted();
         while (!manifests.get(ref).toCompletableFuture().join().isPresent()) {
-            if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(1)) {
+            if (stopwatch.elapsed(TimeUnit.SECONDS) > TimeUnit.MINUTES.toSeconds(2)) {
                 throw new IllegalStateException(
                     String.format(
                         "Manifest is expected to be present, but it was not found after %s seconds",
@@ -177,7 +177,7 @@ final class CachingProxyITCase {
                     )
                 );
             }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
         }
     }
 
