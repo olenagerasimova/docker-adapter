@@ -75,7 +75,9 @@ public final class DockerClient {
         final String log = new String(Files.readAllBytes(stdout));
         Logger.debug(this, "Full stdout/stderr:\n%s", log);
         if (code != 0) {
-            throw new IllegalStateException(String.format("Not OK exit code: %d", code));
+            throw new IllegalStateException(
+                String.format("Not OK exit code: %d\n, error: %s", code, log)
+            );
         }
         return log;
     }
